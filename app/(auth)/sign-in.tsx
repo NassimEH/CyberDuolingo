@@ -1,13 +1,10 @@
 import SocialButton from "@/components/SocialButton";
-import VerificationModal from "@/components/VerificationModal";
 import { images } from "@/constants/images";
 import { posthog } from "@/lib/posthog";
 import { useLanguageStore } from "@/store/languageStore";
-import { useSignIn, useSSO } from "@clerk/expo";
+import { useSessionStore } from "@/store/sessionStore";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
-import * as Linking from "expo-linking";
-import { type Href, router } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   Image,
@@ -22,112 +19,26 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-WebBrowser.maybeCompleteAuthSession();
-
-type SSOStrategy = "oauth_google" | "oauth_facebook" | "oauth_apple";
-
 export default function SignInScreen() {
-  const { signIn, errors, fetchStatus } = useSignIn();
-  const { startSSOFlow } = useSSO();
+  const signIn = useSessionStore((s) => s.signIn);
   const { selectedLanguage } = useLanguageStore();
-
   const [email, setEmail] = useState("");
-  const [showVerification, setShowVerification] = useState(false);
   const [authError, setAuthError] = useState("");
 
-  const isLoading = fetchStatus === "fetching";
+  const completeSignIn = (method: string, nextEmail = email) => {
+    const trimmed = nextEmail.trim();
+    if (!trimmed.includes("@")) {
+      setAuthError("Enter a valid email address.");
+      return;
+    }
 
-  const handleSignIn = async () => {
     setAuthError("");
-    posthog.capture("sign_in_submitted", { method: "code" });
-    const { error: createError } = await signIn.create({ identifier: email });
-    if (createError) {
-      posthog.capture("$exception", {
-        $exception_list: [
-          {
-            type: createError.name ?? "SignInCreateError",
-            value: createError.message,
-          },
-        ],
-        $exception_source: "sign-in-create",
-      });
-      setAuthError("We couldn't start sign in. Please try again.");
-      return;
-    }
-
-    const { error } = await signIn.emailCode.sendCode({ emailAddress: email });
-    if (error) {
-      posthog.capture("$exception", {
-        $exception_list: [
-          {
-            type: error.name ?? "SignInError",
-            value: error.message,
-          },
-        ],
-        $exception_source: "sign-in",
-      });
-      setAuthError("We couldn't send your code. Please try again.");
-      return;
-    }
-    setShowVerification(true);
-  };
-
-  const handleVerify = async (code: string) => {
-    const { error } = await signIn.emailCode.verifyCode({ code });
-    if (error) {
-      posthog.capture("$exception", {
-        $exception_list: [
-          {
-            type: error.name ?? "VerificationError",
-            value: error.message,
-          },
-        ],
-        $exception_source: "sign-in-verification",
-      });
-      return;
-    }
-    if (signIn.status === "complete") {
-      posthog.capture("sign_in_completed", { method: "code" });
-      if (signIn.createdUserId) {
-        posthog.identify(signIn.createdUserId, {
-          $set: { preferred_language: selectedLanguage ?? null },
-        });
-      }
-      await signIn.finalize({
-        navigate: ({ decorateUrl }) => {
-          router.replace(decorateUrl("/") as Href);
-        },
-      });
-    }
-  };
-
-  const handleResend = async () => {
-    await signIn.emailCode.sendCode({ emailAddress: email });
-  };
-
-  const handleSSO = async (strategy: SSOStrategy) => {
-    posthog.capture("sign_in_sso_started", { strategy });
-    setAuthError("");
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy,
-        redirectUrl: Linking.createURL("/"),
-      });
-      if (createdSessionId && setActive) {
-        posthog.capture("sign_in_completed", { method: strategy });
-        await setActive({ session: createdSessionId });
-        router.replace("/");
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unknown SSO sign-in error";
-      console.error("SSO sign-in failed", err);
-      posthog.capture("sign_in_sso_failed", {
-        strategy,
-        error: message,
-      });
-      setAuthError("Couldn't continue with social sign in. Please try again.");
-    }
+    signIn({ email: trimmed });
+    posthog.capture("sign_in_completed", { method });
+    posthog.identify(useSessionStore.getState().userId!, {
+      $set: { preferred_language: selectedLanguage ?? null },
+    });
+    router.replace("/");
   };
 
   return (
@@ -142,7 +53,6 @@ export default function SignInScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 px-6">
-            {/* Back */}
             <TouchableOpacity
               onPress={() => router.back()}
               className="mt-4 w-10 h-10 justify-center"
@@ -150,13 +60,11 @@ export default function SignInScreen() {
               <Ionicons name="chevron-back" size={24} color="#001328" />
             </TouchableOpacity>
 
-            {/* Header */}
             <Text className="h1 mt-4">Welcome back!</Text>
             <Text className="body-md text-text-secondary mt-2">
               Continue your language journey ✨
             </Text>
 
-            {/* Mascot */}
             <View className="items-center mt-6 mb-6">
               <Image
                 source={images.mascotAuth}
@@ -165,7 +73,6 @@ export default function SignInScreen() {
               />
             </View>
 
-            {/* Email */}
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
@@ -178,35 +85,23 @@ export default function SignInScreen() {
                 style={styles.input}
               />
             </View>
-            {errors.fields.identifier ? (
-              <Text className="body-sm text-error -mt-2 mb-2">
-                {errors.fields.identifier.message}
-              </Text>
-            ) : null}
-            {errors.global?.[0] ? (
-              <Text className="body-sm text-error mb-2">
-                {errors.global[0].message}
-              </Text>
-            ) : null}
             {authError ? (
               <Text className="body-sm text-error mb-2">{authError}</Text>
             ) : null}
 
-            {/* Sign In button */}
             <TouchableOpacity
               className="bg-lingua-purple rounded-2xl py-4 items-center mt-2"
               activeOpacity={0.85}
-              onPress={handleSignIn}
-              disabled={!email || isLoading}
-              style={{ opacity: !email || isLoading ? 0.6 : 1 }}
+              onPress={() => completeSignIn("email")}
+              disabled={!email}
+              style={{ opacity: !email ? 0.6 : 1 }}
               testID="sign-in-button"
             >
               <Text className="font-poppins-semibold text-base text-white">
-                {isLoading ? "Sending code..." : "Sign In"}
+                Sign In
               </Text>
             </TouchableOpacity>
 
-            {/* Divider */}
             <View className="flex-row items-center my-6 gap-3">
               <View className="flex-1 h-px bg-border" />
               <Text className="body-sm text-text-secondary">
@@ -215,24 +110,28 @@ export default function SignInScreen() {
               <View className="flex-1 h-px bg-border" />
             </View>
 
-            {/* Social */}
             <SocialButton
               icon={<AntDesign name="google" size={20} color="#DB4437" />}
               label="Continue with Google"
-              onPress={() => handleSSO("oauth_google")}
+              onPress={() =>
+                completeSignIn("oauth_google", "google.user@lingua.app")
+              }
             />
             <SocialButton
               icon={<FontAwesome name="facebook" size={20} color="#1877F2" />}
               label="Continue with Facebook"
-              onPress={() => handleSSO("oauth_facebook")}
+              onPress={() =>
+                completeSignIn("oauth_facebook", "facebook.user@lingua.app")
+              }
             />
             <SocialButton
               icon={<AntDesign name="apple" size={20} color="#000" />}
               label="Continue with Apple"
-              onPress={() => handleSSO("oauth_apple")}
+              onPress={() =>
+                completeSignIn("oauth_apple", "apple.user@lingua.app")
+              }
             />
 
-            {/* Sign Up link */}
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">
                 {"Don't have an account? "}
@@ -248,15 +147,6 @@ export default function SignInScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <VerificationModal
-        visible={showVerification}
-        email={email}
-        onClose={() => setShowVerification(false)}
-        onVerify={handleVerify}
-        onResend={handleResend}
-        error={errors.fields.code?.message || errors.global?.[0]?.message || ""}
-      />
     </SafeAreaView>
   );
 }

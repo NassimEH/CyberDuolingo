@@ -2,34 +2,34 @@ import "../global.css";
 
 import { posthog } from "@/lib/posthog";
 import { useLanguageStore } from "@/store/languageStore";
-import { useUser } from "@clerk/expo";
-import { ClerkProvider } from "@clerk/expo";
-import { tokenCache } from "@clerk/expo/token-cache";
+import { useSessionStore } from "@/store/sessionStore";
 import { useFonts } from "expo-font";
 import { Stack, useGlobalSearchParams, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { PostHogProvider } from "posthog-react-native";
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const isWeb = Platform.OS === "web";
 
-if (!publishableKey) {
-  throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
+if (!isWeb) {
+  SplashScreen.preventAutoHideAsync();
 }
 
-SplashScreen.preventAutoHideAsync();
-
-function ClerkIdentifier() {
-  const { isSignedIn, user, isLoaded } = useUser();
+function SessionIdentifier() {
+  const { isSignedIn, userId, firstName } = useSessionStore();
   const { selectedLanguage } = useLanguageStore();
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
-    posthog.identify(user.id, {
+    if (!isSignedIn || !userId) return;
+    posthog.identify(userId, {
       $set_once: { signup_date: new Date().toISOString() },
-      $set: { preferred_language: selectedLanguage ?? null },
+      $set: {
+        preferred_language: selectedLanguage ?? null,
+        name: firstName ?? null,
+      },
     });
-  }, [isLoaded, isSignedIn, user?.id, selectedLanguage]);
+  }, [isSignedIn, userId, firstName, selectedLanguage]);
 
   return null;
 }
@@ -45,9 +45,10 @@ export default function RootLayout() {
   const pathname = usePathname();
   const params = useGlobalSearchParams();
   const previousPathname = useRef<string | undefined>(undefined);
+  const appReady = isWeb || fontsLoaded || !!fontError;
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (!isWeb && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
@@ -62,7 +63,7 @@ export default function RootLayout() {
     }
   }, [pathname, params]);
 
-  if (!fontsLoaded && !fontError) {
+  if (!appReady) {
     return null;
   }
 
@@ -76,17 +77,15 @@ export default function RootLayout() {
         maxElementsCaptured: 20,
       }}
     >
-      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <ClerkIdentifier />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="language-select" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="lesson" />
-        </Stack>
-      </ClerkProvider>
+      <SessionIdentifier />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="language-select" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="lesson" />
+      </Stack>
     </PostHogProvider>
   );
 }

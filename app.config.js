@@ -24,7 +24,7 @@ export default {
       predictiveBackGestureEnabled: false,
     },
     web: {
-      output: "static",
+      output: "single",
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
@@ -41,7 +41,6 @@ export default {
           },
         },
       ],
-      "@clerk/expo",
       "expo-secure-store",
       "@stream-io/video-react-native-sdk",
       [

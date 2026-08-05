@@ -1,5 +1,4 @@
 import { Lesson } from "@/types/learning";
-import { useAuth, useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Call,
@@ -27,6 +26,7 @@ import { colors } from "@/constants/theme";
 import { LESSONS } from "@/data/lessons";
 import { posthog } from "@/lib/posthog";
 import { useLanguageStore } from "@/store/languageStore";
+import { useSessionStore } from "@/store/sessionStore";
 
 type CallStatus = "idle" | "connecting" | "joined" | "error";
 type AgentStatus = "idle" | "connecting" | "connected" | "failed";
@@ -36,8 +36,7 @@ const AGENT_USER_ID = "ai-teacher";
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { userId, firstName, isSignedIn } = useSessionStore();
   const { selectedLanguage } = useLanguageStore();
 
   const lesson = LESSONS.find((l) => l.id === id);
@@ -54,7 +53,7 @@ export default function LessonScreen() {
   const abandonedRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded || !user || !lesson) return;
+    if (!isSignedIn || !userId || !lesson) return;
 
     lessonStartTimeRef.current = Date.now();
     abandonedRef.current = false;
@@ -82,17 +81,15 @@ export default function LessonScreen() {
       clientRef.current?.disconnectUser().catch(console.error);
       stopAgentSession(callRef.current?.id ?? null, agentSessionRef.current);
     };
-  }, [isLoaded, user, lesson]);
+  }, [isSignedIn, userId, lesson]);
 
   async function startCall() {
-    if (!user || !lesson) return;
+    if (!userId || !lesson) return;
     setCallStatus("connecting");
 
     try {
-      const clerkToken = await getToken();
-      if (!clerkToken) throw new Error("Not authenticated");
       const res = await fetch("/api/stream-token", {
-        headers: { Authorization: `Bearer ${clerkToken}` },
+        headers: { "X-User-Id": userId },
       });
       if (!res.ok) throw new Error("Token fetch failed");
       const { token, apiKey } = await res.json();
@@ -101,13 +98,12 @@ export default function LessonScreen() {
         apiKey,
         token,
         user: {
-          id: user.id,
-          name: user.fullName ?? user.id,
-          image: user.imageUrl || undefined,
+          id: userId,
+          name: firstName ?? userId,
         },
       });
 
-      const callId = `lesson-${lesson.id}-${user.id}`;
+      const callId = `lesson-${lesson.id}-${userId}`;
       const streamCall = streamClient.call("default", callId);
       await streamCall.join({ create: true });
 

@@ -1,5 +1,5 @@
-import { useAuth, useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -17,6 +17,7 @@ import { UNITS } from "@/data/units";
 import { posthog } from "@/lib/posthog";
 import { useLanguageStore } from "@/store/languageStore";
 import { useLearningStore } from "@/store/learningStore";
+import { useSessionStore } from "@/store/sessionStore";
 import { LanguageCode } from "@/types/learning";
 
 function getGreeting(langCode: LanguageCode | null): string {
@@ -65,14 +66,13 @@ const PLAN_ITEMS = [
 ];
 
 export default function HomeScreen() {
-  const { user } = useUser();
-  const { signOut } = useAuth();
+  const { firstName, signOut } = useSessionStore();
   const { selectedLanguage } = useLanguageStore();
   const { xpToday, dailyGoal, streak } = useLearningStore();
 
   const language = LANGUAGES.find((l) => l.code === selectedLanguage);
   const unit = UNITS.find((u) => u.languageCode === selectedLanguage);
-  const firstName = user?.firstName ?? "Learner";
+  const displayName = firstName ?? "Learner";
   const greeting = getGreeting(selectedLanguage);
   const xpProgress =
     dailyGoal > 0 ? Math.min((xpToday / dailyGoal) * 100, 100) : 0;
@@ -97,7 +97,7 @@ export default function HomeScreen() {
               <View className="w-[34px] h-[34px] rounded-full bg-surface" />
             )}
             <Text className="font-poppins-semibold text-base text-text-primary">
-              {greeting}, {firstName}! 👋
+              {greeting}, {displayName}! 👋
             </Text>
           </View>
 
@@ -115,7 +115,14 @@ export default function HomeScreen() {
                 color={colors.neutral.textPrimary}
               />
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => signOut()}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                signOut();
+                posthog.reset();
+                router.replace("/onboarding");
+              }}
+            >
               <Ionicons
                 name="log-out-outline"
                 size={24}
