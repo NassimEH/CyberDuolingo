@@ -21,7 +21,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const signIn = useSessionStore((s) => s.signIn);
-  const { selectedLanguage } = useLanguageStore();
+  const signInAsGuest = useSessionStore((s) => s.signInAsGuest);
+  const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
   const [email, setEmail] = useState("");
   const [authError, setAuthError] = useState("");
 
@@ -38,6 +39,15 @@ export default function SignInScreen() {
     posthog.identify(useSessionStore.getState().userId!, {
       $set: { preferred_language: selectedLanguage ?? null },
     });
+    router.replace("/");
+  };
+
+  const handleGuestAccess = () => {
+    signInAsGuest();
+    if (!selectedLanguage) {
+      setSelectedLanguage("es");
+    }
+    posthog.capture("guest_access");
     router.replace("/");
   };
 
@@ -131,6 +141,17 @@ export default function SignInScreen() {
                 completeSignIn("oauth_apple", "apple.user@lingua.app")
               }
             />
+
+            <TouchableOpacity
+              className="rounded-2xl py-4 items-center mt-2 border border-border"
+              activeOpacity={0.85}
+              onPress={handleGuestAccess}
+              testID="guest-access-button"
+            >
+              <Text className="font-poppins-semibold text-base text-text-primary">
+                Accéder sans connexion
+              </Text>
+            </TouchableOpacity>
 
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">

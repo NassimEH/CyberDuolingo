@@ -8,6 +8,7 @@ interface SessionState {
   firstName: string | null;
   isSignedIn: boolean;
   signIn: (input: { email: string; firstName?: string }) => void;
+  signInAsGuest: () => void;
   signOut: () => void;
 }
 
@@ -31,6 +32,13 @@ export const useSessionStore = create<SessionState>()(
           isSignedIn: true,
         });
       },
+      signInAsGuest: () =>
+        set({
+          userId: "user_guest",
+          email: null,
+          firstName: "Invité",
+          isSignedIn: true,
+        }),
       signOut: () =>
         set({
           userId: null,
