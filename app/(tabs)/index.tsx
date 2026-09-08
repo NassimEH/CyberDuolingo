@@ -2,6 +2,7 @@ import { Bell } from "@/constants/icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,8 +16,10 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { ModuleProgressList } from "@/components/home/ModuleProgressList";
 import { NotificationsSheet } from "@/components/home/NotificationsSheet";
 import { ReviewSection } from "@/components/home/ReviewSection";
+import { WeekStrip } from "@/components/home/WeekStrip";
 import { MotionView } from "@/components/motion/MotionView";
 import { ProgressCard } from "@/components/ProgressCard";
+import { images } from "@/constants/images";
 import { fontFamily, radius, shadows, spacing } from "@/constants/theme";
 import { getLevelProgress } from "@/data/achievements";
 import { getDailyChallenge } from "@/data/challenges";
@@ -46,6 +49,7 @@ export default function HomeScreen() {
     totalXP,
     reviewQuestionIds,
     activityLogs,
+    activeDays,
   } = useLearningStore();
 
   const track = getTrack(selectedTrack);
@@ -103,40 +107,55 @@ export default function HomeScreen() {
                     {t("home.level", { level })}
                   </Text>
                 </View>
-                <Text
-                  style={{
-                    color: colors.semantic.streak,
-                    fontFamily: fontFamily.semiBold,
-                    fontSize: 13,
-                  }}
-                >
-                  {streak} · {track ? L(track.shortName) : "Tech"}
-                </Text>
+                {track ? (
+                  <Text
+                    style={[
+                      styles.trackMeta,
+                      { color: colors.neutral.textSecondary },
+                    ]}
+                  >
+                    {L(track.shortName)}
+                  </Text>
+                ) : null}
               </View>
             </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setNotifOpen(true)}
-              style={[
-                styles.bellBtn,
-                {
-                  backgroundColor: colors.neutral.card,
-                  borderColor: colors.neutral.border,
-                },
-              ]}
-            >
-              <Bell size={20} color={colors.neutral.textPrimary} />
-              {unreadHint ? (
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: colors.primary.blue },
-                  ]}
+            <View style={styles.headerRight}>
+              <View style={styles.flamePill}>
+                <Image
+                  source={images.streakFlame}
+                  style={styles.flameIcon}
+                  resizeMode="contain"
                 />
-              ) : null}
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.flameValue,
+                    { color: colors.neutral.textPrimary },
+                  ]}
+                >
+                  {streak}
+                </Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setNotifOpen(true)}
+                style={styles.bellBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Bell size={28} color={colors.neutral.textPrimary} />
+                {unreadHint ? (
+                  <View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: colors.primary.blue },
+                    ]}
+                  />
+                ) : null}
+              </TouchableOpacity>
+            </View>
           </View>
         </MotionView>
+
+        <WeekStrip activeDays={activeDays} />
 
         {nextLesson ? (
           <HomeHero
@@ -216,13 +235,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.section,
+    marginBottom: 14,
   },
-  headerLeft: { flex: 1, paddingRight: 12 },
+  headerLeft: { flex: 1, paddingRight: 10 },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   greeting: {
     fontFamily: fontFamily.bold,
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 32,
   },
   metaRow: {
     flexDirection: "row",
@@ -239,18 +263,31 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 12,
   },
+  trackMeta: {
+    fontFamily: fontFamily.medium,
+    fontSize: 13,
+  },
+  flamePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  flameIcon: { width: 22, height: 22 },
+  flameValue: {
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
+  },
   bellBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    padding: 2,
   },
   dot: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: 2,
+    right: 2,
     width: 8,
     height: 8,
     borderRadius: 4,
