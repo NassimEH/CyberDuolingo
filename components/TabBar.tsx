@@ -1,9 +1,17 @@
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import {
+  BookOpen,
+  Home,
+  MessageCircle,
+  Trophy,
+  User,
+  type LucideIcon,
+} from "@/constants/icons";
 import { useEffect } from "react";
 import Animated, {
+  Easing,
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import {
   TouchableOpacity,
@@ -13,29 +21,74 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, fontFamily } from "@/constants/theme";
+import { fontFamily } from "@/constants/theme";
+import { motion } from "@/lib/motion";
+import { useT } from "@/lib/i18n";
+import { useTheme } from "@/lib/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CIRCLE_SIZE = 52;
 const TAB_HEIGHT = 64;
 
 type TabConfig = {
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  activeIcon: keyof typeof Ionicons.glyphMap;
+  labelKey:
+    | "tabs.home"
+    | "tabs.learn"
+    | "tabs.challenges"
+    | "tabs.coach"
+    | "tabs.profile";
+  Icon: LucideIcon;
 };
 
 const TABS: TabConfig[] = [
-  { label: "Home", icon: "home-outline", activeIcon: "home" },
-  { label: "Learn", icon: "book-outline", activeIcon: "book" },
-  { label: "AI Teacher", icon: "sparkles-outline", activeIcon: "sparkles" },
-  { label: "Chat", icon: "chatbubbles-outline", activeIcon: "chatbubbles" },
-  { label: "Profile", icon: "person-outline", activeIcon: "person" },
+  { labelKey: "tabs.home", Icon: Home },
+  { labelKey: "tabs.learn", Icon: BookOpen },
+  { labelKey: "tabs.challenges", Icon: Trophy },
+  { labelKey: "tabs.coach", Icon: MessageCircle },
+  { labelKey: "tabs.profile", Icon: User },
 ];
 
-export function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabItem({
+  label,
+  Icon,
+  isFocused,
+  color,
+  onPress,
+}: {
+  label: string;
+  Icon: LucideIcon;
+  isFocused: boolean;
+  color: string;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(isFocused ? 1 : 0.92);
+
+  useEffect(() => {
+    scale.value = withTiming(isFocused ? 1 : 0.92, {
+      duration: motion.duration.fast,
+      easing: motion.easing,
+    });
+  }, [isFocused, scale]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.tab} activeOpacity={0.8}>
+      <Animated.View style={iconStyle}>
+        <Icon size={22} color={color} strokeWidth={2} />
+      </Animated.View>
+      {!isFocused && <Text style={[styles.label, { color }]}>{label}</Text>}
+    </TouchableOpacity>
+  );
+}
+
+export function TabBar(props: any) {
+  const { state, navigation } = props;
   const insets = useSafeAreaInsets();
+  const t = useT();
+  const { colors } = useTheme();
   const tabWidth = SCREEN_WIDTH / TABS.length;
 
   const indicatorX = useSharedValue(
@@ -43,51 +96,65 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   );
 
   useEffect(() => {
-    indicatorX.value = withSpring(
+    indicatorX.value = withTiming(
       state.index * tabWidth + (tabWidth - CIRCLE_SIZE) / 2,
-      { damping: 18, stiffness: 160 }
+      { duration: 220, easing: Easing.out(Easing.cubic) }
     );
-  }, [state.index]);
+  }, [state.index, tabWidth, indicatorX]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
   }));
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom || 8 }]}>
-      <Animated.View style={[styles.indicator, indicatorStyle]} />
+    <View
+      style={[
+        styles.container,
+        {
+          paddingBottom: insets.bottom || 8,
+          backgroundColor: colors.neutral.background,
+          borderTopColor: colors.neutral.border,
+        },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.indicator,
+          indicatorStyle,
+          { backgroundColor: colors.primary.blue },
+        ]}
+      />
 
-      {state.routes.map((route, index) => {
-        const tab = TABS[index];
-        const isFocused = state.index === index;
+      {state.routes.map(
+        (route: { key: string; name: string }, index: number) => {
+          const tab = TABS[index];
+          if (!tab) return null;
+          const isFocused = state.index === index;
+          const Icon = tab.Icon;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            style={styles.tab}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name={isFocused ? tab.activeIcon : tab.icon}
-              size={22}
+          return (
+            <TabItem
+              key={route.key}
+              label={t(tab.labelKey)}
+              Icon={Icon}
+              isFocused={isFocused}
               color={isFocused ? "#fff" : colors.neutral.textSecondary}
+              onPress={onPress}
             />
-            {!isFocused && <Text style={styles.label}>{tab.label}</Text>}
-          </TouchableOpacity>
-        );
-      })}
+          );
+        }
+      )}
     </View>
   );
 }
@@ -95,9 +162,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: colors.neutral.background,
     borderTopWidth: 1,
-    borderTopColor: colors.neutral.border,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.06,
@@ -111,7 +176,6 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: colors.primary.purple,
   },
   tab: {
     flex: 1,
@@ -122,7 +186,6 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fontFamily.medium,
     fontSize: 10,
-    color: colors.neutral.textSecondary,
     marginTop: 3,
   },
 });

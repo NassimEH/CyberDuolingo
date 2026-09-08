@@ -1,20 +1,24 @@
-// Design tokens — mirrors the Lingua design system defined in global.css.
-// Use these constants with StyleSheet or runtime styles where NativeWind
-// className is not supported (see AGENTS.md Style Exception Rules).
+// Design tokens — light/dark palettes for Tech learning app.
 
-export const colors = {
+export const lightColors = {
   primary: {
-    purple: "#6c4ef5",
-    deepPurple: "#5b3bf6",
-    blue: "#4d88ff",
+    purple: "#2563EB",
+    deepPurple: "#1D4ED8",
+    blue: "#2563EB",
+    deepBlue: "#1D4ED8",
     green: "#21c16b",
+  },
+  soft: {
+    blueBg: "#EFF6FF",
+    blueBorder: "#93C5FD",
+    blueMuted: "#DBEAFE",
   },
   semantic: {
     success: "#21c16b",
     warning: "#ffcb00",
-    streak: "#ff8a00",
+    streak: "#0B1220",
     error: "#ff4d4f",
-    info: "#4d88ff",
+    info: "#3B82F6",
   },
   neutral: {
     textPrimary: "#001328",
@@ -22,7 +26,94 @@ export const colors = {
     border: "#e5e7eb",
     surface: "#f6f7fb",
     background: "#ffffff",
+    card: "#ffffff",
   },
+} as const;
+
+export const darkColors = {
+  primary: {
+    purple: "#3B82F6",
+    deepPurple: "#2563EB",
+    blue: "#3B82F6",
+    deepBlue: "#2563EB",
+    green: "#34d399",
+  },
+  soft: {
+    blueBg: "#132038",
+    blueBorder: "#1E3A5F",
+    blueMuted: "#1A2B45",
+  },
+  semantic: {
+    success: "#34d399",
+    warning: "#fbbf24",
+    streak: "#F8FAFC",
+    error: "#f87171",
+    info: "#60a5fa",
+  },
+  neutral: {
+    textPrimary: "#F1F5F9",
+    textSecondary: "#94A3B8",
+    border: "#243044",
+    surface: "#151E2E",
+    background: "#0B1220",
+    card: "#151E2E",
+  },
+} as const;
+
+export type ThemeColors = {
+  primary: {
+    purple: string;
+    deepPurple: string;
+    blue: string;
+    deepBlue: string;
+    green: string;
+  };
+  soft: {
+    blueBg: string;
+    blueBorder: string;
+    blueMuted: string;
+  };
+  semantic: {
+    success: string;
+    warning: string;
+    streak: string;
+    error: string;
+    info: string;
+  };
+  neutral: {
+    textPrimary: string;
+    textSecondary: string;
+    border: string;
+    surface: string;
+    background: string;
+    card: string;
+  };
+};
+
+/** @deprecated Prefer useTheme().colors — kept for non-themed call sites */
+export const colors = lightColors;
+
+export const radius = {
+  sm: 12,
+  md: 16,
+  lg: 20,
+} as const;
+
+export const shadows = {
+  card: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+} as const;
+
+export const spacing = {
+  screen: 24,
+  section: 20,
+  md: 16,
+  sm: 12,
 } as const;
 
 export const fontFamily = {
@@ -44,14 +135,14 @@ export const fontSize = {
 } as const;
 
 export const lineHeight = {
-  h1: 38,  // 32 × 1.2
-  h2: 31,  // 24 × 1.3
-  h3: 26,  // 20 × 1.3
-  h4: 22,  // 16 × 1.4
-  bodyLg: 26, // 16 × 1.6
-  bodyMd: 22, // 14 × 1.6
-  bodySm: 21, // 13 × 1.6
-  caption: 15, // 11 × 1.4
+  h1: 38,
+  h2: 31,
+  h3: 26,
+  h4: 22,
+  bodyLg: 26,
+  bodyMd: 22,
+  bodySm: 21,
+  caption: 15,
 } as const;
 
 export const fontWeight = {
@@ -61,7 +152,6 @@ export const fontWeight = {
   bold: "700",
 } as const;
 
-// Pre-composed text styles for use with StyleSheet.create()
 export const textStyles = {
   h1: {
     fontFamily: fontFamily.bold,

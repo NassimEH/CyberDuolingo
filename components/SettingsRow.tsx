@@ -1,10 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
+import type { LucideIcon } from "@/constants/icons";
+import { Bell, ChevronRight, Volume2 } from "@/constants/icons";
 import { Switch, Text, View } from "react-native";
 
-import { colors } from "@/constants/theme";
+import { fontFamily } from "@/constants/theme";
+import { useTheme } from "@/lib/useTheme";
 
 type SettingsRowProps = {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
   iconColor?: string;
   iconBg?: string;
   label: string;
@@ -15,45 +17,75 @@ type SettingsRowProps = {
 };
 
 export function SettingsRow({
-  icon,
-  iconColor = colors.primary.purple,
-  iconBg = "#EDE9FE",
+  icon: Icon,
+  iconColor,
+  iconBg,
   label,
   subtitle,
   value,
   onValueChange,
   showChevron = false,
 }: SettingsRowProps) {
+  const { colors } = useTheme();
+  const resolvedIconColor = iconColor ?? colors.neutral.textPrimary;
+  const resolvedIconBg = iconBg ?? "transparent";
+
   return (
-    <View className="flex-row items-center py-3.5 px-4">
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+      }}
+    >
       <View
-        className="w-9 h-9 rounded-xl items-center justify-center"
-        style={{ backgroundColor: iconBg }}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: resolvedIconBg,
+        }}
       >
-        <Ionicons name={icon} size={18} color={iconColor} />
+        <Icon size={18} color={resolvedIconColor} strokeWidth={2} />
       </View>
-      <View className="flex-1 ml-3">
-        <Text className="font-poppins-medium text-sm text-text-primary">
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text
+          style={{
+            fontFamily: fontFamily.medium,
+            fontSize: 14,
+            color: colors.neutral.textPrimary,
+          }}
+        >
           {label}
         </Text>
         {subtitle ? (
-          <Text className="caption mt-0.5">{subtitle}</Text>
+          <Text
+            style={{
+              fontFamily: fontFamily.regular,
+              fontSize: 11,
+              color: colors.neutral.textSecondary,
+              marginTop: 2,
+            }}
+          >
+            {subtitle}
+          </Text>
         ) : null}
       </View>
       {onValueChange !== undefined && value !== undefined ? (
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: colors.neutral.border, true: "#C4B5FD" }}
-          thumbColor={value ? colors.primary.purple : "#f4f4f5"}
+          trackColor={{ false: colors.neutral.border, true: colors.soft.blueBorder }}
+          thumbColor={value ? colors.primary.blue : "#f4f4f5"}
         />
       ) : showChevron ? (
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={colors.neutral.textSecondary}
-        />
+        <ChevronRight size={18} color={colors.neutral.textSecondary} />
       ) : null}
     </View>
   );
 }
+
+export const settingsIcons = { Bell, Volume2 };

@@ -1,12 +1,16 @@
-export type LanguageCode = "es" | "fr" | "ja" | "ko" | "de" | "zh";
+import type { LocalizedString } from "@/lib/i18n/translations";
+import type { AppIcon } from "@/constants/icons";
 
-export interface Language {
-  code: LanguageCode;
-  name: string;
-  nativeName: string;
-  flag: string;
+export type TrackId = "networking" | "cloud" | "security" | "ai";
+
+export interface Track {
+  id: TrackId;
+  name: LocalizedString;
+  shortName: LocalizedString;
+  icon: AppIcon;
   color: string;
   learners: string;
+  available: boolean;
 }
 
 export type ActivityType =
@@ -16,57 +20,77 @@ export type ActivityType =
   | "listen";
 
 export interface VocabularyItem {
-  word: string;
-  translation: string;
-  pronunciation: string;
-  emoji?: string;
+  term: LocalizedString;
+  definition: LocalizedString;
 }
 
-export interface Phrase {
-  text: string;
-  translation: string;
-  pronunciation: string;
+export type DiagramId =
+  | "lan-wan"
+  | "osi-layers"
+  | "ip-subnet"
+  | "dns-lookup"
+  | "http-https"
+  | "client-server"
+  | "tcp-udp"
+  | "network-devices"
+  | "nat-firewall";
+
+export interface LessonSection {
+  id: string;
+  title: LocalizedString;
+  body: LocalizedString;
+  bullets?: LocalizedString[];
+  callout?: LocalizedString;
+  diagram?: DiagramId;
 }
 
 export interface Activity {
   id: string;
   type: ActivityType;
-  question: string;
-  correctAnswer: string;
-  options?: string[];
-  hint?: string;
+  question: LocalizedString;
+  correctAnswer: LocalizedString;
+  options?: LocalizedString[];
+  hint?: LocalizedString;
+  explanation?: LocalizedString;
 }
 
 export interface LessonGoal {
-  description: string;
+  description: LocalizedString;
   xpReward: number;
 }
 
 export interface AITeacherPrompt {
-  systemPrompt: string;
-  introMessage: string;
-  topics: string[];
+  systemPrompt: LocalizedString;
+  introMessage: LocalizedString;
+  topics: LocalizedString[];
 }
 
 export interface Lesson {
   id: string;
   unitId: string;
-  title: string;
-  description: string;
-  icon: string;
+  title: LocalizedString;
+  description: LocalizedString;
+  icon: AppIcon;
+  estimatedMinutes: number;
   xpReward: number;
   goals: LessonGoal[];
+  sections: LessonSection[];
   vocabulary: VocabularyItem[];
-  phrases: Phrase[];
   activities: Activity[];
   aiTeacherPrompt: AITeacherPrompt;
 }
 
 export interface Unit {
   id: string;
-  languageCode: LanguageCode;
-  title: string;
-  description: string;
+  trackId: TrackId;
+  title: LocalizedString;
+  description: LocalizedString;
   order: number;
   lessonIds: string[];
+  progressColor: string;
 }
+
+/** @deprecated */
+export type LanguageCode = TrackId;
+/** @deprecated */
+export type Language = Track;

@@ -2,15 +2,15 @@ import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
-import { useLanguageStore } from "@/store/languageStore";
+import { colors } from "@/constants/theme";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTrackStore } from "@/store/trackStore";
 
 export default function Index() {
   const { isSignedIn } = useSessionStore();
-  const { selectedLanguage } = useLanguageStore();
+  const { selectedTrack } = useTrackStore();
   const [hydrated, setHydrated] = useState(
-    useSessionStore.persist.hasHydrated() &&
-      useLanguageStore.persist.hasHydrated()
+    useSessionStore.persist.hasHydrated() && useTrackStore.persist.hasHydrated()
   );
 
   useEffect(() => {
@@ -19,19 +19,19 @@ export default function Index() {
     const finish = () => {
       if (
         useSessionStore.persist.hasHydrated() &&
-        useLanguageStore.persist.hasHydrated()
+        useTrackStore.persist.hasHydrated()
       ) {
         setHydrated(true);
       }
     };
 
     const unsubSession = useSessionStore.persist.onFinishHydration(finish);
-    const unsubLanguage = useLanguageStore.persist.onFinishHydration(finish);
+    const unsubTrack = useTrackStore.persist.onFinishHydration(finish);
     const timer = setTimeout(() => setHydrated(true), 1500);
 
     return () => {
       unsubSession();
-      unsubLanguage();
+      unsubTrack();
       clearTimeout(timer);
     };
   }, [hydrated]);
@@ -39,7 +39,7 @@ export default function Index() {
   if (!hydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#6c4ef5" />
+        <ActivityIndicator size="large" color={colors.primary.blue} />
       </View>
     );
   }
@@ -48,7 +48,7 @@ export default function Index() {
     return <Redirect href="/onboarding" />;
   }
 
-  if (!selectedLanguage) {
+  if (!selectedTrack) {
     return <Redirect href="/language-select" />;
   }
 

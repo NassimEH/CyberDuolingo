@@ -1,54 +1,44 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import {
-  Image as RNImage,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { router } from "expo-router";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LessonCard } from "@/components/LessonCard";
-import { images } from "@/constants/images";
-import { colors } from "@/constants/theme";
+import { ModulePicker } from "@/components/learn/ModulePicker";
+import { AnimatedProgressBar } from "@/components/motion/AnimatedProgressBar";
+import { MotionView } from "@/components/motion/MotionView";
+import { fontFamily, radius, spacing } from "@/constants/theme";
 import { LESSONS } from "@/data/lessons";
-import { UNITS } from "@/data/units";
-import { useLanguageStore } from "@/store/languageStore";
+import { useLocalize, useT } from "@/lib/i18n";
+import { useTheme } from "@/lib/useTheme";
 import { useLearningStore } from "@/store/learningStore";
-import { Lesson } from "@/types/learning";
+import { useTrackStore } from "@/store/trackStore";
+import { getSelectedUnit, useUnitStore } from "@/store/unitStore";
 
 export default function LearnScreen() {
-  const router = useRouter();
-  const { selectedLanguage } = useLanguageStore();
-  const { completedLessonIds } = useLearningStore();
+  const t = useT();
+  const L = useLocalize();
+  const { colors } = useTheme();
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
+  const completedLessonIds = useLearningStore((s) => s.completedLessonIds);
+  const unit = getSelectedUnit(selectedUnitId);
+  const lessons = unit.lessonIds
+    .map((id) => LESSONS.find((l) => l.id === id))
+    .filter((l): l is NonNullable<typeof l> => Boolean(l));
+  const done = lessons.filter((l) => completedLessonIds.includes(l.id)).length;
+  const percent =
+    lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
 
-  const unit = UNITS.find((u) => u.languageCode === selectedLanguage);
-  const lessons = unit
-    ? (unit.lessonIds
-        .map((id) => LESSONS.find((l) => l.id === id))
-        .filter(Boolean) as Lesson[])
-    : [];
-
-  const completedCount = lessons.filter((l) =>
-    completedLessonIds.includes(l.id)
-  ).length;
-
-  const inProgressIndex = lessons.findIndex(
-    (l) => !completedLessonIds.includes(l.id)
-  );
-
-  if (!selectedLanguage || !unit) {
+  if (!selectedTrack) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.neutral.background }}
+        style={[styles.safe, { backgroundColor: colors.neutral.background }]}
       >
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="h3 text-center mb-2">No language selected</Text>
-          <Text className="body-md text-text-secondary text-center">
-            Go to the home screen and pick a language to start learning.
+        <View style={styles.empty}>
+          <Text
+            style={[styles.emptyText, { color: colors.neutral.textSecondary }]}
+          >
+            {t("learn.noTrack")}
           </Text>
         </View>
       </SafeAreaView>
@@ -57,119 +47,213 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.neutral.background }}
+      style={[styles.safe, { backgroundColor: colors.neutral.background }]}
+      edges={["top"]}
     >
-      {/* Header */}
-      <View className="px-5 pt-2 pb-3">
-        <View className="flex-row items-center mb-1">
-          <TouchableOpacity
-            onPress={() => router.navigate("/")}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.neutral.textPrimary}
-            />
-          </TouchableOpacity>
-
-          <Text
-            className="flex-1 text-center font-poppins-semibold text-base text-text-primary"
-            numberOfLines={1}
-          >
-            {unit.title}
-          </Text>
-
-          <TouchableOpacity
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name="bookmark-outline"
-              size={22}
-              color={colors.neutral.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Text className="caption text-center">
-          Unit {unit.order} · {completedCount}/{lessons.length} lessons
-        </Text>
-      </View>
-
       <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
       >
-        {/* Hero Section */}
-        <View style={styles.heroContainer}>
-          <Image
-            source={images.palace}
-            contentFit="contain"
-            style={styles.heroImage}
-          />
-          <RNImage
-            source={images.mascotWelcome}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
+        <MotionView index={0} variant="fade">
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <Text style={[styles.h2, { color: colors.neutral.textPrimary }]}>
+                {t("learn.title")}
+              </Text>
+              <View
+                style={[
+                  styles.percentPill,
+                  { backgroundColor: colors.soft.blueBg },
+                ]}
+              >
+                <Text
+                  style={[styles.percentText, { color: colors.primary.blue }]}
+                >
+                  {percent}%
+                </Text>
+              </View>
+            </View>
+            <ModulePicker />
+            {lessons.length > 0 ? (
+              <>
+                <AnimatedProgressBar
+                  progress={percent}
+                  color={colors.primary.blue}
+                  trackColor={colors.neutral.border}
+                  height={8}
+                  style={{ marginTop: 12 }}
+                />
+                <Text
+                  style={[styles.progressMeta, { color: colors.primary.blue }]}
+                >
+                  {t("learn.unitProgress", { done, total: lessons.length })}
+                </Text>
+              </>
+            ) : null}
+          </View>
+        </MotionView>
+
+        <View style={styles.moduleBlock}>
+          <Text
+            style={[styles.moduleTitle, { color: colors.neutral.textPrimary }]}
+          >
+            {L(unit.title)}
+          </Text>
         </View>
 
-        {/* Lessons / Practice tabs */}
-        <View className="flex-row border-b border-border mb-5">
-          <View className="pb-3 mr-6 border-b-2 border-lingua-purple">
-            <Text className="font-poppins-semibold text-sm text-lingua-purple">
-              Lessons
+        <View style={styles.tabs}>
+          <View
+            style={[
+              styles.tabActive,
+              { borderBottomColor: colors.primary.blue },
+            ]}
+          >
+            <Text
+              style={[styles.tabActiveText, { color: colors.primary.blue }]}
+            >
+              {t("learn.lessons")}
             </Text>
           </View>
-          <View className="pb-3">
-            <Text className="font-poppins-semibold text-sm text-text-secondary">
-              Practice
+          <View style={styles.tab}>
+            <Text
+              style={[styles.tabText, { color: colors.neutral.textSecondary }]}
+            >
+              {t("learn.practice")}
             </Text>
           </View>
         </View>
 
-        {/* Lesson cards */}
-        <View className="gap-3">
-          {lessons.map((lesson, index) => (
-            <LessonCard
-              key={lesson.id}
-              lesson={lesson}
-              index={index}
-              isCompleted={completedLessonIds.includes(lesson.id)}
-              isInProgress={
-                !completedLessonIds.includes(lesson.id) &&
-                index === inProgressIndex
-              }
-              onPress={() => router.push(`/lesson/${lesson.id}`)}
-            />
-          ))}
-        </View>
+        {lessons.length === 0 ? (
+          <View style={styles.comingSoon}>
+            <Text
+              style={[
+                styles.comingSoonTitle,
+                { color: colors.neutral.textPrimary },
+              ]}
+            >
+              {L(unit.title)}
+            </Text>
+            <Text
+              style={[
+                styles.comingSoonBody,
+                { color: colors.neutral.textSecondary },
+              ]}
+            >
+              {t("learn.moduleComingSoon")}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {lessons.map((lesson, index) => {
+              const isCompleted = completedLessonIds.includes(lesson.id);
+              const isInProgress =
+                !isCompleted &&
+                (index === 0 ||
+                  completedLessonIds.includes(lessons[index - 1]?.id));
+              return (
+                <LessonCard
+                  key={lesson.id}
+                  lesson={lesson}
+                  index={index}
+                  isCompleted={isCompleted}
+                  isInProgress={isInProgress}
+                  onPress={() => router.push(`/lesson/${lesson.id}`)}
+                />
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+  safe: { flex: 1 },
+  empty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
-  heroContainer: {
-    height: 180,
+  emptyText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+  },
+  header: {
+    paddingHorizontal: spacing.screen,
+    paddingTop: 16,
+    marginBottom: 16,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  h2: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 24,
+  },
+  percentPill: {
     borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 20,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
-  heroImage: {
-    width: "100%",
-    height: "100%",
+  percentText: {
+    fontFamily: fontFamily.bold,
+    fontSize: 14,
   },
-  mascotImage: {
-    position: "absolute",
-    bottom: 0,
-    right: 16,
-    width: 110,
-    height: 110,
+  progressMeta: {
+    fontFamily: fontFamily.medium,
+    fontSize: 12,
+    marginTop: 8,
+  },
+  moduleBlock: {
+    paddingHorizontal: spacing.screen,
+    marginBottom: 8,
+  },
+  moduleTitle: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 16,
+  },
+  tabs: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.screen,
+    marginBottom: 16,
+    gap: 24,
+  },
+  tabActive: {
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+  },
+  tabActiveText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+  },
+  tab: { paddingBottom: 12 },
+  tabText: {
+    fontFamily: fontFamily.medium,
+    fontSize: 14,
+  },
+  list: {
+    paddingHorizontal: spacing.screen,
+    gap: 12,
+  },
+  comingSoon: {
+    paddingHorizontal: spacing.screen,
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  comingSoonTitle: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 18,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  comingSoonBody: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    textAlign: "center",
   },
 });

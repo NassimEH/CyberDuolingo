@@ -1,47 +1,72 @@
-import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 
-import { colors } from "@/constants/theme";
+import { lucideIcons, type AppIcon } from "@/constants/icons";
+import { fontFamily, radius } from "@/constants/theme";
+import { enterUp } from "@/lib/motion";
+import { useTheme } from "@/lib/useTheme";
 
 type StatCardProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  iconBg: string;
+  icon: AppIcon;
+  iconColor?: string;
   label: string;
   value: string | number;
+  index?: number;
 };
 
 export function StatCard({
   icon,
   iconColor,
-  iconBg,
   label,
   value,
+  index = 0,
 }: StatCardProps) {
+  const { colors } = useTheme();
+  const Icon = lucideIcons[icon] ?? lucideIcons.book;
+  const tint = iconColor ?? colors.neutral.textPrimary;
+
   return (
-    <View style={styles.card}>
-      <View
-        className="w-10 h-10 rounded-xl items-center justify-center mb-2"
-        style={{ backgroundColor: iconBg }}
+    <Animated.View
+      entering={enterUp(index)}
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.neutral.card,
+          borderColor: colors.neutral.border,
+        },
+      ]}
+    >
+      <Icon size={22} color={tint} strokeWidth={2} />
+      <Text
+        style={{
+          fontFamily: fontFamily.bold,
+          fontSize: 20,
+          color: colors.neutral.textPrimary,
+          marginTop: 8,
+        }}
       >
-        <Ionicons name={icon} size={20} color={iconColor} />
-      </View>
-      <Text className="font-poppins-bold text-xl text-text-primary">
         {value}
       </Text>
-      <Text className="caption mt-0.5">{label}</Text>
-    </View>
+      <Text
+        style={{
+          fontFamily: fontFamily.regular,
+          fontSize: 11,
+          color: colors.neutral.textSecondary,
+          marginTop: 2,
+        }}
+      >
+        {label}
+      </Text>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: 14,
     borderWidth: 1,
-    borderColor: colors.neutral.border,
     alignItems: "center",
   },
 });

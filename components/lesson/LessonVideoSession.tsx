@@ -25,8 +25,10 @@ import { images } from "@/constants/images";
 import { colors } from "@/constants/theme";
 import { LESSONS } from "@/data/lessons";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
+import { localize } from "@/lib/i18n";
+import { useLocaleStore } from "@/store/localeStore";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTrackStore } from "@/store/trackStore";
 
 type CallStatus = "idle" | "connecting" | "joined" | "error";
 type AgentStatus = "idle" | "connecting" | "connected" | "failed";
@@ -37,7 +39,8 @@ export default function LessonVideoSession() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { userId, firstName, isSignedIn } = useSessionStore();
-  const { selectedLanguage } = useLanguageStore();
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const locale = useLocaleStore((s) => s.locale);
 
   const lesson = LESSONS.find((l) => l.id === id);
 
@@ -60,7 +63,7 @@ export default function LessonVideoSession() {
     const lessonNumber = LESSONS.findIndex((l) => l.id === lesson.id) + 1;
     posthog.capture("lesson_started", {
       lesson_id: lesson.id,
-      language: selectedLanguage ?? lesson.id.split("-")[0],
+      track: selectedTrack ?? "networking",
       lesson_number: lessonNumber,
     });
 
@@ -112,21 +115,24 @@ export default function LessonVideoSession() {
         await streamCall.microphone.disable();
       } catch {}
 
-      const language = selectedLanguage ?? (lesson.id.split("-")[0] as string);
+      const language = selectedTrack ?? "networking";
       try {
         await streamCall.update({
           custom: {
             lesson_id: lesson.id,
-            lesson_title: lesson.title,
+            lesson_title: localize(lesson.title, locale),
             language,
-            goals: lesson.goals.map((g) => g.description),
+            goals: lesson.goals.map((g) => localize(g.description, locale)),
             vocabulary: lesson.vocabulary.map(
-              (v) => `${v.word}: ${v.translation}`,
+              (v) =>
+                `${localize(v.term, locale)}: ${localize(v.definition, locale)}`,
             ),
-            phrases: lesson.phrases.map((p) => p.text),
-            topics: lesson.aiTeacherPrompt.topics,
-            system_prompt: lesson.aiTeacherPrompt.systemPrompt,
-            intro_message: lesson.aiTeacherPrompt.introMessage,
+            phrases: lesson.sections.map((s) => localize(s.title, locale)),
+            topics: lesson.aiTeacherPrompt.topics.map((topic) =>
+              localize(topic, locale),
+            ),
+            system_prompt: localize(lesson.aiTeacherPrompt.systemPrompt, locale),
+            intro_message: localize(lesson.aiTeacherPrompt.introMessage, locale),
           },
         });
       } catch (updateErr) {
@@ -382,6 +388,7 @@ function ActiveCallContent({
   call: Call;
   onRetry: () => void;
 }) {
+  const locale = useLocaleStore((s) => s.locale);
   const { useMicrophoneState, useCallClosedCaptions } = useCallStateHooks();
   const { microphone } = useMicrophoneState();
   const captions = useCallClosedCaptions();
@@ -545,7 +552,10 @@ function ActiveCallContent({
               <View style={styles.responseBubble}>
                 <View style={styles.responseBubbleText}>
                   <Text style={styles.responsePrimary} numberOfLines={1}>
-                    {lesson.aiTeacherPrompt.introMessage.split("!")[0]}!
+                    {localize(lesson.aiTeacherPrompt.introMessage, locale).split(
+                      "!"
+                    )[0]}
+                    !
                   </Text>
                   <Text style={styles.responseSecondary}>
                     Hold the mic to respond 🎙️

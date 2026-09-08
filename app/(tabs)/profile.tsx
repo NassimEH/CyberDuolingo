@@ -1,9 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Award, Bell, Languages, LogOut, Moon, Volume2 } from "@/constants/icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,76 +11,81 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AnimatedProgressBar } from "@/components/motion/AnimatedProgressBar";
+import { ActivityCalendar } from "@/components/profile/ActivityCalendar";
+import { BadgesShowcase } from "@/components/profile/BadgesShowcase";
+import { RankBanner } from "@/components/profile/RankBanner";
+import { SkillsSection } from "@/components/profile/SkillsSection";
+import { IconBadge } from "@/components/IconBadge";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsRow } from "@/components/SettingsRow";
 import { StatCard } from "@/components/StatCard";
+import { getTrackIcon } from "@/constants/icons";
 import { images } from "@/constants/images";
-import { colors } from "@/constants/theme";
-import { LANGUAGES } from "@/data/languages";
-import { LESSONS } from "@/data/lessons";
+import { fontFamily, radius, shadows, spacing } from "@/constants/theme";
+import { getCertification } from "@/data/certifications";
+import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
+import { useTheme } from "@/lib/useTheme";
+import {
+  selectCertsByStatus,
+  useCertificationStore,
+} from "@/store/certificationStore";
 import { useLearningStore } from "@/store/learningStore";
+import { useLocaleStore } from "@/store/localeStore";
 import { useSessionStore } from "@/store/sessionStore";
-
-const ACHIEVEMENTS = [
-  {
-    id: "first-lesson",
-    title: "First steps",
-    description: "Complete your first lesson",
-    icon: "footsteps" as const,
-    requirement: (completed: number) => completed >= 1,
-  },
-  {
-    id: "three-lessons",
-    title: "On a roll",
-    description: "Complete 3 lessons",
-    icon: "flame" as const,
-    requirement: (completed: number) => completed >= 3,
-  },
-  {
-    id: "streak-7",
-    title: "Week warrior",
-    description: "Maintain a 7-day streak",
-    icon: "calendar" as const,
-    requirement: (_completed: number, streak: number) => streak >= 7,
-  },
-  {
-    id: "xp-goal",
-    title: "Goal getter",
-    description: "Reach your daily XP goal",
-    icon: "trophy" as const,
-    requirement: (_completed: number, _streak: number, xpToday: number, dailyGoal: number) =>
-      xpToday >= dailyGoal,
-  },
-];
+import { useThemeStore } from "@/store/themeStore";
+import { useTrackStore } from "@/store/trackStore";
+import { getTrack } from "@/data/tracks";
 
 export default function ProfileScreen() {
+  const t = useT();
+  const L = useLocalize();
+  const { colors } = useTheme();
   const { firstName, email, userId, signOut } = useSessionStore();
-  const { selectedLanguage } = useLanguageStore();
-  const { xpToday, dailyGoal, streak, completedLessonIds } = useLearningStore();
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
+  const darkMode = useThemeStore((s) => s.darkMode);
+  const setDarkMode = useThemeStore((s) => s.setDarkMode);
+  const {
+    streak,
+    completedLessonIds,
+    totalXP,
+    soundEnabled,
+    setSoundEnabled,
+    activeDays,
+    completedChallengeIds,
+    skillXP,
+    activityLogs,
+  } = useLearningStore();
+  const entries = useCertificationStore((s) => s.entries);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
-  const language = LANGUAGES.find((item) => item.code === selectedLanguage);
+  const track = getTrack(selectedTrack);
   const displayName = firstName ?? "Learner";
   const isGuest = userId === "user_guest";
   const initial = displayName.charAt(0).toUpperCase();
-
   const completedCount = completedLessonIds.length;
-  const totalXP = useMemo(
-    () =>
-      completedLessonIds.reduce((sum, lessonId) => {
-        const lesson = LESSONS.find((item) => item.id === lessonId);
-        return sum + (lesson?.xpReward ?? 0);
-      }, 0),
-    [completedLessonIds],
+  const challengesDone = completedChallengeIds.length;
+  const labsDone = useMemo(
+    () => activityLogs.filter((l) => l.type === "lab_complete").length,
+    [activityLogs]
   );
+  const activeDayCount = activeDays.length;
 
-  const xpProgress =
-    dailyGoal > 0 ? Math.min((xpToday / dailyGoal) * 100, 100) : 0;
+  const preparing = useMemo(
+    () => selectCertsByStatus(entries, "preparing"),
+    [entries]
+  );
+  const todo = useMemo(() => selectCertsByStatus(entries, "todo"), [entries]);
+  const obtained = useMemo(
+    () => selectCertsByStatus(entries, "obtained"),
+    [entries]
+  );
+  const hasCertPath =
+    preparing.length + todo.length + obtained.length > 0;
 
   function handleSignOut() {
     signOut();
@@ -91,265 +95,387 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.neutral.background }}
+      style={[styles.safe, { backgroundColor: colors.neutral.background }]}
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text className="h2 mb-5">Profile</Text>
-
-        <View
-          className="flex-row items-center bg-white rounded-[20px] border border-border p-4 mb-5"
-          style={styles.profileCard}
-        >
+        <View style={styles.hero}>
           <View
-            className="w-16 h-16 rounded-full items-center justify-center"
-            style={{ backgroundColor: colors.primary.purple }}
+            style={[styles.avatar, { backgroundColor: colors.primary.blue }]}
           >
-            <Text className="font-poppins-bold text-2xl text-white">
-              {initial}
-            </Text>
+            <Text style={styles.avatarText}>{initial}</Text>
           </View>
-          <View className="flex-1 ml-4">
-            <View className="flex-row items-center gap-2 mb-0.5">
-              <Text className="font-poppins-semibold text-lg text-text-primary">
-                {displayName}
-              </Text>
-              {isGuest ? (
-                <View className="bg-surface rounded-full px-2 py-0.5">
-                  <Text className="caption">Guest</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text className="body-sm text-text-secondary">
-              {email ?? "Exploring without account"}
-            </Text>
-          </View>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => router.push("/language-select")}
+          <Text style={[styles.name, { color: colors.neutral.textPrimary }]}>
+            {displayName}
+            {isGuest ? ` · ${t("profile.guest")}` : ""}
+          </Text>
+          <Text
+            style={[styles.email, { color: colors.neutral.textSecondary }]}
           >
-            <Ionicons
-              name="create-outline"
-              size={22}
-              color={colors.neutral.textSecondary}
-            />
-          </TouchableOpacity>
+            {email ?? (locale === "fr" ? "Sans compte" : "No account")}
+          </Text>
         </View>
 
-        <View className="flex-row gap-3 mb-5">
+        <RankBanner totalXP={totalXP} />
+
+        <ActivityCalendar activeDays={activeDays} />
+
+        <SectionHeader title={t("profile.stats")} />
+        <View style={styles.statsRow}>
           <StatCard
             icon="flame"
-            iconColor={colors.semantic.streak}
-            iconBg="#FFF5E8"
-            label="Day streak"
+            label={t("profile.dayStreak")}
             value={streak}
+            index={0}
           />
           <StatCard
-            icon="flash"
-            iconColor={colors.primary.purple}
-            iconBg="#EDE9FE"
-            label="Total XP"
+            icon="zap"
+            label={t("profile.totalXp")}
             value={totalXP}
+            index={1}
           />
           <StatCard
             icon="book"
-            iconColor={colors.primary.blue}
-            iconBg="#DBEAFE"
-            label="Lessons"
+            label={t("profile.lessons")}
             value={completedCount}
+            index={2}
+          />
+        </View>
+        <View style={[styles.statsRow, { marginBottom: spacing.section }]}>
+          <StatCard
+            icon="trophy"
+            label={t("profile.challengesDone")}
+            value={challengesDone}
+            index={3}
+          />
+          <StatCard
+            icon="sparkles"
+            label={t("profile.activeDays")}
+            value={activeDayCount}
+            index={4}
+          />
+          <StatCard
+            icon="award"
+            label={t("profile.certsObtained")}
+            value={obtained.length}
+            index={5}
           />
         </View>
 
-        <View className="flex-row items-center bg-[#FFF5E8] rounded-[20px] py-4 pl-5 pr-3 mb-5">
-          <View className="flex-1 pr-2">
-            <Text className="font-poppins text-xs text-text-secondary mb-1">
-              Daily goal
-            </Text>
-            <Text>
-              <Text className="font-poppins-bold text-[28px] text-text-primary leading-[34px]">
-                {xpToday}
-              </Text>
-              <Text className="font-poppins text-sm text-text-secondary leading-[34px]">
-                {` / ${dailyGoal} XP`}
-              </Text>
-            </Text>
-            <View className="h-2 bg-border rounded mt-[10px] overflow-hidden">
-              <View
-                className="h-2 bg-streak rounded"
-                style={{ width: `${Math.round(xpProgress)}%` as `${number}%` }}
-              />
-            </View>
+        <SkillsSection skillXP={skillXP} />
+
+        <BadgesShowcase
+          streak={streak}
+          totalXP={totalXP}
+          lessonsCompleted={completedCount}
+          challengesCompleted={challengesDone}
+          labsCompleted={labsDone}
+          certificationsObtained={obtained.length}
+        />
+
+        <SectionHeader title={t("profile.myCerts")} />
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/certifications/index")}
+          style={[
+            styles.certsEntry,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
+        >
+          <SettingsRow
+            icon={Award}
+            label={t("profile.certsEntry")}
+            subtitle={t("certs.subtitle")}
+            showChevron
+          />
+        </TouchableOpacity>
+
+        {hasCertPath ? (
+          <View style={styles.certsBlock}>
+            {preparing.length > 0 ? (
+              <View style={styles.certsGroup}>
+                <Text
+                  style={[
+                    styles.certsGroupTitle,
+                    { color: colors.neutral.textSecondary },
+                  ]}
+                >
+                  {t("profile.certsPreparing")}
+                </Text>
+                {preparing.map((e) => {
+                  const cert = getCertification(e.id);
+                  if (!cert) return null;
+                  return (
+                    <TouchableOpacity
+                      key={e.id}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/certifications/[id]",
+                          params: { id: e.id },
+                        })
+                      }
+                      style={[
+                        styles.certRow,
+                        {
+                          backgroundColor: colors.neutral.card,
+                          borderColor: colors.neutral.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.certName,
+                          { color: colors.neutral.textPrimary },
+                        ]}
+                      >
+                        {cert.name}
+                      </Text>
+                      <AnimatedProgressBar
+                        progress={e.progress}
+                        color={colors.primary.blue}
+                        trackColor={colors.neutral.border}
+                        height={6}
+                        style={{ marginTop: 8 }}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {todo.length > 0 ? (
+              <View style={styles.certsGroup}>
+                <Text
+                  style={[
+                    styles.certsGroupTitle,
+                    { color: colors.neutral.textSecondary },
+                  ]}
+                >
+                  {t("profile.certsTodo")}
+                </Text>
+                {todo.map((e) => {
+                  const cert = getCertification(e.id);
+                  if (!cert) return null;
+                  return (
+                    <TouchableOpacity
+                      key={e.id}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/certifications/[id]",
+                          params: { id: e.id },
+                        })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.todoItem,
+                          { color: colors.neutral.textPrimary },
+                        ]}
+                      >
+                        · {cert.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {obtained.length > 0 ? (
+              <View style={styles.certsGroup}>
+                <Text
+                  style={[
+                    styles.certsGroupTitle,
+                    { color: colors.neutral.textSecondary },
+                  ]}
+                >
+                  {t("profile.certsObtained")}
+                </Text>
+                {obtained.map((e) => {
+                  const cert = getCertification(e.id);
+                  if (!cert) return null;
+                  return (
+                    <TouchableOpacity
+                      key={e.id}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/certifications/[id]",
+                          params: { id: e.id },
+                        })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.todoItem,
+                          { color: colors.neutral.textPrimary },
+                        ]}
+                      >
+                        · {cert.name}
+                        {e.obtainedAt ? ` · ${e.obtainedAt}` : ""}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : null}
           </View>
-          <RNImage
-            source={images.treasure}
-            style={{ width: 72, height: 72 }}
-            resizeMode="contain"
-          />
-        </View>
+        ) : (
+          <View
+            style={[
+              styles.emptyCerts,
+              {
+                backgroundColor: colors.neutral.card,
+                borderColor: colors.neutral.border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.emptyText,
+                { color: colors.neutral.textSecondary },
+              ]}
+            >
+              {t("profile.certsEmpty")}
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.push("/certifications/index")}
+              style={[
+                styles.exploreBtn,
+                { backgroundColor: colors.primary.blue },
+              ]}
+            >
+              <Text style={styles.exploreText}>
+                {t("profile.certsExplore")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        <SectionHeader title="Learning language" />
+        <SectionHeader title={t("profile.learningTrack")} />
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => router.push("/language-select")}
-          className="flex-row items-center bg-white rounded-2xl border border-border p-4 mb-6"
-          style={styles.languageCard}
+          style={[
+            styles.trackRow,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
         >
-          {language ? (
-            <RNImage
-              source={{ uri: language.flag }}
-              style={styles.flag}
-            />
-          ) : (
-            <View className="w-11 h-11 rounded-full bg-surface" />
-          )}
-          <View className="flex-1 ml-3">
-            <Text className="font-poppins-semibold text-sm text-text-primary">
-              {language?.name ?? "No language selected"}
+          <IconBadge name={getTrackIcon(selectedTrack)} size="md" />
+          <View style={styles.trackBody}>
+            <Text
+              style={[styles.trackTitle, { color: colors.neutral.textPrimary }]}
+            >
+              {track ? L(track.name) : t("learn.noTrack")}
             </Text>
-            <Text className="caption">
-              {language?.nativeName ?? "Tap to choose a language"}
+            <Text
+              style={[
+                styles.trackCaption,
+                { color: colors.neutral.textSecondary },
+              ]}
+            >
+              {t("profile.changeTrack")}
             </Text>
           </View>
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={colors.neutral.textSecondary}
-          />
         </TouchableOpacity>
 
-        <SectionHeader title="Achievements" />
-        <View className="gap-3 mb-6">
-          {ACHIEVEMENTS.map((achievement) => {
-            const unlocked = achievement.requirement(
-              completedCount,
-              streak,
-              xpToday,
-              dailyGoal,
-            );
-
-            return (
-              <View
-                key={achievement.id}
-                className={`flex-row items-center rounded-2xl border p-4 ${
-                  unlocked
-                    ? "bg-white border-border"
-                    : "bg-surface border-transparent opacity-70"
-                }`}
-                style={styles.achievementCard}
-              >
-                <View
-                  className="w-11 h-11 rounded-xl items-center justify-center"
-                  style={{
-                    backgroundColor: unlocked ? "#EDE9FE" : colors.neutral.border,
-                  }}
-                >
-                  <Ionicons
-                    name={achievement.icon}
-                    size={22}
-                    color={
-                      unlocked
-                        ? colors.primary.purple
-                        : colors.neutral.textSecondary
-                    }
-                  />
-                </View>
-                <View className="flex-1 ml-3">
-                  <Text className="font-poppins-semibold text-sm text-text-primary">
-                    {achievement.title}
-                  </Text>
-                  <Text className="caption">{achievement.description}</Text>
-                </View>
-                {unlocked ? (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color={colors.semantic.success}
-                  />
-                ) : (
-                  <Ionicons
-                    name="lock-closed"
-                    size={18}
-                    color={colors.neutral.textSecondary}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        <SectionHeader title="Settings" />
+        <SectionHeader title={t("profile.settings")} />
         <View
-          className="bg-white rounded-2xl border border-border mb-6 overflow-hidden"
-          style={styles.settingsCard}
+          style={[
+            styles.settingsCard,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
         >
           <SettingsRow
-            icon="notifications-outline"
-            label="Notifications"
-            subtitle="Daily reminders & streak alerts"
+            icon={Bell}
+            label={t("profile.notifications")}
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
           />
-          <View className="h-px bg-border mx-4" />
+          <View
+            style={[
+              styles.settingsDivider,
+              { backgroundColor: colors.neutral.border },
+            ]}
+          />
           <SettingsRow
-            icon="volume-high-outline"
-            iconColor={colors.primary.blue}
-            iconBg="#DBEAFE"
-            label="Sound effects"
-            subtitle="Lesson feedback sounds"
+            icon={Volume2}
+            label={t("profile.sound")}
             value={soundEnabled}
             onValueChange={setSoundEnabled}
           />
-          <View className="h-px bg-border mx-4" />
-          <SettingsRow
-            icon="phone-portrait-outline"
-            iconColor={colors.semantic.success}
-            iconBg="#DCFCE7"
-            label="Haptic feedback"
-            subtitle="Vibration on interactions"
-            value={hapticsEnabled}
-            onValueChange={setHapticsEnabled}
+          <View
+            style={[
+              styles.settingsDivider,
+              { backgroundColor: colors.neutral.border },
+            ]}
           />
-          <View className="h-px bg-border mx-4" />
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => router.push("/language-select")}
-          >
-            <SettingsRow
-              icon="language-outline"
-              label="Change language"
-              subtitle={language?.name ?? "Not set"}
-              showChevron
-            />
-          </TouchableOpacity>
+          <SettingsRow
+            icon={Moon}
+            label={t("profile.darkMode")}
+            value={darkMode}
+            onValueChange={setDarkMode}
+          />
+          <View
+            style={[
+              styles.settingsDivider,
+              { backgroundColor: colors.neutral.border },
+            ]}
+          />
+          <SettingsRow
+            icon={Languages}
+            label={t("profile.languageToggle")}
+            subtitle={t("profile.languageSubtitle", {
+              lang: locale === "en" ? "EN" : "FR",
+            })}
+            value={locale === "en"}
+            onValueChange={(on) => setLocale(on ? "en" : "fr")}
+          />
         </View>
 
         <TouchableOpacity
-          className="flex-row items-center justify-center bg-white rounded-2xl border border-border py-4 mb-3"
+          style={[
+            styles.signOut,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
           activeOpacity={0.85}
           onPress={handleSignOut}
         >
-          <Ionicons
-            name="log-out-outline"
-            size={20}
-            color={colors.semantic.error}
-          />
+          <LogOut size={20} color={colors.semantic.error} />
           <Text
-            className="font-poppins-semibold text-base ml-2"
-            style={{ color: colors.semantic.error }}
+            style={[styles.signOutText, { color: colors.semantic.error }]}
           >
-            Sign out
+            {t("profile.signOut")}
           </Text>
         </TouchableOpacity>
 
-        <View className="items-center mb-4">
+        <View style={styles.footer}>
           <Image
             source={images.mascotLogo}
             contentFit="contain"
             style={{ width: 32, height: 32, opacity: 0.5 }}
           />
-          <Text className="caption mt-2">Lingua · v1.0.0</Text>
+          <Text
+            style={[styles.version, { color: colors.neutral.textSecondary }]}
+          >
+            {t("profile.version")}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -357,44 +483,134 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.screen,
     paddingTop: 12,
     paddingBottom: 100,
   },
-  profileCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+  hero: { alignItems: "center", marginBottom: spacing.section },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
-  languageCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+  avatarText: {
+    fontFamily: fontFamily.bold,
+    fontSize: 32,
+    color: "#fff",
   },
-  achievementCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+  name: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 20,
+  },
+  email: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  certsEntry: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginBottom: 12,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  certsBlock: { marginBottom: spacing.section },
+  certsGroup: { marginBottom: 12 },
+  certsGroupTitle: {
+    fontFamily: fontFamily.medium,
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  certRow: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 8,
+  },
+  certName: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+  },
+  todoItem: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  emptyCerts: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: spacing.section,
+  },
+  emptyText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  exploreBtn: {
+    borderRadius: radius.md,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  exploreText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+    color: "#fff",
+  },
+  trackRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: spacing.section,
+    gap: 12,
+    ...shadows.card,
+  },
+  trackBody: { flex: 1 },
+  trackTitle: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+  },
+  trackCaption: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginTop: 2,
   },
   settingsCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  flag: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.neutral.border,
+    marginBottom: spacing.section,
+    overflow: "hidden",
+  },
+  settingsDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 16,
+  },
+  signOut: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingVertical: 16,
+    marginBottom: 12,
+    gap: 8,
+  },
+  signOutText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 16,
+  },
+  footer: { alignItems: "center", marginBottom: 16 },
+  version: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginTop: 8,
   },
 });

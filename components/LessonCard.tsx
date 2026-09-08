@@ -1,8 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Check, ChevronRight } from "@/constants/icons";
+import { StyleSheet, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 
-import { colors } from "@/constants/theme";
-import { Lesson } from "@/types/learning";
+import { IconBadge } from "@/components/IconBadge";
+import { PressScale } from "@/components/motion/PressScale";
+import { getLessonIcon } from "@/constants/icons";
+import { fontFamily, radius, shadows } from "@/constants/theme";
+import { enterUp } from "@/lib/motion";
+import { useLocalize, useT } from "@/lib/i18n";
+import { useTheme } from "@/lib/useTheme";
+import type { Lesson } from "@/types/learning";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -12,10 +19,6 @@ interface LessonCardProps {
   onPress: () => void;
 }
 
-function getLessonThumbnail(lessonId: string): string {
-  return `https://picsum.photos/seed/${lessonId}/160/100`;
-}
-
 export function LessonCard({
   lesson,
   index,
@@ -23,48 +26,79 @@ export function LessonCard({
   isInProgress,
   onPress,
 }: LessonCardProps) {
+  const t = useT();
+  const L = useLocalize();
+  const { colors } = useTheme();
+  const icon = getLessonIcon(lesson.id, lesson.icon);
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={onPress}
-      style={[styles.card, isInProgress && styles.cardInProgress]}
-    >
-      <View className="flex-1">
-        <View className="flex-row items-center gap-2 mb-1">
-          <Text className="caption">Lesson {index + 1}</Text>
-          {isInProgress && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>In progress</Text>
+    <Animated.View entering={enterUp(index)}>
+      <PressScale onPress={onPress}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isInProgress
+                ? colors.soft.blueBg
+                : colors.neutral.card,
+              borderColor: isInProgress
+                ? colors.soft.blueBorder
+                : colors.neutral.border,
+            },
+          ]}
+        >
+          <IconBadge name={icon} size="md" />
+          <View style={styles.body}>
+            <View style={styles.metaRow}>
+              <Text
+                style={[styles.caption, { color: colors.neutral.textSecondary }]}
+              >
+                {t("lesson.intro")} {index + 1}
+              </Text>
+              {isInProgress && !isCompleted ? (
+                <View
+                  style={[
+                    styles.badge,
+                    { backgroundColor: "rgba(37, 99, 235, 0.12)" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.badgeText, { color: colors.primary.blue }]}
+                  >
+                    {t("lesson.inProgress")}
+                  </Text>
+                </View>
+              ) : null}
             </View>
+            <Text
+              style={[styles.title, { color: colors.neutral.textPrimary }]}
+              numberOfLines={2}
+            >
+              {L(lesson.title)}
+            </Text>
+            <Text
+              style={[styles.caption, { color: colors.neutral.textSecondary }]}
+            >
+              {lesson.estimatedMinutes} {t("lesson.minutes")} ·{" "}
+              {lesson.activities.length} {t("lesson.activities")} ·{" "}
+              {lesson.xpReward} XP
+            </Text>
+          </View>
+          {isCompleted ? (
+            <View
+              style={[
+                styles.check,
+                { backgroundColor: colors.semantic.success },
+              ]}
+            >
+              <Check size={16} color="#fff" strokeWidth={3} />
+            </View>
+          ) : (
+            <ChevronRight size={18} color={colors.neutral.textSecondary} />
           )}
         </View>
-
-        <Text
-          className="font-poppins-semibold text-sm text-text-primary"
-          numberOfLines={1}
-        >
-          {lesson.title}
-        </Text>
-
-        <Text className="caption mt-0.5">
-          {lesson.activities.length} activities · {lesson.xpReward} XP
-        </Text>
-      </View>
-
-      {isCompleted && (
-        <View style={styles.checkCircle}>
-          <Ionicons name="checkmark" size={16} color="#fff" />
-        </View>
-      )}
-
-      {isInProgress && (
-        <Image
-          source={{ uri: getLessonThumbnail(lesson.id) }}
-          style={styles.thumbnail}
-          resizeMode="cover"
-        />
-      )}
-    </TouchableOpacity>
+      </PressScale>
+    </Animated.View>
   );
 }
 
@@ -72,45 +106,42 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: radius.md,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.neutral.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    gap: 12,
+    ...shadows.card,
   },
-  cardInProgress: {
-    backgroundColor: "#EDE9FE",
-    borderColor: "#C4B5FD",
+  body: { flex: 1 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  caption: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+  },
+  title: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+    marginBottom: 4,
   },
   badge: {
-    backgroundColor: "rgba(108, 78, 245, 0.12)",
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   badgeText: {
     fontSize: 10,
-    color: colors.primary.purple,
-    fontFamily: "Poppins-Medium",
+    fontFamily: fontFamily.medium,
   },
-  checkCircle: {
+  check: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.semantic.success,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 12,
-  },
-  thumbnail: {
-    width: 72,
-    height: 56,
-    borderRadius: 10,
-    marginLeft: 12,
   },
 });

@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Bell } from "@/constants/icons";
 import { router } from "expo-router";
+import { useMemo, useState } from "react";
 import {
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,258 +10,272 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { images } from "@/constants/images";
-import { colors } from "@/constants/theme";
-import { LANGUAGES } from "@/data/languages";
-import { UNITS } from "@/data/units";
+import { DailyChallengeCard } from "@/components/home/DailyChallengeCard";
+import { HomeHero } from "@/components/home/HomeHero";
+import { ModuleProgressList } from "@/components/home/ModuleProgressList";
+import { NotificationsSheet } from "@/components/home/NotificationsSheet";
+import { ReviewSection } from "@/components/home/ReviewSection";
+import { MotionView } from "@/components/motion/MotionView";
+import { ProgressCard } from "@/components/ProgressCard";
+import { fontFamily, radius, shadows, spacing } from "@/constants/theme";
+import { getLevelProgress } from "@/data/achievements";
+import { getDailyChallenge } from "@/data/challenges";
+import { LESSONS } from "@/data/lessons";
+import { getTrack } from "@/data/tracks";
+import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
+import { useTheme } from "@/lib/useTheme";
 import { useLearningStore } from "@/store/learningStore";
 import { useSessionStore } from "@/store/sessionStore";
-import { LanguageCode } from "@/types/learning";
-
-function getGreeting(langCode: LanguageCode | null): string {
-  switch (langCode) {
-    case "es":
-      return "Hola";
-    case "fr":
-      return "Bonjour";
-    case "ja":
-      return "こんにちは";
-    case "de":
-      return "Hallo";
-    default:
-      return "Hello";
-  }
-}
-
-const PLAN_ITEMS = [
-  {
-    id: "lesson",
-    icon: "book" as const,
-    iconBg: "#EDE9FE",
-    iconColor: colors.primary.purple,
-    title: "Lesson",
-    subtitle: "At the café",
-    completed: true,
-  },
-  {
-    id: "ai-conversation",
-    icon: "headset" as const,
-    iconBg: "#EDE9FE",
-    iconColor: colors.primary.purple,
-    title: "AI Conversation",
-    subtitle: "Talk about your day",
-    completed: false,
-  },
-  {
-    id: "new-words",
-    icon: "chatbubble-ellipses" as const,
-    iconBg: "#FEE2E2",
-    iconColor: "#EF4444",
-    title: "New words",
-    subtitle: "10 words",
-    completed: false,
-  },
-];
+import { useTrackStore } from "@/store/trackStore";
+import { getSelectedUnit, useUnitStore } from "@/store/unitStore";
 
 export default function HomeScreen() {
-  const { firstName, signOut } = useSessionStore();
-  const { selectedLanguage } = useLanguageStore();
-  const { xpToday, dailyGoal, streak } = useLearningStore();
+  const t = useT();
+  const L = useLocalize();
+  const { colors } = useTheme();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const firstName = useSessionStore((s) => s.firstName);
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
+  const {
+    xpToday,
+    dailyGoal,
+    streak,
+    completedLessonIds,
+    totalXP,
+    reviewQuestionIds,
+    activityLogs,
+  } = useLearningStore();
 
-  const language = LANGUAGES.find((l) => l.code === selectedLanguage);
-  const unit = UNITS.find((u) => u.languageCode === selectedLanguage);
+  const track = getTrack(selectedTrack);
+  const unit = getSelectedUnit(selectedUnitId);
   const displayName = firstName ?? "Learner";
-  const greeting = getGreeting(selectedLanguage);
-  const xpProgress =
-    dailyGoal > 0 ? Math.min((xpToday / dailyGoal) * 100, 100) : 0;
+  const { level } = getLevelProgress(totalXP);
+  const daily = useMemo(() => getDailyChallenge(), []);
+  const unreadHint = activityLogs.length > 0;
+
+  const lessons = useMemo(
+    () =>
+      unit.lessonIds
+        .map((id) => LESSONS.find((l) => l.id === id))
+        .filter((l): l is NonNullable<typeof l> => Boolean(l)),
+    [unit]
+  );
+  const done = lessons.filter((l) => completedLessonIds.includes(l.id)).length;
+  const modulePercent =
+    lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
+
+  const nextLesson = useMemo(() => {
+    return (
+      lessons.find((l) => !completedLessonIds.includes(l.id)) ??
+      lessons[lessons.length - 1] ??
+      null
+    );
+  }, [lessons, completedLessonIds]);
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.neutral.background }}
+      style={[styles.safe, { backgroundColor: colors.neutral.background }]}
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* ── Header ── */}
-        <View className="flex-row items-center justify-between mb-5">
-          <View className="flex-row items-center gap-[10px]">
-            {language ? (
-              <Image
-                source={{ uri: language.flag }}
-                className="w-[34px] h-[34px] rounded-full"
-              />
-            ) : (
-              <View className="w-[34px] h-[34px] rounded-full bg-surface" />
-            )}
-            <Text className="font-poppins-semibold text-base text-text-primary">
-              {greeting}, {displayName}! 👋
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-[14px]">
-            <View className="flex-row items-center gap-1">
-              <Image source={images.streakFire} className="w-[22px] h-[22px]" />
-              <Text className="font-poppins-semibold text-[15px] text-streak">
-                {streak}
+        <MotionView index={0} variant="fade">
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Text
+                style={[styles.greeting, { color: colors.neutral.textPrimary }]}
+              >
+                {t("home.greeting")}, {displayName}
               </Text>
-            </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color={colors.neutral.textPrimary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                signOut();
-                posthog.reset();
-                router.replace("/onboarding");
-              }}
-            >
-              <Ionicons
-                name="log-out-outline"
-                size={24}
-                color={colors.neutral.textPrimary}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Daily Goal Card ── */}
-        <View className="flex-row items-center bg-[#FFF5E8] rounded-[20px] py-4 pl-5 pr-3 mb-4">
-          <View className="flex-1 pr-2">
-            <Text className="font-poppins text-xs text-text-secondary mb-1">
-              Daily goal
-            </Text>
-            <Text>
-              <Text className="font-poppins-bold text-[28px] text-text-primary leading-[34px]">
-                {xpToday}
-              </Text>
-              <Text className="font-poppins text-sm text-text-secondary leading-[34px]">
-                {` / ${dailyGoal} XP`}
-              </Text>
-            </Text>
-            <View className="h-2 bg-border rounded mt-[10px] overflow-hidden">
-              <View
-                className="h-2 bg-streak rounded"
-                style={{ width: `${Math.round(xpProgress)}%` as `${number}%` }}
-              />
-            </View>
-          </View>
-          <Image
-            source={images.treasure}
-            className="w-20 h-20"
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* ── Continue Learning Card ── */}
-        <View className="flex-row bg-lingua-purple rounded-[20px] h-[160px] mb-6 overflow-hidden">
-          <View className="flex-1 py-5 pl-5 pr-2 justify-between">
-            <View>
-              <Text className="font-poppins text-[11px] text-white/75 mb-0.5">
-                Continue learning
-              </Text>
-              <Text className="font-poppins-bold text-[22px] text-white leading-7">
-                {language?.name ?? "Pick a language"}
-              </Text>
-              <Text className="font-poppins text-xs text-white/65 mt-0.5">
-                A1 · Unit {unit?.order ?? 1}
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="bg-white rounded-xl py-2 px-[22px] self-start"
-              activeOpacity={0.85}
-              testID="continue-learning-button"
-              onPress={() => {
-                posthog.capture("continue_learning_tapped", {
-                  language_code: selectedLanguage,
-                  unit_order: unit?.order ?? 1,
-                  xp_today: xpToday,
-                  streak,
-                });
-              }}
-            >
-              <Text className="font-poppins-semibold text-[13px] text-lingua-purple">
-                Continue
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Image
-            source={images.palace}
-            className="w-[130px] h-[160px]"
-            resizeMode="cover"
-          />
-        </View>
-
-        {/* ── Today's Plan Header ── */}
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="font-poppins-semibold text-[17px] text-text-primary">
-            {"Today's plan"}
-          </Text>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text className="font-poppins-medium text-[13px] text-lingua-blue">
-              View all
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Today's Plan Card ── */}
-        <View
-          className="bg-white rounded-[20px] border border-border mb-4 overflow-hidden"
-          style={styles.planCardShadow}
-        >
-          {PLAN_ITEMS.map((item, index) => (
-            <View key={item.id}>
-              {index > 0 && <View className="h-px bg-border mx-4" />}
-              <View className="flex-row items-center px-4 py-[14px]">
+              <View style={styles.metaRow}>
                 <View
-                  className="w-11 h-11 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: item.iconBg }}
+                  style={[
+                    styles.levelPill,
+                    { backgroundColor: colors.soft.blueBg },
+                  ]}
                 >
-                  <Ionicons name={item.icon} size={20} color={item.iconColor} />
-                </View>
-                <View className="flex-1 ml-3">
-                  <Text className="font-poppins-semibold text-sm text-text-primary mb-0.5">
-                    {item.title}
-                  </Text>
-                  <Text className="font-poppins text-xs text-text-secondary">
-                    {item.subtitle}
+                  <Text
+                    style={[styles.levelText, { color: colors.primary.blue }]}
+                  >
+                    {t("home.level", { level })}
                   </Text>
                 </View>
-                {item.completed ? (
-                  <View className="w-[26px] h-[26px] rounded-full bg-lingua-blue items-center justify-center">
-                    <Ionicons name="checkmark" size={14} color="#fff" />
-                  </View>
-                ) : (
-                  <View className="w-[26px] h-[26px] rounded-full border-2 border-border" />
-                )}
+                <Text
+                  style={{
+                    color: colors.semantic.streak,
+                    fontFamily: fontFamily.semiBold,
+                    fontSize: 13,
+                  }}
+                >
+                  {streak} · {track ? L(track.shortName) : "Tech"}
+                </Text>
               </View>
             </View>
-          ))}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setNotifOpen(true)}
+              style={[
+                styles.bellBtn,
+                {
+                  backgroundColor: colors.neutral.card,
+                  borderColor: colors.neutral.border,
+                },
+              ]}
+            >
+              <Bell size={20} color={colors.neutral.textPrimary} />
+              {unreadHint ? (
+                <View
+                  style={[
+                    styles.dot,
+                    { backgroundColor: colors.primary.blue },
+                  ]}
+                />
+              ) : null}
+            </TouchableOpacity>
+          </View>
+        </MotionView>
+
+        {nextLesson ? (
+          <HomeHero
+            eyebrow={`${t("home.continueLearning")} · ${track ? L(track.name) : "Tech"}`}
+            title={L(nextLesson.title)}
+            meta={`${nextLesson.estimatedMinutes} ${t("lesson.minutes")} · ${modulePercent}%`}
+            ctaLabel={t("home.startLesson")}
+            onPress={() => {
+              posthog.capture("continue_learning_tapped", {
+                track_id: selectedTrack,
+                lesson_id: nextLesson.id,
+              });
+              router.push(`/lesson/${nextLesson.id}`);
+            }}
+          />
+        ) : null}
+
+        <View style={styles.motivation}>
+          <View
+            style={[
+              styles.streakCard,
+              {
+                backgroundColor: colors.neutral.card,
+                borderColor: colors.neutral.border,
+              },
+            ]}
+          >
+            <Text
+              style={[styles.streakValue, { color: colors.semantic.streak }]}
+            >
+              {streak}
+            </Text>
+            <Text
+              style={[
+                styles.streakLabel,
+                { color: colors.neutral.textSecondary },
+              ]}
+            >
+              {t("profile.dayStreak")}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <ProgressCard
+              label={t("home.dailyGoal")}
+              xpToday={xpToday}
+              dailyGoal={dailyGoal}
+            />
+          </View>
         </View>
+
+        <DailyChallengeCard
+          challenge={daily}
+          onPress={() => router.push(`/(tabs)/challenges?focus=${daily.id}`)}
+        />
+
+        <ReviewSection reviewQuestionIds={reviewQuestionIds} />
+
+        <ModuleProgressList completedLessonIds={completedLessonIds} />
       </ScrollView>
+
+      <NotificationsSheet
+        visible={notifOpen}
+        onClose={() => setNotifOpen(false)}
+      />
     </SafeAreaView>
   );
 }
 
-// ScrollView.contentContainerStyle and shadow (iOS/Android) must stay in StyleSheet
 const styles = StyleSheet.create({
+  safe: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 100,
+    paddingHorizontal: spacing.screen,
+    paddingTop: 8,
+    paddingBottom: 28,
   },
-  planCardShadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.section,
+  },
+  headerLeft: { flex: 1, paddingRight: 12 },
+  greeting: {
+    fontFamily: fontFamily.bold,
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 6,
+  },
+  levelPill: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  levelText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 12,
+  },
+  bellBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  dot: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  motivation: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: spacing.section,
+  },
+  streakCard: {
+    width: 88,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    ...shadows.card,
+  },
+  streakValue: {
+    fontFamily: fontFamily.bold,
+    fontSize: 28,
+  },
+  streakLabel: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginTop: 2,
   },
 });

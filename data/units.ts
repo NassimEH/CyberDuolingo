@@ -1,36 +1,84 @@
-import { Unit } from '@/types/learning';
+import type { Unit } from "@/types/learning";
 
 export const UNITS: Unit[] = [
   {
-    id: 'es-unit-1',
-    languageCode: 'es',
-    title: 'Greetings & Basics',
-    description: 'Start your Spanish journey with everyday phrases',
+    id: "net-fundamentals",
+    trackId: "networking",
+    title: {
+      fr: "Fondamentaux des réseaux",
+      en: "Network Fundamentals",
+    },
+    description: {
+      fr: "Les bases pour comprendre comment les machines communiquent.",
+      en: "The basics of how machines talk to each other.",
+    },
     order: 1,
-    lessonIds: ['es-lesson-1', 'es-lesson-2', 'es-lesson-3'],
+    progressColor: "#2563EB",
+    lessonIds: [
+      "net-what-is-a-network",
+      "net-osi-tcpip",
+      "net-ip-addressing",
+      "net-devices",
+      "net-ports-protocols",
+      "net-dns",
+      "net-http-https",
+      "net-nat-firewall",
+    ],
   },
   {
-    id: 'fr-unit-1',
-    languageCode: 'fr',
-    title: 'Bonjour! Greetings',
-    description: 'Learn how to greet and introduce yourself in French',
-    order: 1,
-    lessonIds: ['fr-lesson-1', 'fr-lesson-2', 'fr-lesson-3', 'fr-lesson-4', 'fr-lesson-5'],
+    id: "net-advanced",
+    trackId: "networking",
+    title: {
+      fr: "Réseaux avancés",
+      en: "Advanced Networking",
+    },
+    description: {
+      fr: "Routage, VLAN, QoS et architectures d’entreprise.",
+      en: "Routing, VLANs, QoS, and enterprise architectures.",
+    },
+    order: 2,
+    progressColor: "#0EA5E9",
+    lessonIds: [],
   },
   {
-    id: 'ja-unit-1',
-    languageCode: 'ja',
-    title: 'はじめまして — First Steps',
-    description: 'Learn essential Japanese phrases for meeting people',
-    order: 1,
-    lessonIds: ['ja-lesson-1', 'ja-lesson-2', 'ja-lesson-3', 'ja-lesson-4', 'ja-lesson-5'],
+    id: "sec-basics",
+    trackId: "security",
+    title: {
+      fr: "Cybersécurité",
+      en: "Cybersecurity",
+    },
+    description: {
+      fr: "Menaces, chiffrement et bonnes pratiques de sécurité.",
+      en: "Threats, encryption, and security best practices.",
+    },
+    order: 3,
+    progressColor: "#10B981",
+    lessonIds: [],
   },
   {
-    id: 'de-unit-1',
-    languageCode: 'de',
-    title: 'Hallo! German Basics',
-    description: 'Master everyday German greetings and introductions',
-    order: 1,
-    lessonIds: ['de-lesson-1', 'de-lesson-2', 'de-lesson-3', 'de-lesson-4', 'de-lesson-5'],
+    id: "ai-basics",
+    trackId: "ai",
+    title: {
+      fr: "Intelligence artificielle",
+      en: "Artificial Intelligence",
+    },
+    description: {
+      fr: "Concepts IA, ML et cas d’usage tech.",
+      en: "AI concepts, ML, and tech use cases.",
+    },
+    order: 4,
+    progressColor: "#7C3AED",
+    lessonIds: [],
   },
 ];
+
+export function getUnitsForTrack(trackId: string) {
+  return UNITS.filter((u) => u.trackId === trackId).sort(
+    (a, b) => a.order - b.order
+  );
+}
+
+export function getUnitById(unitId: string | null | undefined) {
+  if (!unitId) return UNITS[0];
+  return UNITS.find((u) => u.id === unitId) ?? UNITS[0];
+}

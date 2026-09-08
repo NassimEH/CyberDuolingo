@@ -1,8 +1,9 @@
 import SocialButton from "@/components/SocialButton";
 import { images } from "@/constants/images";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTrackStore } from "@/store/trackStore";
+import { useT } from "@/lib/i18n";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -20,8 +21,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
+  const t = useT();
   const signIn = useSessionStore((s) => s.signIn);
-  const { selectedLanguage } = useLanguageStore();
+  const signInAsGuest = useSessionStore((s) => s.signInAsGuest);
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,8 +47,17 @@ export default function SignUpScreen() {
     posthog.capture("sign_up_completed", { method });
     posthog.identify(useSessionStore.getState().userId!, {
       $set_once: { signup_date: new Date().toISOString() },
-      $set: { preferred_language: selectedLanguage ?? null },
+      $set: { preferred_track: selectedTrack ?? null },
     });
+    router.replace("/");
+  };
+
+  const handleGuestAccess = () => {
+    signInAsGuest();
+    if (!selectedTrack) {
+      setSelectedTrack("networking");
+    }
+    posthog.capture("guest_access", { source: "sign_up" });
     router.replace("/");
   };
 
@@ -67,9 +80,9 @@ export default function SignUpScreen() {
               <Ionicons name="chevron-back" size={24} color="#001328" />
             </TouchableOpacity>
 
-            <Text className="h1 mt-4">Create your account</Text>
+            <Text className="h1 mt-4">{t("auth.signUp")}</Text>
             <Text className="body-md text-text-secondary mt-2">
-              Start your language journey today ✨
+              {t("auth.startJourney")}
             </Text>
 
             <View className="items-center mt-6 mb-6">
@@ -145,27 +158,38 @@ export default function SignUpScreen() {
               icon={<AntDesign name="google" size={20} color="#DB4437" />}
               label="Continue with Google"
               onPress={() =>
-                completeSignUp("oauth_google", "google.user@lingua.app")
+                completeSignUp("oauth_google", "google.user@tech.app")
               }
             />
             <SocialButton
               icon={<FontAwesome name="facebook" size={20} color="#1877F2" />}
               label="Continue with Facebook"
               onPress={() =>
-                completeSignUp("oauth_facebook", "facebook.user@lingua.app")
+                completeSignUp("oauth_facebook", "facebook.user@tech.app")
               }
             />
             <SocialButton
               icon={<AntDesign name="apple" size={20} color="#000" />}
               label="Continue with Apple"
               onPress={() =>
-                completeSignUp("oauth_apple", "apple.user@lingua.app")
+                completeSignUp("oauth_apple", "apple.user@tech.app")
               }
             />
 
+            <TouchableOpacity
+              className="rounded-2xl py-4 items-center mt-2 border border-border"
+              activeOpacity={0.85}
+              onPress={handleGuestAccess}
+              testID="guest-access-button"
+            >
+              <Text className="font-poppins-semibold text-base text-text-primary">
+                {t("auth.guest")}
+              </Text>
+            </TouchableOpacity>
+
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">
-                Already have an account?{" "}
+                {t("auth.hasAccount")}
               </Text>
               <TouchableOpacity
                 onPress={() => router.replace("/(auth)/sign-in")}

@@ -5,7 +5,14 @@ const { withNativewind } = require("nativewind/metro");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+// Keep default package exports (required for react-native 0.86 / Expo 57).
+// Lucide icons import deep .mjs paths directly, so mjs must be resolvable.
+if (!config.resolver.sourceExts.includes("mjs")) {
+  config.resolver.sourceExts.push("mjs");
+}
+
 const streamStub = path.resolve(__dirname, "shims/stream-web-stub.js");
+const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (
@@ -16,6 +23,10 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
       moduleName.startsWith("@stream-io/react-native-webrtc/"))
   ) {
     return { filePath: streamStub, type: "sourceFile" };
+  }
+
+  if (defaultResolveRequest) {
+    return defaultResolveRequest(context, moduleName, platform);
   }
 
   return context.resolveRequest(context, moduleName, platform);

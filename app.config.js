@@ -1,21 +1,21 @@
 export default {
   expo: {
-    name: "duolingo-clone",
-    slug: "duolingo-clone",
+    name: "Tech",
+    slug: "tech",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "duolingoclone",
+    scheme: "tech",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
+    newArchEnabled: false,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.jsmastery.duolingo-clone",
+      bundleIdentifier: "com.tech.app",
     },
     android: {
-      package: "com.jsmastery.duolingoclone",
+      package: "com.tech.app",
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
+        backgroundColor: "#DBEAFE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -42,14 +42,19 @@ export default {
         },
       ],
       "expo-secure-store",
+      "expo-asset",
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser",
       "@stream-io/video-react-native-sdk",
       [
         "@config-plugins/react-native-webrtc",
         {
           cameraPermission:
-            "Allow $(PRODUCT_NAME) to access your camera for video lessons.",
+            "Allow $(PRODUCT_NAME) to access your camera for tech lessons.",
           microphonePermission:
-            "Allow $(PRODUCT_NAME) to access your microphone for audio lessons.",
+            "Allow $(PRODUCT_NAME) to access your microphone for tech lessons.",
         },
       ],
       [

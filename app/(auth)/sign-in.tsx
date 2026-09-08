@@ -1,8 +1,9 @@
 import SocialButton from "@/components/SocialButton";
 import { images } from "@/constants/images";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTrackStore } from "@/store/trackStore";
+import { useT } from "@/lib/i18n";
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -20,9 +21,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
+  const t = useT();
   const signIn = useSessionStore((s) => s.signIn);
   const signInAsGuest = useSessionStore((s) => s.signInAsGuest);
-  const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
   const [email, setEmail] = useState("");
   const [authError, setAuthError] = useState("");
 
@@ -37,15 +40,15 @@ export default function SignInScreen() {
     signIn({ email: trimmed });
     posthog.capture("sign_in_completed", { method });
     posthog.identify(useSessionStore.getState().userId!, {
-      $set: { preferred_language: selectedLanguage ?? null },
+      $set: { preferred_track: selectedTrack ?? null },
     });
     router.replace("/");
   };
 
   const handleGuestAccess = () => {
     signInAsGuest();
-    if (!selectedLanguage) {
-      setSelectedLanguage("es");
+    if (!selectedTrack) {
+      setSelectedTrack("networking");
     }
     posthog.capture("guest_access");
     router.replace("/");
@@ -70,9 +73,9 @@ export default function SignInScreen() {
               <Ionicons name="chevron-back" size={24} color="#001328" />
             </TouchableOpacity>
 
-            <Text className="h1 mt-4">Welcome back!</Text>
+            <Text className="h1 mt-4">{t("auth.welcomeBack")}</Text>
             <Text className="body-md text-text-secondary mt-2">
-              Continue your language journey ✨
+              {t("auth.continueJourney")}
             </Text>
 
             <View className="items-center mt-6 mb-6">
@@ -108,7 +111,7 @@ export default function SignInScreen() {
               testID="sign-in-button"
             >
               <Text className="font-poppins-semibold text-base text-white">
-                Sign In
+                {t("auth.signIn")}
               </Text>
             </TouchableOpacity>
 
@@ -124,21 +127,21 @@ export default function SignInScreen() {
               icon={<AntDesign name="google" size={20} color="#DB4437" />}
               label="Continue with Google"
               onPress={() =>
-                completeSignIn("oauth_google", "google.user@lingua.app")
+                completeSignIn("oauth_google", "google.user@tech.app")
               }
             />
             <SocialButton
               icon={<FontAwesome name="facebook" size={20} color="#1877F2" />}
               label="Continue with Facebook"
               onPress={() =>
-                completeSignIn("oauth_facebook", "facebook.user@lingua.app")
+                completeSignIn("oauth_facebook", "facebook.user@tech.app")
               }
             />
             <SocialButton
               icon={<AntDesign name="apple" size={20} color="#000" />}
               label="Continue with Apple"
               onPress={() =>
-                completeSignIn("oauth_apple", "apple.user@lingua.app")
+                completeSignIn("oauth_apple", "apple.user@tech.app")
               }
             />
 
@@ -149,13 +152,13 @@ export default function SignInScreen() {
               testID="guest-access-button"
             >
               <Text className="font-poppins-semibold text-base text-text-primary">
-                Accéder sans connexion
+                {t("auth.guest")}
               </Text>
             </TouchableOpacity>
 
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">
-                {"Don't have an account? "}
+                {t("auth.noAccount")}
               </Text>
               <TouchableOpacity
                 onPress={() => router.replace("/(auth)/sign-up")}

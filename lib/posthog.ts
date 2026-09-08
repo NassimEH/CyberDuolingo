@@ -8,11 +8,16 @@ const host = Constants.expoConfig?.extra?.posthogHost as string | undefined;
 const isPostHogConfigured =
   !!apiKey && apiKey !== "phc_your_project_token_here";
 
+// Phone often cannot reach PostHog while tunneling / off corporate Wi‑Fi.
+// Keep analytics for production builds only to avoid noisy flush errors in Expo Go.
+const isPostHogEnabled = isPostHogConfigured && !__DEV__;
+
 if (__DEV__) {
   console.log("PostHog config:", {
     apiKey: apiKey ? "SET" : "NOT SET",
     host: host ? "SET" : "NOT SET",
     isConfigured: isPostHogConfigured,
+    enabled: isPostHogEnabled,
   });
 }
 
@@ -25,17 +30,16 @@ if (!isPostHogConfigured) {
 
 export const posthog = new PostHog(apiKey || "placeholder_key", {
   host,
-  disabled: !isPostHogConfigured,
-  captureAppLifecycleEvents: true,
-  debug: __DEV__,
+  disabled: !isPostHogEnabled,
+  captureAppLifecycleEvents: isPostHogEnabled,
   flushAt: 20,
   flushInterval: 10000,
   maxBatchSize: 100,
   maxQueueSize: 1000,
-  preloadFeatureFlags: true,
-  sendFeatureFlagEvent: true,
+  preloadFeatureFlags: false,
+  sendFeatureFlagEvent: false,
   featureFlagsRequestTimeoutMs: 10000,
   requestTimeout: 10000,
-  fetchRetryCount: 3,
+  fetchRetryCount: 0,
   fetchRetryDelay: 3000,
 });

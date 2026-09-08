@@ -1,134 +1,111 @@
-import { LanguageCode } from "@/types/learning";
+import type { LocalizedString } from "@/lib/i18n/translations";
+import type { TrackId } from "@/types/learning";
+import type { AppIcon } from "@/constants/icons";
 
 export interface ChatTopic {
   id: string;
-  languageCode: LanguageCode;
-  title: string;
-  subtitle: string;
-  emoji: string;
-  introMessage: string;
-  suggestedReplies: string[];
-  tutorResponses: string[];
+  trackId: TrackId;
+  title: LocalizedString;
+  subtitle: LocalizedString;
+  icon: AppIcon;
+  introMessage: LocalizedString;
+  suggestedReplies: LocalizedString[];
+  tutorResponses: LocalizedString[];
 }
 
 export const CHAT_TOPICS: ChatTopic[] = [
   {
-    id: "es-order-coffee",
-    languageCode: "es",
-    title: "Order at a café",
-    subtitle: "Practice ordering drinks politely",
-    emoji: "☕",
-    introMessage:
-      "¡Hola! Imagine we're at a café in Madrid. What would you like to order?",
+    id: "net-chat-lan",
+    trackId: "networking",
+    title: { fr: "Expliquer un LAN", en: "Explain a LAN" },
+    subtitle: {
+      fr: "Décris ton réseau local",
+      en: "Describe your local network",
+    },
+    icon: "home",
+    introMessage: {
+      fr: "Salut ! Explique-moi ce qu’est un LAN, avec un exemple chez toi ou au bureau.",
+      en: "Hi! Explain what a LAN is, with an example from home or the office.",
+    },
     suggestedReplies: [
-      "Un café con leche, por favor.",
-      "¿Qué recomiendas?",
-      "Quisiera un té verde.",
+      { fr: "C’est mon Wi-Fi à la maison", en: "It’s my home Wi-Fi" },
+      { fr: "Ça reste sur un site", en: "It stays on one site" },
     ],
     tutorResponses: [
-      "¡Muy bien! Your pronunciation is clear. Try adding \"por favor\" at the end for extra politeness.",
-      "Great effort! In Spain, \"café con leche\" is the most popular morning drink.",
-      "Nice vocabulary! You could also say \"Me gustaría...\" to sound more formal.",
+      {
+        fr: "Exact — un LAN couvre une zone limitée. Et un WAN alors ?",
+        en: "Right — a LAN covers a limited area. What about a WAN?",
+      },
+      {
+        fr: "Bien. Le client demande, le serveur répond : un classique du LAN aussi.",
+        en: "Good. Client asks, server answers: a LAN classic too.",
+      },
     ],
   },
   {
-    id: "es-talk-about-day",
-    languageCode: "es",
-    title: "Talk about your day",
-    subtitle: "Share what you did today",
-    emoji: "🌤️",
-    introMessage:
-      "¿Cómo estuvo tu día? Tell me one thing you did today — in Spanish!",
+    id: "net-chat-dns",
+    trackId: "networking",
+    title: { fr: "Debugger le DNS", en: "Debug DNS" },
+    subtitle: {
+      fr: "Le site ne charge pas…",
+      en: "The site won’t load…",
+    },
+    icon: "search",
+    introMessage: {
+      fr: "Un collègue dit « Internet est mort » mais ping d’une IP marche. Que vérifies-tu ?",
+      en: "A coworker says “the Internet is dead” but pinging an IP works. What do you check?",
+    },
     suggestedReplies: [
-      "Hoy fui al parque.",
-      "Estudié español por la mañana.",
-      "Comí paella con mis amigos.",
+      { fr: "Je teste le DNS", en: "I test DNS" },
+      { fr: "Je change de résolveur", en: "I change resolver" },
     ],
     tutorResponses: [
-      "Excellent! You used the preterite correctly. Can you add when you did it?",
-      "I love that! Try connecting ideas with \"y también\" to extend your answer.",
-      "Well done! Your sentence structure is natural. Keep going!",
+      {
+        fr: "Oui : si l’IP répond mais pas le nom, le DNS est suspect.",
+        en: "Yes: if IP replies but the name doesn’t, DNS is suspicious.",
+      },
+      {
+        fr: "Super. DNS traduit le nom en IP avant HTTP.",
+        en: "Great. DNS turns the name into an IP before HTTP.",
+      },
     ],
   },
   {
-    id: "fr-at-restaurant",
-    languageCode: "fr",
-    title: "At the restaurant",
-    subtitle: "Order food and ask for the bill",
-    emoji: "🥐",
-    introMessage:
-      "Bonjour! Vous êtes au restaurant. Que souhaitez-vous commander?",
+    id: "net-chat-https",
+    trackId: "networking",
+    title: { fr: "HTTP vs HTTPS", en: "HTTP vs HTTPS" },
+    subtitle: {
+      fr: "Pourquoi le cadenas ?",
+      en: "Why the padlock?",
+    },
+    icon: "lock",
+    introMessage: {
+      fr: "Pourquoi préfère-t-on HTTPS à HTTP sur le web moderne ?",
+      en: "Why do we prefer HTTPS over HTTP on the modern web?",
+    },
     suggestedReplies: [
-      "Je voudrais une salade, s'il vous plaît.",
-      "L'addition, s'il vous plaît.",
-      "Qu'est-ce que vous recommandez?",
+      { fr: "Pour chiffrer le trafic", en: "To encrypt traffic" },
+      { fr: "Port 443 et TLS", en: "Port 443 and TLS" },
     ],
     tutorResponses: [
-      "Parfait! \"Je voudrais\" is the polite way to order in French.",
-      "Très bien! Remember that \"s'il vous plaît\" makes any request sound courteous.",
-      "Excellent! You're building real restaurant confidence.",
-    ],
-  },
-  {
-    id: "fr-introduce-yourself",
-    languageCode: "fr",
-    title: "Introduce yourself",
-    subtitle: "Name, origin, and hobbies",
-    emoji: "🙋",
-    introMessage:
-      "Enchanté! Présentez-vous — comment vous appelez-vous?",
-    suggestedReplies: [
-      "Je m'appelle Alex.",
-      "Je viens de France.",
-      "J'aime la musique et le sport.",
-    ],
-    tutorResponses: [
-      "Super! Now try adding \"Et toi?\" to ask the other person back.",
-      "Great introduction! \"Je viens de...\" is perfect for saying where you're from.",
-      "Nice! Link your hobbies with \"J'aime... et aussi...\"",
-    ],
-  },
-  {
-    id: "ja-self-intro",
-    languageCode: "ja",
-    title: "Self introduction",
-    subtitle: "Basic 自己紹介 practice",
-    emoji: "🇯🇵",
-    introMessage:
-      "はじめまして! Try introducing yourself in Japanese.",
-    suggestedReplies: [
-      "はじめまして。Alex です。",
-      "よろしく おねがいします。",
-      "アメリカ から きました。",
-    ],
-    tutorResponses: [
-      "Great start! Always follow with よろしくお願いします.",
-      "Perfect! That's the essential phrase for first meetings.",
-      "Well done! Your particles are in the right places.",
-    ],
-  },
-  {
-    id: "ja-order-food",
-    languageCode: "ja",
-    title: "Order ramen",
-    subtitle: "Practice at an izakaya",
-    emoji: "🍜",
-    introMessage:
-      "いらっしゃいませ! What would you like to order at this ramen shop?",
-    suggestedReplies: [
-      "ラーメン を ください。",
-      "みず を ください。",
-      "おすすめ は なん です か?",
-    ],
-    tutorResponses: [
-      "Nice! をください is the standard way to request something.",
-      "Good! You can also say お水をお願いします for water.",
-      "Excellent question! おすすめは何ですか is very natural.",
+      {
+        fr: "Oui — TLS protège le contenu des regards indiscrets sur le réseau.",
+        en: "Yes — TLS protects content from eavesdroppers on the network.",
+      },
+      {
+        fr: "Parfait. HTTP reste le langage ; HTTPS = HTTP + TLS.",
+        en: "Perfect. HTTP is still the language; HTTPS = HTTP + TLS.",
+      },
     ],
   },
 ];
 
-export function getChatTopicsForLanguage(languageCode: LanguageCode | null) {
-  if (!languageCode) return CHAT_TOPICS;
-  return CHAT_TOPICS.filter((topic) => topic.languageCode === languageCode);
+export function getChatTopicsForTrack(trackId: TrackId | null | undefined) {
+  if (!trackId) return [];
+  return CHAT_TOPICS.filter((t) => t.trackId === trackId);
+}
+
+/** @deprecated */
+export function getChatTopicsForLanguage(code: string) {
+  return getChatTopicsForTrack(code as TrackId);
 }

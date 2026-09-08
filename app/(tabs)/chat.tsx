@@ -14,11 +14,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ChatBubble } from "@/components/ChatBubble";
+import { IconBadge } from "@/components/IconBadge";
+import { MotionView } from "@/components/motion/MotionView";
+import { PressScale } from "@/components/motion/PressScale";
 import { SectionHeader } from "@/components/SectionHeader";
-import { colors } from "@/constants/theme";
-import { ChatTopic, getChatTopicsForLanguage } from "@/data/chatTopics";
+import { lightColors } from "@/constants/theme";
+import {
+  getLabScenariosForTrack,
+  type LabScenario,
+} from "@/data/labScenarios";
+import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
-import { useLanguageStore } from "@/store/languageStore";
+import { useTheme } from "@/lib/useTheme";
+import { useLearningStore } from "@/store/learningStore";
+import { useTrackStore } from "@/store/trackStore";
 
 interface ChatMessage {
   id: string;
@@ -26,163 +35,166 @@ interface ChatMessage {
   text: string;
 }
 
-export default function ChatScreen() {
-  const { selectedLanguage } = useLanguageStore();
-  const topics = getChatTopicsForLanguage(selectedLanguage);
-  const [selectedTopic, setSelectedTopic] = useState<ChatTopic | null>(null);
+export default function CoachScreen() {
+  const t = useT();
+  const L = useLocalize();
+  const { colors } = useTheme();
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
+  const completeLab = useLearningStore((s) => s.completeLab);
+  const scenarios = getLabScenariosForTrack(selectedTrack);
+  const [selected, setSelected] = useState<LabScenario | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [beatIndex, setBeatIndex] = useState(0);
   const [input, setInput] = useState("");
-  const [responseIndex, setResponseIndex] = useState(0);
+  const [finished, setFinished] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   useEffect(() => {
-    posthog.capture("chat_viewed", {
-      language: selectedLanguage,
-      topics_count: topics.length,
+    posthog.capture("coach_viewed", {
+      track: selectedTrack,
+      scenarios: scenarios.length,
     });
-  }, [selectedLanguage, topics.length]);
+  }, [selectedTrack, scenarios.length]);
 
-  function openTopic(topic: ChatTopic) {
-    setSelectedTopic(topic);
+  function openLab(lab: LabScenario) {
+    setSelected(lab);
     setMessages([
+      { id: "intro", role: "assistant", text: L(lab.introMessage) },
+    ]);
+    setBeatIndex(0);
+    setInput("");
+    setFinished(false);
+  }
+
+  function closeLab() {
+    setSelected(null);
+    setMessages([]);
+  }
+
+  function advance(userText: string, suggestedIndex?: number) {
+    if (!selected || finished) return;
+    const beat =
+      selected.tutorBeats[
+        Math.min(
+          suggestedIndex ?? beatIndex,
+          selected.tutorBeats.length - 1
+        )
+      ] ?? selected.tutorBeats[selected.tutorBeats.length - 1];
+
+    const nextBeat = beatIndex + 1;
+    const isLast = nextBeat >= selected.tutorBeats.length;
+
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", text: userText },
       {
-        id: "intro",
+        id: `a-${Date.now()}`,
         role: "assistant",
-        text: topic.introMessage,
+        text: L(beat),
       },
     ]);
-    setResponseIndex(0);
+    setBeatIndex(nextBeat);
     setInput("");
-    posthog.capture("chat_topic_opened", {
-      topic_id: topic.id,
-      language: topic.languageCode,
-    });
+
+    if (isLast && !finished) {
+      setFinished(true);
+      completeLab(selected.id, selected.xpReward);
+    }
   }
 
-  function closeTopic() {
-    setSelectedTopic(null);
-    setMessages([]);
-    setInput("");
-  }
-
-  function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || !selectedTopic) return;
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      text: trimmed,
-    };
-
-    const tutorText =
-      selectedTopic.tutorResponses[
-        responseIndex % selectedTopic.tutorResponses.length
-      ];
-
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      role: "assistant",
-      text: tutorText,
-    };
-
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
-    setResponseIndex((prev) => prev + 1);
-    setInput("");
-    posthog.capture("chat_message_sent", {
-      topic_id: selectedTopic.id,
-      message_length: trimmed.length,
-    });
-  }
-
-  if (selectedTopic) {
+  if (selected) {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.neutral.background }}
       >
+        <View className="flex-row items-center px-4 py-3 border-b border-border">
+          <TouchableOpacity onPress={closeLab}>
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.neutral.textPrimary}
+            />
+          </TouchableOpacity>
+          <Text className="flex-1 text-center font-poppins-semibold text-base">
+            {L(selected.title)}
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
+
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View className="flex-row items-center px-5 pt-2 pb-3 border-b border-border bg-white">
-            <TouchableOpacity
-              onPress={closeTopic}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color={colors.neutral.textPrimary}
-              />
-            </TouchableOpacity>
-            <View className="flex-1 ml-2">
-              <Text
-                className="font-poppins-semibold text-base text-text-primary"
-                numberOfLines={1}
-              >
-                {selectedTopic.title}
-              </Text>
-              <Text className="caption">{selectedTopic.subtitle}</Text>
-            </View>
-            <Text className="text-xl">{selectedTopic.emoji}</Text>
-          </View>
-
           <FlatList
             ref={listRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.messagesContent}
+            contentContainerStyle={{ padding: 16, gap: 10 }}
             onContentSizeChange={() =>
               listRef.current?.scrollToEnd({ animated: true })
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <ChatBubble
-                message={item.text}
                 isUser={item.role === "user"}
-                senderName={item.role === "assistant" ? "Tutor" : undefined}
+                message={item.text}
+                senderName={
+                  item.role === "assistant" ? t("coach.tutor") : undefined
+                }
+                index={index}
               />
             )}
-            ListFooterComponent={
-              selectedTopic.suggestedReplies.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.suggestionsRow}
-                >
-                  {selectedTopic.suggestedReplies.map((reply) => (
-                    <TouchableOpacity
-                      key={reply}
-                      style={styles.suggestionChip}
-                      activeOpacity={0.8}
-                      onPress={() => sendMessage(reply)}
-                    >
-                      <Text className="font-poppins-medium text-xs text-lingua-purple">
-                        {reply}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : null
-            }
           />
 
-          <View className="flex-row items-end px-4 pt-2 pb-3 gap-2 bg-white border-t border-border">
+          {!finished ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              style={{ maxHeight: 48, marginBottom: 8 }}
+            >
+              {selected.suggestedReplies.map((reply, i) => (
+                <TouchableOpacity
+                  key={i}
+                  className="rounded-full px-3 py-2 border border-border"
+                  onPress={() => advance(L(reply), i)}
+                >
+                  <Text className="font-poppins-medium text-xs text-lingua-purple">
+                    {L(reply)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text
+              style={{
+                textAlign: "center",
+                marginBottom: 8,
+                color: colors.semantic.success,
+                fontFamily: "Poppins-Medium",
+              }}
+            >
+              {t("coach.labComplete", { xp: selected.xpReward })}
+            </Text>
+          )}
+
+          <View className="flex-row items-center px-4 pb-4 gap-2">
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Type your message..."
-              placeholderTextColor={colors.neutral.textSecondary}
-              multiline
+              placeholder={t("coach.placeholder")}
+              placeholderTextColor="#9ca3af"
               style={styles.input}
+              editable={!finished}
+              onSubmitEditing={() => {
+                if (input.trim()) advance(input.trim());
+              }}
             />
             <TouchableOpacity
-              style={[
-                styles.sendButton,
-                !input.trim() && styles.sendButtonDisabled,
-              ]}
-              activeOpacity={0.85}
-              disabled={!input.trim()}
-              onPress={() => sendMessage(input)}
+              style={styles.send}
+              disabled={finished}
+              onPress={() => {
+                if (input.trim()) advance(input.trim());
+              }}
             >
               <Ionicons name="send" size={18} color="#fff" />
             </TouchableOpacity>
@@ -196,79 +208,33 @@ export default function ChatScreen() {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.neutral.background }}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Text className="h2 mb-1">Chat</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text className="h2 mb-1">{t("tabs.coach")}</Text>
         <Text className="body-md text-text-secondary mb-5">
-          Text conversations with your AI language tutor
+          {t("coach.subtitle")}
         </Text>
-
-        <View className="flex-row items-center bg-surface rounded-2xl px-4 py-3 mb-5">
-          <Ionicons
-            name="search-outline"
-            size={18}
-            color={colors.neutral.textSecondary}
-          />
-          <Text className="body-md text-text-secondary ml-2">
-            Search conversations
-          </Text>
-        </View>
-
-        <SectionHeader title="Suggested topics" />
-        <View className="gap-3 mb-6">
-          {topics.map((topic) => (
-            <TouchableOpacity
-              key={topic.id}
-              activeOpacity={0.8}
-              onPress={() => openTopic(topic)}
-              className="flex-row items-center bg-white rounded-2xl border border-border p-4"
-              style={styles.topicCard}
-            >
-              <View className="w-12 h-12 rounded-2xl bg-surface items-center justify-center">
-                <Text className="text-2xl">{topic.emoji}</Text>
-              </View>
-              <View className="flex-1 ml-3">
-                <Text className="font-poppins-semibold text-sm text-text-primary mb-0.5">
-                  {topic.title}
-                </Text>
-                <Text className="body-sm text-text-secondary" numberOfLines={1}>
-                  {topic.subtitle}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={colors.neutral.textSecondary}
-              />
-            </TouchableOpacity>
+        <SectionHeader title={t("coach.scenarios")} />
+        <View className="gap-3">
+          {scenarios.map((lab, index) => (
+            <MotionView key={lab.id} index={index}>
+              <PressScale onPress={() => openLab(lab)}>
+                <View className="flex-row items-center bg-white rounded-2xl border border-border p-4">
+                  <IconBadge name={lab.icon} size="md" />
+                  <View className="flex-1 ml-3">
+                    <Text className="font-poppins-semibold text-sm">
+                      {L(lab.title)}
+                    </Text>
+                    <Text className="caption">{L(lab.subtitle)}</Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={colors.neutral.textSecondary}
+                  />
+                </View>
+              </PressScale>
+            </MotionView>
           ))}
-        </View>
-
-        {topics.length === 0 ? (
-          <View className="items-center py-8">
-            <Text className="body-md text-text-secondary text-center">
-              No chat topics for your selected language yet.
-            </Text>
-          </View>
-        ) : null}
-
-        <SectionHeader title="Tips" />
-        <View
-          className="bg-[#FFF5E8] rounded-2xl p-4 flex-row items-start gap-3"
-          style={styles.tipsCard}
-        >
-          <Ionicons name="bulb-outline" size={22} color={colors.semantic.streak} />
-          <View className="flex-1">
-            <Text className="font-poppins-semibold text-sm text-text-primary mb-1">
-              Practice every day
-            </Text>
-            <Text className="body-sm text-text-secondary">
-              Short chat sessions build confidence faster than long study
-              sessions. Try one topic per day!
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -276,58 +242,27 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  scroll: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 100,
   },
-  topicCard: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  tipsCard: {
-    marginBottom: 8,
-  },
-  messagesContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  suggestionsRow: {
-    gap: 8,
-    paddingVertical: 8,
-  },
-  suggestionChip: {
-    backgroundColor: "#EDE9FE",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    maxWidth: 260,
-  },
   input: {
     flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    backgroundColor: colors.neutral.surface,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: lightColors.neutral.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontFamily: "Poppins-Regular",
     fontSize: 14,
-    color: colors.neutral.textPrimary,
   },
-  sendButton: {
+  send: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primary.purple,
+    borderRadius: 14,
+    backgroundColor: lightColors.primary.blue,
     alignItems: "center",
     justifyContent: "center",
-  },
-  sendButtonDisabled: {
-    opacity: 0.45,
   },
 });
