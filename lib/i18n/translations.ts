@@ -14,7 +14,7 @@ export type TranslationKey =
   | "tabs.home"
   | "tabs.learn"
   | "tabs.challenges"
-  | "tabs.coach"
+  | "tabs.lab"
   | "tabs.profile"
   | "brand.name"
   | "brand.tagline"
@@ -53,6 +53,15 @@ export type TranslationKey =
   | "home.progress"
   | "home.notifications"
   | "home.notificationsEmpty"
+  | "home.notif.subtitle"
+  | "home.notif.emptyHint"
+  | "home.notif.all"
+  | "home.notif.lesson"
+  | "home.notif.xp"
+  | "home.notif.quizMiss"
+  | "home.notif.challenge"
+  | "home.notif.lab"
+  | "home.notif.tip"
   | "learn.title"
   | "learn.lessons"
   | "learn.practice"
@@ -61,21 +70,76 @@ export type TranslationKey =
   | "learn.modulePercent"
   | "learn.selectModule"
   | "learn.moduleComingSoon"
+  | "learn.continue"
+  | "learn.continueMeta"
+  | "learn.filterAll"
+  | "learn.filterTodo"
+  | "learn.filterDone"
+  | "learn.lockedHint"
+  | "learn.timeLeft"
+  | "learn.moduleXp"
+  | "learn.statLessons"
+  | "learn.statXp"
+  | "learn.statTime"
+  | "learn.reviews"
+  | "learn.relatedChallenge"
+  | "learn.relatedLab"
+  | "learn.moduleComplete"
+  | "learn.nextModule"
   | "challenges.subtitle"
   | "challenges.allSkills"
   | "challenges.done"
   | "challenges.finish"
-  | "coach.subtitle"
-  | "coach.scenarios"
-  | "coach.placeholder"
-  | "coach.tutor"
-  | "coach.labComplete"
+  | "challenges.filterAll"
+  | "challenges.statDone"
+  | "challenges.statXpLeft"
+  | "challenges.xpAvailable"
+  | "challenges.statDaily"
+  | "challenges.statDailyDone"
+  | "challenges.statDailyTodo"
+  | "challenges.replay"
+  | "challenges.comeBackTomorrow"
+  | "challenges.lockedHint"
+  | "challenges.emptyFilter"
+  | "challenges.resultTitle"
+  | "challenges.resultScore"
+  | "challenges.resultXp"
+  | "challenges.progress"
+  | "challenges.retry"
+  | "challenges.timer"
+  | "challenges.timeUp"
+  | "challenges.timeUpHint"
+  | "lab.subtitle"
+  | "lab.placeholder"
+  | "lab.tutor"
+  | "lab.complete"
+  | "lab.featured"
+  | "lab.inProgress"
+  | "lab.available"
+  | "lab.completed"
+  | "lab.start"
+  | "lab.continue"
+  | "lab.replay"
+  | "lab.progress"
+  | "lab.briefStart"
+  | "lab.suggestHint"
+  | "lab.suggested"
+  | "lab.lockedHint"
+  | "lab.emptyFilter"
+  | "lab.resultTitle"
+  | "lab.backToList"
+  | "lab.xpEarned"
+  | "lab.filterAll"
+  | "lab.xpAvailable"
+  | "lab.xpLabel"
+  | "lab.difficulty.easy"
+  | "lab.difficulty.medium"
+  | "lab.difficulty.hard"
   | "ai.title"
   | "ai.subtitle"
   | "ai.online"
   | "ai.start"
   | "chat.title"
-  | "chat.suggested"
   | "chat.placeholder"
   | "chat.tutor"
   | "profile.title"
@@ -121,6 +185,16 @@ export type TranslationKey =
   | "profile.certsObtained"
   | "profile.certsEmpty"
   | "profile.certsExplore"
+  | "profile.subtitle"
+  | "profile.createAccount"
+  | "profile.activityLink"
+  | "profile.activitySubtitle"
+  | "profile.certsSummary"
+  | "profile.noAccount"
+  | "profile.account"
+  | "profile.shortcuts"
+  | "profile.changePhoto"
+  | "profile.photoPermission"
   | "certs.title"
   | "certs.subtitle"
   | "certs.search"
@@ -208,9 +282,28 @@ export type TranslationKey =
   | "lesson.phaseDone"
   | "lesson.stepOf"
   | "lesson.keyTakeaway"
+  | "lesson.analogy"
+  | "lesson.miniExercise"
+  | "lesson.commonMistake"
+  | "lesson.warning"
+  | "lesson.tip"
   | "lesson.nextLesson"
   | "lesson.explanation"
   | "lesson.why"
+  | "challenges.summary"
+  | "challenges.featured"
+  | "challenges.available"
+  | "challenges.completedSection"
+  | "challenges.difficulty.easy"
+  | "challenges.difficulty.medium"
+  | "challenges.difficulty.hard"
+  | "challenges.start"
+  | "challenges.review"
+  | "profile.level"
+  | "profile.summary"
+  | "profile.progression"
+  | "profile.recentActivity"
+  | "profile.labsDone"
   | "common.back"
   | "common.loading";
 
@@ -218,7 +311,7 @@ export const fr: Record<TranslationKey, string> = {
   "tabs.home": "Accueil",
   "tabs.learn": "Apprendre",
   "tabs.challenges": "Défis",
-  "tabs.coach": "Coach",
+  "tabs.lab": "Lab",
   "tabs.profile": "Profil",
   "brand.name": "Tech",
   "brand.tagline": "Le Duolingo de la tech.",
@@ -258,6 +351,15 @@ export const fr: Record<TranslationKey, string> = {
   "home.progress": "Progression",
   "home.notifications": "Activité récente",
   "home.notificationsEmpty": "Aucune activité pour l’instant",
+  "home.notif.subtitle": "Ton fil d’apprentissage",
+  "home.notif.emptyHint": "Termine une leçon, un défi ou un lab pour remplir ce fil.",
+  "home.notif.all": "Tous",
+  "home.notif.lesson": "Leçons",
+  "home.notif.xp": "XP",
+  "home.notif.quizMiss": "Quiz",
+  "home.notif.challenge": "Défis",
+  "home.notif.lab": "Labs",
+  "home.notif.tip": "Astuces",
   "learn.title": "Apprendre",
   "learn.lessons": "Leçons",
   "learn.practice": "Pratique",
@@ -266,21 +368,76 @@ export const fr: Record<TranslationKey, string> = {
   "learn.modulePercent": "{percent} % du module",
   "learn.selectModule": "Choisir un module",
   "learn.moduleComingSoon": "Bientôt disponible",
-  "challenges.subtitle": "Gagne des XP bonus par compétence",
+  "learn.continue": "Continuer",
+  "learn.continueMeta": "{minutes} min · {xp} XP",
+  "learn.filterAll": "Toutes",
+  "learn.filterTodo": "À faire",
+  "learn.filterDone": "Terminées",
+  "learn.lockedHint": "Termine la leçon précédente",
+  "learn.timeLeft": "{minutes} min restantes",
+  "learn.moduleXp": "{earned}/{total} XP",
+  "learn.statLessons": "Leçons",
+  "learn.statXp": "XP",
+  "learn.statTime": "Restant",
+  "learn.reviews": "Révisions du module",
+  "learn.relatedChallenge": "Défi lié",
+  "learn.relatedLab": "Lab lié",
+  "learn.moduleComplete": "Module terminé",
+  "learn.nextModule": "Module suivant",
+  "challenges.subtitle": "Gagne des XP bonus par parcours",
   "challenges.allSkills": "Toutes",
   "challenges.done": "Réussi",
   "challenges.finish": "Terminer",
-  "coach.subtitle": "Labs guidés avec réponses suggérées",
-  "coach.scenarios": "Scénarios",
-  "coach.placeholder": "Ta réponse…",
-  "coach.tutor": "Coach",
-  "coach.labComplete": "Lab terminé · +{xp} XP",
+  "challenges.filterAll": "Tous",
+  "challenges.statDone": "Faits",
+  "challenges.statXpLeft": "XP restants",
+  "challenges.xpAvailable": "{xp} XP",
+  "challenges.statDaily": "Du jour",
+  "challenges.statDailyDone": "Fait",
+  "challenges.statDailyTodo": "À faire",
+  "challenges.replay": "Rejouer",
+  "challenges.comeBackTomorrow": "Reviens demain",
+  "challenges.lockedHint": "Termine une leçon du parcours pour débloquer",
+  "challenges.emptyFilter": "Aucun défi pour ce parcours",
+  "challenges.resultTitle": "Résultat",
+  "challenges.resultScore": "{score} / {total}",
+  "challenges.resultXp": "+{xp} XP",
+  "challenges.progress": "{current} / {total}",
+  "challenges.retry": "Réessayer",
+  "challenges.timer": "{seconds}s",
+  "challenges.timeUp": "Temps écoulé",
+  "challenges.timeUpHint": "Le chronomètre est tombé à zéro — défi perdu.",
+  "lab.subtitle": "Labs guidés avec réponses suggérées",
+  "lab.placeholder": "Ta réponse…",
+  "lab.tutor": "Tuteur",
+  "lab.complete": "Lab terminé · +{xp} XP",
+  "lab.featured": "Recommandé",
+  "lab.inProgress": "En cours",
+  "lab.available": "Disponibles",
+  "lab.completed": "Terminés",
+  "lab.start": "Lancer",
+  "lab.continue": "Continuer",
+  "lab.replay": "Rejouer",
+  "lab.progress": "{current}/{total}",
+  "lab.briefStart": "Commencer",
+  "lab.suggestHint": "Les pistes guidées sont le chemin prévu",
+  "lab.suggested": "Pistes guidées",
+  "lab.lockedHint": "Termine une leçon du parcours pour débloquer",
+  "lab.emptyFilter": "Aucun lab pour ce parcours",
+  "lab.resultTitle": "Lab terminé",
+  "lab.backToList": "Retour",
+  "lab.xpEarned": "+{xp} XP",
+  "lab.filterAll": "Tous",
+  "lab.xpAvailable": "{xp} XP restants",
+  "lab.xpLabel": "+{xp} XP",
+  "lab.difficulty.easy": "Facile",
+  "lab.difficulty.medium": "Moyen",
+  "lab.difficulty.hard": "Difficile",
   "ai.title": "Prof IA",
   "ai.subtitle": "Révise les fondamentaux avec Nova",
   "ai.online": "Nova en ligne",
   "ai.start": "Commencer la leçon",
   "chat.title": "Chat",
-  "chat.suggested": "Sujets suggérés",
   "chat.placeholder": "Écris ton message…",
   "chat.tutor": "Tuteur",
   "profile.title": "Profil",
@@ -326,6 +483,16 @@ export const fr: Record<TranslationKey, string> = {
   "profile.certsObtained": "Obtenues",
   "profile.certsEmpty": "Ajoute ta première certification pour construire ton parcours professionnel.",
   "profile.certsExplore": "Explorer les certifications",
+  "profile.subtitle": "Compte, progression et préférences",
+  "profile.createAccount": "Créer un compte",
+  "profile.activityLink": "Activité",
+  "profile.activitySubtitle": "Voir ton fil d’activité",
+  "profile.certsSummary": "{preparing} en cours · {obtained} obtenue(s)",
+  "profile.noAccount": "Sans compte",
+  "profile.account": "Compte",
+  "profile.shortcuts": "Raccourcis",
+  "profile.changePhoto": "Changer la photo",
+  "profile.photoPermission": "Autorise l’accès à la galerie pour choisir une photo.",
   "certs.title": "Certifications",
   "certs.subtitle": "Explore les certifications les plus reconnues dans la tech.",
   "certs.search": "Rechercher une certification…",
@@ -413,9 +580,28 @@ export const fr: Record<TranslationKey, string> = {
   "lesson.phaseDone": "Terminé",
   "lesson.stepOf": "{label} · {current}/{total}",
   "lesson.keyTakeaway": "À retenir",
+  "lesson.analogy": "Analogie",
+  "lesson.miniExercise": "Mini-exercice",
+  "lesson.commonMistake": "Erreur fréquente",
+  "lesson.warning": "Attention",
+  "lesson.tip": "Astuce",
   "lesson.nextLesson": "Leçon suivante",
   "lesson.explanation": "Explication",
   "lesson.why": "Pourquoi",
+  "challenges.summary": "{done} / {total} défis · {xp} XP possibles",
+  "challenges.featured": "Défi du jour",
+  "challenges.available": "Disponibles",
+  "challenges.completedSection": "Terminés",
+  "challenges.difficulty.easy": "Facile",
+  "challenges.difficulty.medium": "Moyen",
+  "challenges.difficulty.hard": "Difficile",
+  "challenges.start": "Commencer",
+  "challenges.review": "Revoir",
+  "profile.level": "Niveau {level}",
+  "profile.summary": "Résumé",
+  "profile.progression": "Progression",
+  "profile.recentActivity": "Activité récente",
+  "profile.labsDone": "Labs",
   "common.back": "Retour",
   "common.loading": "Chargement…",
 };
@@ -424,7 +610,7 @@ export const en: Record<TranslationKey, string> = {
   "tabs.home": "Home",
   "tabs.learn": "Learn",
   "tabs.challenges": "Challenges",
-  "tabs.coach": "Coach",
+  "tabs.lab": "Lab",
   "tabs.profile": "Profile",
   "brand.name": "Tech",
   "brand.tagline": "The Duolingo of tech.",
@@ -464,6 +650,15 @@ export const en: Record<TranslationKey, string> = {
   "home.progress": "Progress",
   "home.notifications": "Recent activity",
   "home.notificationsEmpty": "No activity yet",
+  "home.notif.subtitle": "Your learning feed",
+  "home.notif.emptyHint": "Finish a lesson, challenge, or lab to fill this feed.",
+  "home.notif.all": "All",
+  "home.notif.lesson": "Lessons",
+  "home.notif.xp": "XP",
+  "home.notif.quizMiss": "Quiz",
+  "home.notif.challenge": "Challenges",
+  "home.notif.lab": "Labs",
+  "home.notif.tip": "Tips",
   "learn.title": "Learn",
   "learn.lessons": "Lessons",
   "learn.practice": "Practice",
@@ -472,21 +667,76 @@ export const en: Record<TranslationKey, string> = {
   "learn.modulePercent": "{percent}% of module",
   "learn.selectModule": "Choose a module",
   "learn.moduleComingSoon": "Coming soon",
-  "challenges.subtitle": "Earn bonus XP per skill",
+  "learn.continue": "Continue",
+  "learn.continueMeta": "{minutes} min · {xp} XP",
+  "learn.filterAll": "All",
+  "learn.filterTodo": "To do",
+  "learn.filterDone": "Done",
+  "learn.lockedHint": "Finish the previous lesson first",
+  "learn.timeLeft": "{minutes} min left",
+  "learn.moduleXp": "{earned}/{total} XP",
+  "learn.statLessons": "Lessons",
+  "learn.statXp": "XP",
+  "learn.statTime": "Left",
+  "learn.reviews": "Module reviews",
+  "learn.relatedChallenge": "Related challenge",
+  "learn.relatedLab": "Related lab",
+  "learn.moduleComplete": "Module complete",
+  "learn.nextModule": "Next module",
+  "challenges.subtitle": "Earn bonus XP by track",
   "challenges.allSkills": "All",
   "challenges.done": "Cleared",
   "challenges.finish": "Finish",
-  "coach.subtitle": "Guided labs with suggested replies",
-  "coach.scenarios": "Scenarios",
-  "coach.placeholder": "Your answer…",
-  "coach.tutor": "Coach",
-  "coach.labComplete": "Lab complete · +{xp} XP",
+  "challenges.filterAll": "All",
+  "challenges.statDone": "Done",
+  "challenges.statXpLeft": "XP left",
+  "challenges.xpAvailable": "{xp} XP",
+  "challenges.statDaily": "Daily",
+  "challenges.statDailyDone": "Done",
+  "challenges.statDailyTodo": "To do",
+  "challenges.replay": "Replay",
+  "challenges.comeBackTomorrow": "Come back tomorrow",
+  "challenges.lockedHint": "Finish a lesson in this track to unlock",
+  "challenges.emptyFilter": "No challenges for this track",
+  "challenges.resultTitle": "Result",
+  "challenges.resultScore": "{score} / {total}",
+  "challenges.resultXp": "+{xp} XP",
+  "challenges.progress": "{current} / {total}",
+  "challenges.retry": "Retry",
+  "challenges.timer": "{seconds}s",
+  "challenges.timeUp": "Time’s up",
+  "challenges.timeUpHint": "The timer hit zero — challenge lost.",
+  "lab.subtitle": "Guided labs with suggested replies",
+  "lab.placeholder": "Your answer…",
+  "lab.tutor": "Tutor",
+  "lab.complete": "Lab complete · +{xp} XP",
+  "lab.featured": "Recommended",
+  "lab.inProgress": "In progress",
+  "lab.available": "Available",
+  "lab.completed": "Completed",
+  "lab.start": "Start",
+  "lab.continue": "Continue",
+  "lab.replay": "Replay",
+  "lab.progress": "{current}/{total}",
+  "lab.briefStart": "Start",
+  "lab.suggestHint": "Guided prompts are the intended path",
+  "lab.suggested": "Guided prompts",
+  "lab.lockedHint": "Finish a lesson in this track to unlock",
+  "lab.emptyFilter": "No labs for this track",
+  "lab.resultTitle": "Lab complete",
+  "lab.backToList": "Back",
+  "lab.xpEarned": "+{xp} XP",
+  "lab.filterAll": "All",
+  "lab.xpAvailable": "{xp} XP left",
+  "lab.xpLabel": "+{xp} XP",
+  "lab.difficulty.easy": "Easy",
+  "lab.difficulty.medium": "Medium",
+  "lab.difficulty.hard": "Hard",
   "ai.title": "AI Tutor",
   "ai.subtitle": "Review fundamentals with Nova",
   "ai.online": "Nova online",
   "ai.start": "Start lesson",
   "chat.title": "Chat",
-  "chat.suggested": "Suggested topics",
   "chat.placeholder": "Type your message…",
   "chat.tutor": "Tutor",
   "profile.title": "Profile",
@@ -532,6 +782,16 @@ export const en: Record<TranslationKey, string> = {
   "profile.certsObtained": "Obtained",
   "profile.certsEmpty": "Add your first certification to build your career path.",
   "profile.certsExplore": "Explore certifications",
+  "profile.subtitle": "Account, progress, and preferences",
+  "profile.createAccount": "Create an account",
+  "profile.activityLink": "Activity",
+  "profile.activitySubtitle": "View your activity feed",
+  "profile.certsSummary": "{preparing} in progress · {obtained} earned",
+  "profile.noAccount": "No account",
+  "profile.account": "Account",
+  "profile.shortcuts": "Shortcuts",
+  "profile.changePhoto": "Change photo",
+  "profile.photoPermission": "Allow photo library access to choose a picture.",
   "certs.title": "Certifications",
   "certs.subtitle": "Explore the most recognized tech certifications.",
   "certs.search": "Search a certification…",
@@ -619,9 +879,28 @@ export const en: Record<TranslationKey, string> = {
   "lesson.phaseDone": "Done",
   "lesson.stepOf": "{label} · {current}/{total}",
   "lesson.keyTakeaway": "Key takeaway",
+  "lesson.analogy": "Analogy",
+  "lesson.miniExercise": "Mini exercise",
+  "lesson.commonMistake": "Common mistake",
+  "lesson.warning": "Warning",
+  "lesson.tip": "Tip",
   "lesson.nextLesson": "Next lesson",
   "lesson.explanation": "Explanation",
   "lesson.why": "Why",
+  "challenges.summary": "{done} / {total} challenges · {xp} XP available",
+  "challenges.featured": "Daily challenge",
+  "challenges.available": "Available",
+  "challenges.completedSection": "Completed",
+  "challenges.difficulty.easy": "Easy",
+  "challenges.difficulty.medium": "Medium",
+  "challenges.difficulty.hard": "Hard",
+  "challenges.start": "Start",
+  "challenges.review": "Review",
+  "profile.level": "Level {level}",
+  "profile.summary": "Summary",
+  "profile.progression": "Progress",
+  "profile.recentActivity": "Recent activity",
+  "profile.labsDone": "Labs",
   "common.back": "Back",
   "common.loading": "Loading…",
 };

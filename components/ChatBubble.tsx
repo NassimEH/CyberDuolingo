@@ -1,7 +1,8 @@
-import { Text } from "react-native";
-import Animated from "react-native-reanimated";
-
+import { fontFamily, radius } from "@/constants/theme";
 import { enterSide } from "@/lib/motion";
+import { useTheme } from "@/lib/useTheme";
+import { StyleSheet, Text } from "react-native";
+import Animated from "react-native-reanimated";
 
 type ChatBubbleProps = {
   message: string;
@@ -16,21 +17,44 @@ export function ChatBubble({
   senderName,
   index = 0,
 }: ChatBubbleProps) {
+  const { colors } = useTheme();
+
   return (
     <Animated.View
       entering={enterSide(isUser, index)}
-      className={`max-w-[85%] mb-3 ${isUser ? "self-end items-end" : "self-start items-start"}`}
+      style={[
+        styles.wrap,
+        isUser ? styles.userAlign : styles.assistantAlign,
+      ]}
     >
       {!isUser && senderName ? (
-        <Text className="caption mb-1 ml-1">{senderName}</Text>
+        <Text
+          style={[styles.sender, { color: colors.neutral.textSecondary }]}
+        >
+          {senderName}
+        </Text>
       ) : null}
       <Animated.View
-        className={`rounded-2xl px-4 py-3 ${
-          isUser ? "bg-lingua-purple rounded-br-sm" : "bg-surface rounded-bl-sm"
-        }`}
+        style={[
+          styles.bubble,
+          isUser
+            ? {
+                backgroundColor: colors.primary.blue,
+                borderBottomRightRadius: 4,
+              }
+            : {
+                backgroundColor: colors.neutral.surface,
+                borderBottomLeftRadius: 4,
+              },
+        ]}
       >
         <Text
-          className={`body-md ${isUser ? "text-white" : "text-text-primary"}`}
+          style={[
+            styles.message,
+            {
+              color: isUser ? "#fff" : colors.neutral.textPrimary,
+            },
+          ]}
         >
           {message}
         </Text>
@@ -38,3 +62,34 @@ export function ChatBubble({
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  wrap: {
+    maxWidth: "85%",
+    marginBottom: 12,
+  },
+  userAlign: {
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
+  },
+  assistantAlign: {
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+  },
+  sender: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  bubble: {
+    borderRadius: radius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  message: {
+    fontFamily: fontFamily.regular,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+});

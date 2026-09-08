@@ -1,6 +1,8 @@
 import type { Lesson } from "@/types/learning";
+import { SOFTWARE_LESSONS } from "@/data/lessons/software";
+import { WEB_LESSONS } from "@/data/lessons/web";
 
-export const LESSONS: Lesson[] = [
+const NETWORKING_LESSONS: Lesson[] = [
   {
     id: "net-what-is-a-network",
     unitId: "net-fundamentals",
@@ -13,7 +15,7 @@ export const LESSONS: Lesson[] = [
       en: "Understand LAN, WAN, clients and servers, and why machines connect.",
     },
     icon: "network",
-    estimatedMinutes: 8,
+    estimatedMinutes: 16,
     xpReward: 20,
     goals: [
       {
@@ -99,9 +101,106 @@ export const LESSONS: Lesson[] = [
           en: "Without a network, each machine would be isolated. Networks enable file sharing, messaging, cloud services, streaming, and almost every everyday digital service. Understanding this model is the foundation for everything else in networking.",
         },
         callout: {
-          fr: "À retenir",
-          en: "Key takeaway",
+          fr: "Un réseau n’est pas « Internet » : Internet est un type de réseau (WAN public).",
+          en: "A network is not “the Internet”: the Internet is one kind of network (a public WAN).",
         },
+        calloutKind: "key",
+      },
+      {
+        id: "net-what-s5",
+        title: {
+          fr: "Analogie : le courrier",
+          en: "Analogy: the mail",
+        },
+        body: {
+          fr: "Imagine un service postal. Les adresses trouvent les destinataires, les facteurs transportent les lettres, et les centres de tri choisissent le chemin. En réseau : adresses IP, paquets, routeurs.",
+          en: "Imagine a postal service. Addresses find recipients, carriers move letters, and sorting centers choose the path. On a network: IP addresses, packets, routers.",
+        },
+        analogy: {
+          fr: "LAN = quartier ; WAN = réseau national de la poste.",
+          en: "LAN = neighborhood; WAN = national postal network.",
+        },
+      },
+      {
+        id: "net-what-s6",
+        title: {
+          fr: "Cas concret : regarder une vidéo",
+          en: "Concrete case: watching a video",
+        },
+        body: {
+          fr: "Ton téléphone (client) demande un flux à un serveur. La requête sort de ton LAN via le routeur, traverse Internet (WAN), puis les données reviennent.",
+          en: "Your phone (client) requests a stream from a server. The request leaves your LAN via the router, crosses the Internet (WAN), then data returns.",
+        },
+        bullets: [
+          {
+            fr: "Client : ton app / navigateur",
+            en: "Client: your app / browser",
+          },
+          {
+            fr: "Serveur : infrastructure du service vidéo",
+            en: "Server: video service infrastructure",
+          },
+          {
+            fr: "Réseau : le chemin entre les deux",
+            en: "Network: the path between them",
+          },
+        ],
+      },
+      {
+        id: "net-what-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Beaucoup disent « le Wi‑Fi est Internet ». Le Wi‑Fi n’est qu’un accès local (LAN). Internet commence après ta box, côté FAI.",
+          en: "Many say “Wi‑Fi is the Internet.” Wi‑Fi is only local access (LAN). The Internet starts after your gateway, on the ISP side.",
+        },
+        callout: {
+          fr: "Wi‑Fi ≠ Internet. Wi‑Fi = accès radio local.",
+          en: "Wi‑Fi ≠ Internet. Wi‑Fi = local radio access.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Cite 3 appareils sur ton LAN et 1 service sur Internet.",
+            en: "Name 3 devices on your LAN and 1 Internet service.",
+          },
+          hint: {
+            fr: "Ex. téléphone, PC, TV · et YouTube.",
+            en: "E.g. phone, PC, TV · and YouTube.",
+          },
+        },
+      },
+      {
+        id: "net-what-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu sais définir un réseau, distinguer LAN/WAN, et expliquer client-serveur. Ces idées reviennent partout ensuite.",
+          en: "You can define a network, distinguish LAN/WAN, and explain client-server. These ideas return everywhere next.",
+        },
+        bullets: [
+          {
+            fr: "Réseau = appareils qui échangent des données",
+            en: "Network = devices that exchange data",
+          },
+          {
+            fr: "LAN local, WAN longue distance",
+            en: "LAN local, WAN long distance",
+          },
+          {
+            fr: "Client demande, serveur fournit",
+            en: "Client requests, server provides",
+          },
+        ],
+        callout: {
+          fr: "Objectif : expliquer un réseau sans jargon inutile.",
+          en: "Goal: explain a network without useless jargon.",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -302,7 +401,7 @@ export const LESSONS: Lesson[] = [
       en: "Explore the OSI and TCP/IP layers to understand how data flows.",
     },
     icon: "layers",
-    estimatedMinutes: 10,
+    estimatedMinutes: 18,
     xpReward: 22,
     goals: [
       {
@@ -388,9 +487,106 @@ export const LESSONS: Lesson[] = [
           en: "When you send a message, each layer adds its own information (headers). On arrival, layers remove them in reverse order. That is encapsulation: nested envelopes around the useful data.",
         },
         callout: {
-          fr: "À retenir",
-          en: "Key takeaway",
+          fr: "Chaque couche ajoute (puis retire) sa propre enveloppe autour des données.",
+          en: "Each layer adds (then removes) its own envelope around the data.",
         },
+        calloutKind: "key",
+      },
+      {
+        id: "net-osi-s5",
+        title: {
+          fr: "Analogie : l'immeuble postal",
+          en: "Analogy: the postal building",
+        },
+        body: {
+          fr: "Imagine un courrier qui monte les étages d'un immeuble. Au rez-de-chaussée on gère le transport physique ; plus haut on trie les adresses ; en haut on lit le contenu du message. Chaque étage ignore les détails des autres, mais tous sont nécessaires.",
+          en: "Imagine mail climbing the floors of a building. The ground floor handles physical transport; higher floors sort addresses; the top reads the message content. Each floor ignores the others' details, yet all are required.",
+        },
+        analogy: {
+          fr: "OSI = plan des 7 étages ; TCP/IP = immeuble réel d'Internet (4 étages utiles).",
+          en: "OSI = 7-floor blueprint; TCP/IP = the real Internet building (4 useful floors).",
+        },
+      },
+      {
+        id: "net-osi-s6",
+        title: {
+          fr: "Cas concret : ouvrir une page web",
+          en: "Concrete case: opening a web page",
+        },
+        body: {
+          fr: "Ton navigateur (application) envoie du HTTP. TCP découpe et numérote. IP achemine vers le serveur. Ethernet ou Wi‑Fi porte les bits. Au retour, on défait les enveloppes dans l'ordre inverse.",
+          en: "Your browser (application) sends HTTP. TCP segments and numbers. IP routes to the server. Ethernet or Wi‑Fi carries the bits. On the way back, envelopes are removed in reverse order.",
+        },
+        bullets: [
+          {
+            fr: "Application : HTTP / HTTPS",
+            en: "Application: HTTP / HTTPS",
+          },
+          {
+            fr: "Transport : TCP",
+            en: "Transport: TCP",
+          },
+          {
+            fr: "Internet : IP · Accès : Wi‑Fi / Ethernet",
+            en: "Internet: IP · Access: Wi‑Fi / Ethernet",
+          },
+        ],
+      },
+      {
+        id: "net-osi-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Beaucoup croient qu'Internet « tourne en OSI à 7 couches ». En pratique, on déploie TCP/IP. OSI reste un vocabulaire précieux (couche 2, couche 3) pour diagnostiquer, pas le schéma exact des paquets Internet.",
+          en: "Many believe the Internet “runs on 7-layer OSI.” In practice we deploy TCP/IP. OSI remains useful vocabulary (layer 2, layer 3) for troubleshooting, not the exact Internet packet blueprint.",
+        },
+        callout: {
+          fr: "OSI = carte mentale · TCP/IP = ce qui circule vraiment.",
+          en: "OSI = mental map · TCP/IP = what actually flows.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Place HTTP, TCP et IP dans le modèle TCP/IP (3 couches).",
+            en: "Place HTTP, TCP, and IP in the TCP/IP model (3 layers).",
+          },
+          hint: {
+            fr: "Application → Transport → Internet.",
+            en: "Application → Transport → Internet.",
+          },
+        },
+      },
+      {
+        id: "net-osi-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu peux expliquer pourquoi on découpe en couches, situer les protocoles clés, et décrire l'encapsulation. C'est la grille de lecture de toutes les leçons réseau suivantes.",
+          en: "You can explain why we split into layers, place key protocols, and describe encapsulation. This is the reading grid for every networking lesson that follows.",
+        },
+        bullets: [
+          {
+            fr: "OSI = 7 couches de référence",
+            en: "OSI = 7 reference layers",
+          },
+          {
+            fr: "TCP/IP = 4 couches pratiques",
+            en: "TCP/IP = 4 practical layers",
+          },
+          {
+            fr: "Encapsulation = enveloppes successives",
+            en: "Encapsulation = successive envelopes",
+          },
+        ],
+        callout: {
+          fr: "En panne : demande-toi « à quelle couche ça casse ? »",
+          en: "When troubleshooting: ask “which layer is breaking?”",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -594,6 +790,67 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: With UDP, it is the layer between application and IP.",
         },
       },
+      {
+        id: "net-osi-q7",
+        type: "multiple-choice",
+        question: {
+          fr: "Internet s'appuie surtout sur quel modèle en pratique ?",
+          en: "In practice, the Internet mainly relies on which model?",
+        },
+        options: [
+          { fr: "TCP/IP", en: "TCP/IP" },
+          { fr: "OSI uniquement à 7 couches déployées", en: "OSI with all 7 layers deployed" },
+          { fr: "USB uniquement", en: "USB only" },
+          { fr: "Aucun modèle", en: "No model" },
+        ],
+        correctAnswer: { fr: "TCP/IP", en: "TCP/IP" },
+        hint: {
+          fr: "OSI reste surtout une référence pédagogique.",
+          en: "OSI remains mainly a teaching reference.",
+        },
+        explanation: {
+          fr: "Explication : les protocoles d'Internet suivent la suite TCP/IP ; OSI sert de vocabulaire.",
+          en: "Explanation: Internet protocols follow the TCP/IP suite; OSI is vocabulary.",
+        },
+      },
+      {
+        id: "net-osi-q8",
+        type: "multiple-choice",
+        question: {
+          fr: "Lors de l'encapsulation, que se passe-t-il à l'envoi ?",
+          en: "During encapsulation, what happens on send?",
+        },
+        options: [
+          {
+            fr: "Chaque couche ajoute des en-têtes",
+            en: "Each layer adds headers",
+          },
+          {
+            fr: "Toutes les adresses IP sont effacées",
+            en: "All IP addresses are erased",
+          },
+          {
+            fr: "Le Wi‑Fi est désactivé",
+            en: "Wi‑Fi is turned off",
+          },
+          {
+            fr: "Le DNS est supprimé",
+            en: "DNS is deleted",
+          },
+        ],
+        correctAnswer: {
+          fr: "Chaque couche ajoute des en-têtes",
+          en: "Each layer adds headers",
+        },
+        hint: {
+          fr: "Pense aux enveloppes imbriquées.",
+          en: "Think nested envelopes.",
+        },
+        explanation: {
+          fr: "Explication : à l'envoi on empile les en-têtes ; à la réception on les retire.",
+          en: "Explanation: on send we stack headers; on receive we remove them.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -632,7 +889,7 @@ export const LESSONS: Lesson[] = [
       en: "Learn IPv4, masks, private addresses, and the role of an IP address.",
     },
     icon: "locate",
-    estimatedMinutes: 11,
+    estimatedMinutes: 17,
     xpReward: 23,
     goals: [
       {
@@ -714,9 +971,106 @@ export const LESSONS: Lesson[] = [
           en: "IPv6 uses 128 bits to address IPv4 shortage. You will see longer addresses with colons. For this lesson, mastering IPv4 and private vs public concepts is a solid foundation.",
         },
         callout: {
-          fr: "À retenir",
-          en: "Key takeaway",
+          fr: "IPv4 d'abord : format, masque, privé vs public. IPv6 viendra ensuite.",
+          en: "IPv4 first: format, mask, private vs public. IPv6 comes later.",
         },
+        calloutKind: "key",
+      },
+      {
+        id: "net-ip-s5",
+        title: {
+          fr: "Analogie : immeuble et appartement",
+          en: "Analogy: building and apartment",
+        },
+        body: {
+          fr: "Le masque sépare « l'immeuble » (réseau) de « l'appartement » (hôte). Deux appareils dans le même immeuble se parlent localement ; pour sortir vers un autre quartier, il faut le concierge (la passerelle / le routeur).",
+          en: "The mask separates the “building” (network) from the “apartment” (host). Two devices in the same building talk locally; to reach another neighborhood you need the concierge (gateway / router).",
+        },
+        analogy: {
+          fr: "192.168.1.0/24 = un immeuble · .10 et .20 = deux appartements.",
+          en: "192.168.1.0/24 = one building · .10 and .20 = two apartments.",
+        },
+      },
+      {
+        id: "net-ip-s6",
+        title: {
+          fr: "Cas concret : ton téléphone chez toi",
+          en: "Concrete case: your phone at home",
+        },
+        body: {
+          fr: "Sur le Wi‑Fi, ton téléphone reçoit souvent une IP privée (ex. 192.168.1.42). Sur Internet, les sites voient l'IP publique de ta box. Les deux coexistent grâce au NAT.",
+          en: "On Wi‑Fi, your phone often gets a private IP (e.g. 192.168.1.42). On the Internet, sites see your gateway's public IP. Both coexist thanks to NAT.",
+        },
+        bullets: [
+          {
+            fr: "Privée : unique dans ton LAN",
+            en: "Private: unique on your LAN",
+          },
+          {
+            fr: "Publique : visible hors de chez toi",
+            en: "Public: visible outside your home",
+          },
+          {
+            fr: "Masque : qui est « dans le même réseau »",
+            en: "Mask: who is “on the same network”",
+          },
+        ],
+      },
+      {
+        id: "net-ip-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Confondre adresse privée et publique. Une IP en 192.168.x.x n'est pas « ton IP Internet ». De même, 256 dans un octet n'est jamais valide en IPv4.",
+          en: "Mixing private and public addresses. A 192.168.x.x IP is not “your Internet IP.” Likewise, 256 in an octet is never valid in IPv4.",
+        },
+        callout: {
+          fr: "192.168.x.x = LAN · IP publique = côté FAI / Internet.",
+          en: "192.168.x.x = LAN · public IP = ISP / Internet side.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Classe : 10.0.0.5 · 8.8.8.8 · 192.168.1.999 (privé, public, ou invalide).",
+            en: "Classify: 10.0.0.5 · 8.8.8.8 · 192.168.1.999 (private, public, or invalid).",
+          },
+          hint: {
+            fr: "10.x et 192.168.x = privé · 999 > 255 = invalide.",
+            en: "10.x and 192.168.x = private · 999 > 255 = invalid.",
+          },
+        },
+      },
+      {
+        id: "net-ip-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu sais lire une IPv4, comprendre le masque, et distinguer privé/public. Ces bases rendent le DNS, le NAT et le routage beaucoup plus clairs.",
+          en: "You can read an IPv4 address, understand the mask, and tell private from public. These basics make DNS, NAT, and routing much clearer.",
+        },
+        bullets: [
+          {
+            fr: "IP = identité logique sur le réseau",
+            en: "IP = logical identity on the network",
+          },
+          {
+            fr: "Masque = frontière réseau / hôte",
+            en: "Mask = network / host boundary",
+          },
+          {
+            fr: "NAT relie privé et public",
+            en: "NAT bridges private and public",
+          },
+        ],
+        callout: {
+          fr: "Astuce : vérifie toujours si l'IP est privée avant de « la chercher sur Internet ».",
+          en: "Tip: always check whether an IP is private before “looking it up on the Internet.”",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -904,6 +1258,67 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: Address translation on the router.",
         },
       },
+      {
+        id: "net-ip-q6",
+        type: "multiple-choice",
+        question: {
+          fr: "Deux PC avec 192.168.1.10 et 192.168.1.20 (masque 255.255.255.0) sont…",
+          en: "Two PCs with 192.168.1.10 and 192.168.1.20 (mask 255.255.255.0) are…",
+        },
+        options: [
+          {
+            fr: "Sur le même réseau local",
+            en: "On the same local network",
+          },
+          {
+            fr: "Forcément sur deux continents",
+            en: "Necessarily on two continents",
+          },
+          {
+            fr: "Sans adresse IP",
+            en: "Without an IP address",
+          },
+          {
+            fr: "Toujours hors ligne",
+            en: "Always offline",
+          },
+        ],
+        correctAnswer: {
+          fr: "Sur le même réseau local",
+          en: "On the same local network",
+        },
+        hint: {
+          fr: "Le masque /24 garde les trois premiers octets pour le réseau.",
+          en: "A /24 mask keeps the first three octets for the network.",
+        },
+        explanation: {
+          fr: "Explication : avec 255.255.255.0, 192.168.1.x forme le même réseau.",
+          en: "Explanation: with 255.255.255.0, 192.168.1.x is the same network.",
+        },
+      },
+      {
+        id: "net-ip-q7",
+        type: "multiple-choice",
+        question: {
+          fr: "Combien de bits utilise IPv6 ?",
+          en: "How many bits does IPv6 use?",
+        },
+        options: [
+          { fr: "128", en: "128" },
+          { fr: "32", en: "32" },
+          { fr: "16", en: "16" },
+          { fr: "8", en: "8" },
+        ],
+        correctAnswer: { fr: "128", en: "128" },
+        hint: {
+          fr: "Beaucoup plus qu'IPv4 pour éviter la pénurie.",
+          en: "Far more than IPv4 to avoid shortage.",
+        },
+        explanation: {
+          fr: "Explication : IPv6 utilise 128 bits ; IPv4 en utilise 32.",
+          en: "Explanation: IPv6 uses 128 bits; IPv4 uses 32.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -942,7 +1357,7 @@ export const LESSONS: Lesson[] = [
       en: "Understand how a domain name becomes an IP address.",
     },
     icon: "search",
-    estimatedMinutes: 9,
+    estimatedMinutes: 16,
     xpReward: 21,
     goals: [
       {
@@ -1024,9 +1439,100 @@ export const LESSONS: Lesson[] = [
           en: "If DNS fails, you may be connected yet unable to open sites by name. Testing with an IP or changing resolver helps diagnosis. Understanding DNS is essential for everyday troubleshooting.",
         },
         callout: {
-          fr: "À retenir",
-          en: "Key takeaway",
+          fr: "Connecté sans sites = souvent un problème DNS, pas « Internet mort ».",
+          en: "Connected but no sites = often a DNS issue, not “dead Internet.”",
         },
+        calloutKind: "key",
+      },
+      {
+        id: "net-dns-s5",
+        title: {
+          fr: "Analogie : l'annuaire",
+          en: "Analogy: the phone book",
+        },
+        body: {
+          fr: "Tu cherches « Pizza du coin » et l'annuaire te donne le numéro. Le DNS fait la même chose : nom lisible → adresse technique. Sans annuaire, tu pourrais encore appeler… si tu connais déjà le numéro (l'IP).",
+          en: "You look up “Corner Pizza” and the directory gives the number. DNS does the same: readable name → technical address. Without a directory you could still call… if you already know the number (the IP).",
+        },
+        analogy: {
+          fr: "Nom de domaine = nom dans l'annuaire · IP = numéro de téléphone.",
+          en: "Domain name = directory listing · IP = phone number.",
+        },
+      },
+      {
+        id: "net-dns-s6",
+        title: {
+          fr: "Exemple de requête",
+          en: "Sample query",
+        },
+        body: {
+          fr: "Les outils de diagnostic interrogent le DNS et affichent l'enregistrement. Voici une forme typique de ce que tu pourrais voir en ligne de commande.",
+          en: "Diagnostic tools query DNS and show the record. Here is a typical shape of what you might see on the command line.",
+        },
+        codeExample: {
+          language: "bash",
+          code: "nslookup example.com\n# → Address: 93.184.216.34\n\n# ou : dig example.com A +short",
+          caption: {
+            fr: "Résolution d'un nom vers un enregistrement A (IPv4).",
+            en: "Resolving a name to an A record (IPv4).",
+          },
+        },
+      },
+      {
+        id: "net-dns-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Croire que le DNS « transporte » les pages web. Le DNS ne fait que donner l'IP. Ensuite HTTP/HTTPS parle au serveur. Autre piège : un cache DNS obsolète peut montrer une vieille IP après un changement.",
+          en: "Believing DNS “carries” web pages. DNS only returns the IP. Then HTTP/HTTPS talks to the server. Another trap: a stale DNS cache can show an old IP after a change.",
+        },
+        callout: {
+          fr: "DNS = traduction · HTTP = contenu.",
+          en: "DNS = translation · HTTP = content.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Ordre les étapes : tape l'URL → DNS → TCP/HTTPS → page affichée.",
+            en: "Order the steps: type URL → DNS → TCP/HTTPS → page shown.",
+          },
+          hint: {
+            fr: "Sans IP, pas de connexion au serveur web.",
+            en: "Without an IP, no connection to the web server.",
+          },
+        },
+      },
+      {
+        id: "net-dns-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu comprends le rôle du DNS, la hiérarchie des noms, le cache et le diagnostic de base. C'est un des premiers réflexes quand « le web ne marche pas ».",
+          en: "You understand DNS's role, name hierarchy, caching, and basic diagnosis. It is one of the first reflexes when “the web isn't working.”",
+        },
+        bullets: [
+          {
+            fr: "Nom → IP via résolveur et serveurs",
+            en: "Name → IP via resolver and servers",
+          },
+          {
+            fr: "A / AAAA = types d'enregistrements clés",
+            en: "A / AAAA = key record types",
+          },
+          {
+            fr: "Cache accélère, mais peut vieillir",
+            en: "Cache speeds things up, but can go stale",
+          },
+        ],
+        callout: {
+          fr: "Astuce : teste une IP connue pour séparer panne DNS et panne réseau.",
+          en: "Tip: try a known IP to separate DNS failure from network failure.",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -1263,6 +1769,82 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: Avoids asking everything again each time.",
         },
       },
+      {
+        id: "net-dns-q7",
+        type: "multiple-choice",
+        question: {
+          fr: "Qui interroge souvent le DNS en premier sur ton appareil ?",
+          en: "Who often queries DNS first on your device?",
+        },
+        options: [
+          {
+            fr: "Un résolveur DNS (FAI ou public)",
+            en: "A DNS resolver (ISP or public)",
+          },
+          {
+            fr: "Uniquement l'imprimante",
+            en: "Only the printer",
+          },
+          {
+            fr: "Le câble HDMI",
+            en: "The HDMI cable",
+          },
+          {
+            fr: "Le ventilateur du PC",
+            en: "The PC fan",
+          },
+        ],
+        correctAnswer: {
+          fr: "Un résolveur DNS (FAI ou public)",
+          en: "A DNS resolver (ISP or public)",
+        },
+        hint: {
+          fr: "Avant les serveurs autoritaires, on passe par un résolveur.",
+          en: "Before authoritative servers, you go through a resolver.",
+        },
+        explanation: {
+          fr: "Explication : le résolveur cherche (et met en cache) la réponse pour toi.",
+          en: "Explanation: the resolver looks up (and caches) the answer for you.",
+        },
+      },
+      {
+        id: "net-dns-q8",
+        type: "multiple-choice",
+        question: {
+          fr: "Le DNS livre-t-il le contenu HTML d'une page ?",
+          en: "Does DNS deliver a page's HTML content?",
+        },
+        options: [
+          {
+            fr: "Non, il fournit surtout l'adresse IP",
+            en: "No, it mainly provides the IP address",
+          },
+          {
+            fr: "Oui, toujours à la place de HTTP",
+            en: "Yes, always instead of HTTP",
+          },
+          {
+            fr: "Oui, uniquement en IPv6",
+            en: "Yes, only over IPv6",
+          },
+          {
+            fr: "Oui, via le port 443 seulement",
+            en: "Yes, via port 443 only",
+          },
+        ],
+        correctAnswer: {
+          fr: "Non, il fournit surtout l'adresse IP",
+          en: "No, it mainly provides the IP address",
+        },
+        hint: {
+          fr: "Ensuite HTTP/HTTPS récupère la page.",
+          en: "Then HTTP/HTTPS fetches the page.",
+        },
+        explanation: {
+          fr: "Explication : DNS traduit le nom ; le web charge le contenu ensuite.",
+          en: "Explanation: DNS translates the name; the web loads content afterward.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -1301,7 +1883,7 @@ export const LESSONS: Lesson[] = [
       en: "Understand web requests, HTTP methods, and why HTTPS protects exchanges.",
     },
     icon: "lock",
-    estimatedMinutes: 12,
+    estimatedMinutes: 18,
     xpReward: 25,
     goals: [
       {
@@ -1383,9 +1965,100 @@ export const LESSONS: Lesson[] = [
           en: "HTTP often uses port 80; HTTPS uses port 443. On the modern web, HTTPS is the norm: passwords, payments, and sessions should use an encrypted channel. A lock icon in the browser usually signals an active HTTPS connection.",
         },
         callout: {
-          fr: "À retenir",
-          en: "Key takeaway",
+          fr: "Mots de passe et paiements : toujours via HTTPS (port 443).",
+          en: "Passwords and payments: always over HTTPS (port 443).",
         },
+        calloutKind: "key",
+      },
+      {
+        id: "net-http-s5",
+        title: {
+          fr: "Analogie : carte postale vs lettre scellée",
+          en: "Analogy: postcard vs sealed letter",
+        },
+        body: {
+          fr: "HTTP en clair ressemble à une carte postale : le facteur (le réseau) peut lire le message. HTTPS, c'est une lettre scellée : le contenu reste privé, et le sceau (certificat) aide à vérifier l'expéditeur.",
+          en: "Plain HTTP is like a postcard: the carrier (the network) can read the message. HTTPS is a sealed letter: the content stays private, and the seal (certificate) helps verify the sender.",
+        },
+        analogy: {
+          fr: "HTTP = lisible en transit · HTTPS = chiffré + identité vérifiée.",
+          en: "HTTP = readable in transit · HTTPS = encrypted + identity checked.",
+        },
+      },
+      {
+        id: "net-http-s6",
+        title: {
+          fr: "Exemple de requête",
+          en: "Sample request",
+        },
+        body: {
+          fr: "Une requête HTTP a une forme simple : méthode, chemin, version, puis des en-têtes. La réponse commence par un code de statut.",
+          en: "An HTTP request has a simple shape: method, path, version, then headers. The response starts with a status code.",
+        },
+        codeExample: {
+          language: "http",
+          code: "GET /index.html HTTP/1.1\nHost: example.com\nAccept: text/html\n\nHTTP/1.1 200 OK\nContent-Type: text/html",
+          caption: {
+            fr: "Requête GET et début de réponse 200.",
+            en: "GET request and start of a 200 response.",
+          },
+        },
+      },
+      {
+        id: "net-http-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Croire que le cadenas HTTPS garantit un site « sûr à 100 % ». HTTPS protège le canal, pas forcément le contenu ni l'honnêteté du site. Autre erreur : envoyer un mot de passe en HTTP clair.",
+          en: "Believing the HTTPS lock means a site is “100% safe.” HTTPS protects the channel, not necessarily the content or the site's honesty. Another mistake: sending a password over plain HTTP.",
+        },
+        callout: {
+          fr: "HTTPS ≠ site forcément de confiance · HTTP clair = dangereux pour les secrets.",
+          en: "HTTPS ≠ automatically trustworthy site · plain HTTP = unsafe for secrets.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Pour un login, choisis HTTP ou HTTPS, et le port associé.",
+            en: "For a login, choose HTTP or HTTPS, and the matching port.",
+          },
+          hint: {
+            fr: "HTTPS · 443.",
+            en: "HTTPS · 443.",
+          },
+        },
+      },
+      {
+        id: "net-http-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu sais décrire requête/réponse, méthodes courantes, et pourquoi HTTPS + certificats comptent. C'est le langage quotidien du web.",
+          en: "You can describe request/response, common methods, and why HTTPS + certificates matter. This is the everyday language of the web.",
+        },
+        bullets: [
+          {
+            fr: "Client demande, serveur répond avec un code",
+            en: "Client asks, server replies with a code",
+          },
+          {
+            fr: "GET lit · POST envoie",
+            en: "GET reads · POST sends",
+          },
+          {
+            fr: "HTTPS = HTTP + TLS (souvent 443)",
+            en: "HTTPS = HTTP + TLS (often 443)",
+          },
+        ],
+        callout: {
+          fr: "Astuce : en panne web, regarde le code (404, 500) avant de blâmer le Wi‑Fi.",
+          en: "Tip: when the web fails, check the status code (404, 500) before blaming Wi‑Fi.",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -1593,6 +2266,67 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: The browser checks whom it is talking to.",
         },
       },
+      {
+        id: "net-http-q6",
+        type: "multiple-choice",
+        question: {
+          fr: "Quelle méthode HTTP envoie typiquement des données de formulaire ?",
+          en: "Which HTTP method typically sends form data?",
+        },
+        options: [
+          { fr: "POST", en: "POST" },
+          { fr: "GET uniquement sans corps", en: "GET only with no body" },
+          { fr: "PING", en: "PING" },
+          { fr: "WIFI", en: "WIFI" },
+        ],
+        correctAnswer: { fr: "POST", en: "POST" },
+        hint: {
+          fr: "Souvent utilisée pour créer ou envoyer.",
+          en: "Often used to create or submit.",
+        },
+        explanation: {
+          fr: "Explication : POST envoie un corps de données au serveur.",
+          en: "Explanation: POST sends a data body to the server.",
+        },
+      },
+      {
+        id: "net-http-q7",
+        type: "multiple-choice",
+        question: {
+          fr: "Le cadenas HTTPS garantit-il qu'un site est honnête ?",
+          en: "Does the HTTPS lock guarantee a site is honest?",
+        },
+        options: [
+          {
+            fr: "Non, il protège surtout le canal",
+            en: "No, it mainly protects the channel",
+          },
+          {
+            fr: "Oui, à 100 % toujours",
+            en: "Yes, always 100%",
+          },
+          {
+            fr: "Oui, uniquement hors ligne",
+            en: "Yes, only offline",
+          },
+          {
+            fr: "Oui, car HTTP disparaît",
+            en: "Yes, because HTTP disappears",
+          },
+        ],
+        correctAnswer: {
+          fr: "Non, il protège surtout le canal",
+          en: "No, it mainly protects the channel",
+        },
+        hint: {
+          fr: "Chiffrement ≠ confiance totale dans le contenu.",
+          en: "Encryption ≠ full trust in the content.",
+        },
+        explanation: {
+          fr: "Explication : HTTPS sécurise le transport ; le site peut quand même être malveillant.",
+          en: "Explanation: HTTPS secures transport; the site can still be malicious.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -1631,7 +2365,7 @@ export const LESSONS: Lesson[] = [
       en: "Switch, router, and access point: who does what in a topology.",
     },
     icon: "network",
-    estimatedMinutes: 9,
+    estimatedMinutes: 16,
     xpReward: 22,
     goals: [
       {
@@ -1708,6 +2442,7 @@ export const LESSONS: Lesson[] = [
           fr: "Astuce : un problème « pas de Wi‑Fi » n'est pas forcément un problème « pas d'Internet ».",
           en: "Tip: a “no Wi‑Fi” issue is not necessarily a “no Internet” issue.",
         },
+        calloutKind: "tip",
       },
       {
         id: "net-dev-s4",
@@ -1719,6 +2454,98 @@ export const LESSONS: Lesson[] = [
           fr: "Le switch travaille surtout au niveau des adresses MAC (liaison). Le routeur décide avec des adresses IP. L'AP gère la radio Wi‑Fi tout en raccordant au LAN câblé.",
           en: "The switch mostly works with MAC addresses (data link). The router decides with IP addresses. The AP handles Wi‑Fi radio while joining the wired LAN.",
         },
+      },
+      {
+        id: "net-dev-s5",
+        title: {
+          fr: "Analogie : hall d'immeuble",
+          en: "Analogy: building lobby",
+        },
+        body: {
+          fr: "Le switch est comme les couloirs qui relient les appartements du même immeuble. Le routeur est la porte vers la rue. L'AP, c'est le Wi‑Fi dans le hall : tu te connectes sans câble, mais tu restes dans le même bâtiment.",
+          en: "The switch is like hallways linking apartments in the same building. The router is the door to the street. The AP is Wi‑Fi in the lobby: you connect without a cable, yet stay in the same building.",
+        },
+        analogy: {
+          fr: "Switch = couloirs LAN · Routeur = porte Internet · AP = Wi‑Fi local.",
+          en: "Switch = LAN hallways · Router = Internet door · AP = local Wi‑Fi.",
+        },
+      },
+      {
+        id: "net-dev-s6",
+        title: {
+          fr: "Cas concret : bureau simple",
+          en: "Concrete case: simple office",
+        },
+        body: {
+          fr: "PC câblés → switch → routeur → Internet. Les portables se collent à un AP branché sur le même LAN. Si le Wi‑Fi tombe mais le câble marche, le souci est plutôt côté AP — pas forcément le FAI.",
+          en: "Wired PCs → switch → router → Internet. Laptops join an AP on the same LAN. If Wi‑Fi dies but cable works, the issue is likely the AP — not necessarily the ISP.",
+        },
+        bullets: [
+          {
+            fr: "Câble OK, Wi‑Fi KO → suspecte l'AP",
+            en: "Cable OK, Wi‑Fi down → suspect the AP",
+          },
+          {
+            fr: "LAN OK, Internet KO → suspecte le routeur / FAI",
+            en: "LAN OK, Internet down → suspect router / ISP",
+          },
+        ],
+      },
+      {
+        id: "net-dev-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Appeler tout « la box » sans séparer les rôles, ou croire qu'un switch « donne Internet ». Un switch seul ne route pas vers le WAN. Autre confusion : AP ≠ routeur (même si la box fait les deux).",
+          en: "Calling everything “the box” without separating roles, or thinking a switch “gives Internet.” A switch alone does not route to the WAN. Another mix-up: AP ≠ router (even if the gateway does both).",
+        },
+        callout: {
+          fr: "Switch = même réseau · Routeur = entre réseaux · AP = radio.",
+          en: "Switch = same network · Router = between networks · AP = radio.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Pour chaque besoin, choisis : switch, routeur ou AP — (1) Wi‑Fi salon (2) 8 PC Ethernet (3) sortir sur Internet.",
+            en: "For each need, choose: switch, router, or AP — (1) living-room Wi‑Fi (2) 8 Ethernet PCs (3) reach the Internet.",
+          },
+          hint: {
+            fr: "AP · switch · routeur.",
+            en: "AP · switch · router.",
+          },
+        },
+      },
+      {
+        id: "net-dev-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu distingues les trois rôles et tu sais les retrouver même dans une box tout-en-un. Ce découpage accélère le diagnostic au quotidien.",
+          en: "You distinguish the three roles and can still spot them inside an all-in-one gateway. That split speeds up everyday troubleshooting.",
+        },
+        bullets: [
+          {
+            fr: "Switch interconnecte le LAN",
+            en: "Switch interconnects the LAN",
+          },
+          {
+            fr: "Routeur relie LAN et Internet",
+            en: "Router links LAN and Internet",
+          },
+          {
+            fr: "AP apporte le Wi‑Fi",
+            en: "AP provides Wi‑Fi",
+          },
+        ],
+        callout: {
+          fr: "Astuce : diagnostique un rôle à la fois (câble, Wi‑Fi, Internet).",
+          en: "Tip: diagnose one role at a time (cable, Wi‑Fi, Internet).",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -1867,6 +2694,67 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: all-in-one gateways bundle these roles.",
         },
       },
+      {
+        id: "net-dev-q5",
+        type: "multiple-choice",
+        question: {
+          fr: "Un switch seul, sans routeur, permet surtout de…",
+          en: "A switch alone, without a router, mainly lets you…",
+        },
+        options: [
+          {
+            fr: "Relier des appareils sur le même LAN",
+            en: "Connect devices on the same LAN",
+          },
+          {
+            fr: "Remplacer Internet mondial",
+            en: "Replace the global Internet",
+          },
+          {
+            fr: "Créer des certificats TLS",
+            en: "Create TLS certificates",
+          },
+          {
+            fr: "Attribuer des noms de domaine",
+            en: "Assign domain names",
+          },
+        ],
+        correctAnswer: {
+          fr: "Relier des appareils sur le même LAN",
+          en: "Connect devices on the same LAN",
+        },
+        hint: {
+          fr: "Il n'ouvre pas forcément la porte vers le WAN.",
+          en: "It does not necessarily open the door to the WAN.",
+        },
+        explanation: {
+          fr: "Explication : le switch interconnecte localement ; le routage vers Internet est un autre rôle.",
+          en: "Explanation: the switch interconnects locally; routing to the Internet is another role.",
+        },
+      },
+      {
+        id: "net-dev-q6",
+        type: "multiple-choice",
+        question: {
+          fr: "Le switch travaille surtout avec des adresses…",
+          en: "The switch mainly works with… addresses",
+        },
+        options: [
+          { fr: "MAC", en: "MAC" },
+          { fr: "E-mail uniquement", en: "Email only" },
+          { fr: "ISBN", en: "ISBN" },
+          { fr: "GPS", en: "GPS" },
+        ],
+        correctAnswer: { fr: "MAC", en: "MAC" },
+        hint: {
+          fr: "Couche liaison / Ethernet.",
+          en: "Data-link / Ethernet layer.",
+        },
+        explanation: {
+          fr: "Explication : le switch forward souvent selon les adresses MAC.",
+          en: "Explanation: switches often forward based on MAC addresses.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -1905,7 +2793,7 @@ export const LESSONS: Lesson[] = [
       en: "Common ports (22, 53, 80, 443…) and TCP vs UDP.",
     },
     icon: "layers",
-    estimatedMinutes: 10,
+    estimatedMinutes: 17,
     xpReward: 24,
     goals: [
       {
@@ -1988,6 +2876,7 @@ export const LESSONS: Lesson[] = [
           fr: "Les ports « bien connus » vont de 0 à 1023.",
           en: "Well-known ports range from 0 to 1023.",
         },
+        calloutKind: "key",
       },
       {
         id: "net-ports-s4",
@@ -1999,6 +2888,102 @@ export const LESSONS: Lesson[] = [
           fr: "Un pare-feu autorise ou bloque souvent le trafic selon IP, protocole et port. Savoir quel service écoute où aide à ouvrir le minimum nécessaire.",
           en: "A firewall often allows or blocks traffic by IP, protocol, and port. Knowing which service listens where helps you open only what is needed.",
         },
+      },
+      {
+        id: "net-ports-s5",
+        title: {
+          fr: "Analogie : immeuble et appartements",
+          en: "Analogy: building and apartments",
+        },
+        body: {
+          fr: "L'adresse IP est l'immeuble ; le port est le numéro d'appartement. Le facteur (réseau) livre au bon bâtiment, puis au bon appartement (service).",
+          en: "The IP address is the building; the port is the apartment number. The carrier (network) delivers to the right building, then the right apartment (service).",
+        },
+        analogy: {
+          fr: "IP = immeuble · Port = appartement · TCP/UDP = type de livraison.",
+          en: "IP = building · Port = apartment · TCP/UDP = delivery style.",
+        },
+      },
+      {
+        id: "net-ports-s6",
+        title: {
+          fr: "Cas concret : une journée de trafic",
+          en: "Concrete case: a day of traffic",
+        },
+        body: {
+          fr: "Tu ouvres un site (443/TCP), résous un nom (53/UDP souvent), puis te connectes en SSH à un serveur (22/TCP). Même machine, plusieurs services, plusieurs ports.",
+          en: "You open a site (443/TCP), resolve a name (often 53/UDP), then SSH to a server (22/TCP). Same machine, many services, many ports.",
+        },
+        bullets: [
+          {
+            fr: "443/TCP → HTTPS",
+            en: "443/TCP → HTTPS",
+          },
+          {
+            fr: "53/UDP → DNS",
+            en: "53/UDP → DNS",
+          },
+          {
+            fr: "22/TCP → SSH",
+            en: "22/TCP → SSH",
+          },
+        ],
+      },
+      {
+        id: "net-ports-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Croire que « TCP est toujours mieux » ou que « UDP est inutilisable ». UDP est parfait quand la vitesse compte et qu'une perte ponctuelle est acceptable. Autre erreur : confondre port 80 et 443.",
+          en: "Believing “TCP is always better” or “UDP is useless.” UDP is great when speed matters and occasional loss is OK. Another mistake: mixing up ports 80 and 443.",
+        },
+        callout: {
+          fr: "TCP = fiabilité · UDP = légèreté · le bon choix dépend du service.",
+          en: "TCP = reliability · UDP = lightness · the right choice depends on the service.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Associe : 22, 53, 80, 443 → SSH, DNS, HTTP, HTTPS.",
+            en: "Match: 22, 53, 80, 443 → SSH, DNS, HTTP, HTTPS.",
+          },
+          hint: {
+            fr: "22 SSH · 53 DNS · 80 HTTP · 443 HTTPS.",
+            en: "22 SSH · 53 DNS · 80 HTTP · 443 HTTPS.",
+          },
+        },
+      },
+      {
+        id: "net-ports-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu sais pourquoi les ports existent, quand choisir TCP ou UDP, et quels numéros revoir en priorité. C'est la base pour lire un pare-feu ou un scan de ports.",
+          en: "You know why ports exist, when to choose TCP or UDP, and which numbers to review first. That is the base for reading a firewall or a port scan.",
+        },
+        bullets: [
+          {
+            fr: "IP + port = destination précise",
+            en: "IP + port = precise destination",
+          },
+          {
+            fr: "TCP fiable · UDP rapide",
+            en: "TCP reliable · UDP fast",
+          },
+          {
+            fr: "Ouvre le minimum de ports",
+            en: "Open the minimum ports",
+          },
+        ],
+        callout: {
+          fr: "Astuce : apprends d'abord 22, 53, 80, 443 — le reste viendra.",
+          en: "Tip: learn 22, 53, 80, 443 first — the rest will follow.",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -2152,6 +3137,67 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: TCP retransmits and orders streams.",
         },
       },
+      {
+        id: "net-ports-q6",
+        type: "multiple-choice",
+        question: {
+          fr: "Le port 80 est typiquement associé à…",
+          en: "Port 80 is typically associated with…",
+        },
+        options: [
+          { fr: "HTTP", en: "HTTP" },
+          { fr: "HTTPS uniquement", en: "HTTPS only" },
+          { fr: "SSH", en: "SSH" },
+          { fr: "RDP", en: "RDP" },
+        ],
+        correctAnswer: { fr: "HTTP", en: "HTTP" },
+        hint: {
+          fr: "Le web en clair, avant HTTPS.",
+          en: "The plain web, before HTTPS.",
+        },
+        explanation: {
+          fr: "Explication : HTTP utilise souvent 80 ; HTTPS utilise 443.",
+          en: "Explanation: HTTP often uses 80; HTTPS uses 443.",
+        },
+      },
+      {
+        id: "net-ports-q7",
+        type: "multiple-choice",
+        question: {
+          fr: "Pourquoi un pare-feu s'intéresse-t-il aux ports ?",
+          en: "Why does a firewall care about ports?",
+        },
+        options: [
+          {
+            fr: "Pour autoriser ou bloquer des services précis",
+            en: "To allow or block specific services",
+          },
+          {
+            fr: "Pour changer la couleur du boîtier",
+            en: "To change the box color",
+          },
+          {
+            fr: "Pour créer des images",
+            en: "To create images",
+          },
+          {
+            fr: "Pour remplacer l'alimentation",
+            en: "To replace the power supply",
+          },
+        ],
+        correctAnswer: {
+          fr: "Pour autoriser ou bloquer des services précis",
+          en: "To allow or block specific services",
+        },
+        hint: {
+          fr: "Chaque service écoute souvent sur un port.",
+          en: "Each service often listens on a port.",
+        },
+        explanation: {
+          fr: "Explication : filtrer par port cible le service sans tout ouvrir.",
+          en: "Explanation: filtering by port targets the service without opening everything.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -2181,7 +3227,7 @@ export const LESSONS: Lesson[] = [
       en: "How a LAN shares a public IP and how traffic is filtered.",
     },
     icon: "shield",
-    estimatedMinutes: 9,
+    estimatedMinutes: 16,
     xpReward: 22,
     goals: [
       {
@@ -2254,6 +3300,7 @@ export const LESSONS: Lesson[] = [
           fr: "NAT ≠ sécurité complète, mais il masque les IP internes.",
           en: "NAT ≠ full security, but it hides internal IPs.",
         },
+        calloutKind: "key",
       },
       {
         id: "net-nat-s4",
@@ -2262,9 +3309,101 @@ export const LESSONS: Lesson[] = [
           en: "Simple best practices",
         },
         body: {
-          fr: "Ouvre seulement les ports nécessaires (redirection / port forwarding avec prudence). Garde le firmware à jour. Sépare invitados Wi‑Fi si possible. Comprendre NAT et pare-feu, c'est déjà mieux protéger ton LAN.",
+          fr: "Ouvre seulement les ports nécessaires (redirection / port forwarding avec prudence). Garde le firmware à jour. Sépare le Wi‑Fi invité si possible. Comprendre NAT et pare-feu, c'est déjà mieux protéger ton LAN.",
           en: "Open only needed ports (port forwarding carefully). Keep firmware updated. Use a guest Wi‑Fi if possible. Understanding NAT and firewalls already helps protect your LAN.",
         },
+      },
+      {
+        id: "net-nat-s5",
+        title: {
+          fr: "Analogie : réception d'hôtel",
+          en: "Analogy: hotel front desk",
+        },
+        body: {
+          fr: "Les chambres ont des numéros internes (IP privées). L'extérieur ne connaît que l'adresse de l'hôtel (IP publique). La réception (NAT) traduit les appels et sait à quelle chambre renvoyer. Le garde (pare-feu) décide qui peut entrer.",
+          en: "Rooms have internal numbers (private IPs). Outside only knows the hotel address (public IP). The front desk (NAT) translates calls and knows which room to reach. The guard (firewall) decides who may enter.",
+        },
+        analogy: {
+          fr: "NAT = réception qui traduit · Pare-feu = règles d'entrée/sortie.",
+          en: "NAT = translating front desk · Firewall = entry/exit rules.",
+        },
+      },
+      {
+        id: "net-nat-s6",
+        title: {
+          fr: "Cas concret : trois téléphones, une box",
+          en: "Concrete case: three phones, one gateway",
+        },
+        body: {
+          fr: "Trois téléphones sortent sur YouTube. Chacun a une IP privée différente. Sur Internet, le service voit surtout l'IP publique de la box. Le NAT suit chaque session pour ramener la bonne vidéo au bon téléphone.",
+          en: "Three phones stream YouTube. Each has a different private IP. On the Internet, the service mostly sees the gateway's public IP. NAT tracks each session so the right video returns to the right phone.",
+        },
+        bullets: [
+          {
+            fr: "Sortie : privé → public",
+            en: "Outbound: private → public",
+          },
+          {
+            fr: "Retour : public → le bon hôte privé",
+            en: "Return: public → the correct private host",
+          },
+        ],
+      },
+      {
+        id: "net-nat-s7",
+        title: {
+          fr: "Erreur fréquente",
+          en: "Common mistake",
+        },
+        body: {
+          fr: "Croire que le NAT remplace un vrai pare-feu, ou ouvrir du port forwarding « pour voir » sans besoin. Le NAT aide au partage d'adresse ; la sécurité vient surtout des règles et de la surface d'attaque minimale.",
+          en: "Believing NAT replaces a real firewall, or opening port forwarding “just to see” with no need. NAT helps share an address; security mostly comes from rules and a minimal attack surface.",
+        },
+        callout: {
+          fr: "NAT masque · Pare-feu filtre · Port forward = exposition volontaire.",
+          en: "NAT hides · Firewall filters · Port forward = deliberate exposure.",
+        },
+        calloutKind: "mistake",
+        miniExercise: {
+          prompt: {
+            fr: "Cite 1 raison d'utiliser le NAT et 1 règle simple de pare-feu chez toi.",
+            en: "Name 1 reason to use NAT and 1 simple home firewall rule.",
+          },
+          hint: {
+            fr: "Ex. partager une IP publique · bloquer le trafic entrant non demandé.",
+            en: "E.g. share one public IP · block unsolicited inbound traffic.",
+          },
+        },
+      },
+      {
+        id: "net-nat-s8",
+        title: {
+          fr: "Résumé",
+          en: "Summary",
+        },
+        body: {
+          fr: "Tu sais pourquoi le LAN partage une IP publique, comment un pare-feu décide, et pourquoi la redirection de ports demande de la prudence.",
+          en: "You know why a LAN shares a public IP, how a firewall decides, and why port forwarding needs caution.",
+        },
+        bullets: [
+          {
+            fr: "NAT traduit privé ↔ public",
+            en: "NAT translates private ↔ public",
+          },
+          {
+            fr: "Pare-feu = règles allow/deny",
+            en: "Firewall = allow/deny rules",
+          },
+          {
+            fr: "N'expose que le nécessaire",
+            en: "Expose only what is needed",
+          },
+        ],
+        callout: {
+          fr: "Astuce : avant d'ouvrir un port, demande « qui en a vraiment besoin ? »",
+          en: "Tip: before opening a port, ask “who truly needs this?”",
+        },
+        calloutKind: "tip",
       },
     ],
     vocabulary: [
@@ -2431,6 +3570,82 @@ export const LESSONS: Lesson[] = [
           en: "Explanation: open only the minimum required.",
         },
       },
+      {
+        id: "net-nat-q5",
+        type: "multiple-choice",
+        question: {
+          fr: "Le NAT remplace-t-il complètement un pare-feu ?",
+          en: "Does NAT completely replace a firewall?",
+        },
+        options: [
+          {
+            fr: "Non, ce sont des rôles différents",
+            en: "No, they are different roles",
+          },
+          {
+            fr: "Oui, toujours",
+            en: "Yes, always",
+          },
+          {
+            fr: "Oui, uniquement la nuit",
+            en: "Yes, only at night",
+          },
+          {
+            fr: "Oui, car il crée du Wi‑Fi",
+            en: "Yes, because it creates Wi‑Fi",
+          },
+        ],
+        correctAnswer: {
+          fr: "Non, ce sont des rôles différents",
+          en: "No, they are different roles",
+        },
+        hint: {
+          fr: "Traduction d'adresses ≠ filtrage de règles.",
+          en: "Address translation ≠ rule filtering.",
+        },
+        explanation: {
+          fr: "Explication : le NAT partage/masque des adresses ; le pare-feu autorise ou bloque.",
+          en: "Explanation: NAT shares/hides addresses; the firewall allows or blocks.",
+        },
+      },
+      {
+        id: "net-nat-q6",
+        type: "multiple-choice",
+        question: {
+          fr: "Sans NAT, plusieurs PC privés peinent souvent à…",
+          en: "Without NAT, several private PCs often struggle to…",
+        },
+        options: [
+          {
+            fr: "Partager une seule IP publique vers Internet",
+            en: "Share one public IP toward the Internet",
+          },
+          {
+            fr: "Afficher un écran noir",
+            en: "Show a black screen",
+          },
+          {
+            fr: "Charger une police système",
+            en: "Load a system font",
+          },
+          {
+            fr: "Brancher un clavier USB",
+            en: "Plug in a USB keyboard",
+          },
+        ],
+        correctAnswer: {
+          fr: "Partager une seule IP publique vers Internet",
+          en: "Share one public IP toward the Internet",
+        },
+        hint: {
+          fr: "C'est le problème que le NAT résout à la maison.",
+          en: "That is the problem NAT solves at home.",
+        },
+        explanation: {
+          fr: "Explication : le NAT permet à plusieurs hôtes privés d'utiliser une IP publique.",
+          en: "Explanation: NAT lets many private hosts use one public IP.",
+        },
+      },
     ],
     aiTeacherPrompt: {
       systemPrompt: {
@@ -2448,6 +3663,12 @@ export const LESSONS: Lesson[] = [
       ],
     },
   },
+];
+
+export const LESSONS: Lesson[] = [
+  ...NETWORKING_LESSONS,
+  ...WEB_LESSONS,
+  ...SOFTWARE_LESSONS,
 ];
 
 export function getLesson(id: string): Lesson | undefined {

@@ -45,6 +45,13 @@ export default {
       "expo-asset",
       "expo-font",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          photosPermission:
+            "Allow $(PRODUCT_NAME) to access your photos to set a profile picture.",
+        },
+      ],
       "expo-status-bar",
       "expo-web-browser",
       "@stream-io/video-react-native-sdk",

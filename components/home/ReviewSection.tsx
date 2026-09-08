@@ -1,7 +1,7 @@
 import { BookOpen, ChevronRight } from "@/constants/icons";
 import { fontFamily, radius, spacing } from "@/constants/theme";
-import { LESSONS } from "@/data/lessons";
 import { useLocalize, useT } from "@/lib/i18n";
+import { resolveReview } from "@/lib/reviews";
 import { useTheme } from "@/lib/useTheme";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -9,16 +9,6 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 type Props = {
   reviewQuestionIds: string[];
 };
-
-function resolveReview(activityId: string) {
-  for (const lesson of LESSONS) {
-    const activity = lesson.activities.find((a) => a.id === activityId);
-    if (activity) {
-      return { lessonId: lesson.id, question: activity.question };
-    }
-  }
-  return null;
-}
 
 export function ReviewSection({ reviewQuestionIds }: Props) {
   const t = useT();

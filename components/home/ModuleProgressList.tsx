@@ -1,29 +1,45 @@
 import { AnimatedProgressBar } from "@/components/motion/AnimatedProgressBar";
-import { fontFamily, radius, spacing } from "@/constants/theme";
+import { fontFamily, radius } from "@/constants/theme";
+import { TRACKS } from "@/data/tracks";
 import { UNITS } from "@/data/units";
 import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
+import type { TrackId } from "@/types/learning";
 import { StyleSheet, Text, View } from "react-native";
 
 type Props = {
   completedLessonIds: string[];
 };
 
+const HOME_TRACK_IDS: TrackId[] = ["networking", "web", "software"];
+
 export function ModuleProgressList({ completedLessonIds }: Props) {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
 
-  const overallDone = UNITS.reduce((acc, unit) => {
-    return (
-      acc +
-      unit.lessonIds.filter((id) => completedLessonIds.includes(id)).length
-    );
-  }, 0);
-  const overallTotal = UNITS.reduce(
-    (acc, unit) => acc + unit.lessonIds.length,
-    0
-  );
+  const rows = HOME_TRACK_IDS.map((trackId) => {
+    const track = TRACKS.find((tr) => tr.id === trackId);
+    const lessonIds = UNITS.filter(
+      (u) => u.trackId === trackId && u.lessonIds.length > 0
+    ).flatMap((u) => u.lessonIds);
+    const total = lessonIds.length;
+    const done = lessonIds.filter((id) =>
+      completedLessonIds.includes(id)
+    ).length;
+    const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+    return {
+      trackId,
+      title: track?.name,
+      color: track?.color ?? colors.primary.blue,
+      done,
+      total,
+      percent,
+    };
+  }).filter((r) => r.title && r.total > 0);
+
+  const overallDone = rows.filter((r) => r.percent === 100).length;
+  const overallTotal = rows.length;
 
   return (
     <View style={styles.wrap}>
@@ -43,36 +59,22 @@ export function ModuleProgressList({ completedLessonIds }: Props) {
       </View>
 
       <View style={styles.list}>
-        {UNITS.map((unit) => {
-          const total = unit.lessonIds.length;
-          const done =
-            total === 0
-              ? 0
-              : unit.lessonIds.filter((id) => completedLessonIds.includes(id))
-                  .length;
-          const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-          return (
+        {rows.map((row) => (
+          <View
+            key={row.trackId}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.neutral.card,
+                borderColor: colors.neutral.border,
+              },
+            ]}
+          >
             <View
-              key={unit.id}
-              style={[
-                styles.card,
-                {
-                  backgroundColor: colors.neutral.card,
-                  borderColor: colors.neutral.border,
-                },
-              ]}
-            >
+              style={[styles.accent, { backgroundColor: row.color }]}
+            />
+            <View style={styles.cardBody}>
               <View style={styles.labelRow}>
-                <View
-                  style={[
-                    styles.dotWrap,
-                    { backgroundColor: `${unit.progressColor}22` },
-                  ]}
-                >
-                  <View
-                    style={[styles.dot, { backgroundColor: unit.progressColor }]}
-                  />
-                </View>
                 <View style={styles.titleCol}>
                   <Text
                     style={[
@@ -81,7 +83,7 @@ export function ModuleProgressList({ completedLessonIds }: Props) {
                     ]}
                     numberOfLines={1}
                   >
-                    {L(unit.title)}
+                    {L(row.title)}
                   </Text>
                   <Text
                     style={[
@@ -89,25 +91,31 @@ export function ModuleProgressList({ completedLessonIds }: Props) {
                       { color: colors.neutral.textSecondary },
                     ]}
                   >
-                    {total === 0
-                      ? t("learn.moduleComingSoon")
-                      : t("learn.unitProgress", { done, total })}
+                    {t("learn.unitProgress", {
+                      done: row.done,
+                      total: row.total,
+                    })}
                   </Text>
                 </View>
-                <Text style={[styles.pct, { color: unit.progressColor }]}>
-                  {percent}%
+                <Text
+                  style={[
+                    styles.pct,
+                    { color: colors.neutral.textPrimary },
+                  ]}
+                >
+                  {row.percent}%
                 </Text>
               </View>
               <AnimatedProgressBar
-                progress={percent}
-                color={unit.progressColor}
+                progress={row.percent}
+                color={colors.neutral.textPrimary}
                 trackColor={colors.neutral.border}
-                height={10}
+                height={6}
                 style={{ marginTop: 12 }}
               />
             </View>
-          );
-        })}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -137,24 +145,22 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    padding: 16,
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  accent: {
+    width: 3,
+  },
+  cardBody: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
   },
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  dotWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   titleCol: { flex: 1, gap: 2 },
   label: {
@@ -162,8 +168,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   pct: {
-    fontFamily: fontFamily.bold,
-    fontSize: 18,
+    fontFamily: fontFamily.semiBold,
+    fontSize: 15,
   },
   meta: {
     fontFamily: fontFamily.regular,

@@ -324,7 +324,56 @@ export function LessonPlayer({ lessonId }: Props) {
             ))}
           </View>
           {section.diagram ? <LessonDiagram id={section.diagram} /> : null}
-          {section.callout ? (
+          {section.analogy ? (
+            <View
+              style={[
+                styles.callout,
+                {
+                  backgroundColor: colors.neutral.surface,
+                  borderColor: colors.neutral.border,
+                },
+              ]}
+            >
+              <IconBadge name="sparkles" size="sm" />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.calloutTitle,
+                    { color: colors.neutral.textSecondary },
+                  ]}
+                >
+                  {t("lesson.analogy")}
+                </Text>
+                <Text
+                  style={[
+                    styles.calloutBody,
+                    { color: colors.neutral.textPrimary },
+                  ]}
+                >
+                  {L(section.analogy)}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+          {section.codeExample ? (
+            <View
+              style={[
+                styles.codeCard,
+                {
+                  backgroundColor: darkMode ? "#0F172A" : "#111827",
+                  borderColor: colors.neutral.border,
+                },
+              ]}
+            >
+              {section.codeExample.caption ? (
+                <Text style={styles.codeCaption}>
+                  {L(section.codeExample.caption)}
+                </Text>
+              ) : null}
+              <Text style={styles.codeText}>{section.codeExample.code}</Text>
+            </View>
+          ) : null}
+          {section.miniExercise ? (
             <View
               style={[
                 styles.callout,
@@ -334,12 +383,100 @@ export function LessonPlayer({ lessonId }: Props) {
                 },
               ]}
             >
-              <IconBadge name="sparkles" size="sm" />
+              <IconBadge name="book" size="sm" />
               <View style={{ flex: 1 }}>
                 <Text
                   style={[styles.calloutTitle, { color: colors.primary.blue }]}
                 >
-                  {t("lesson.keyTakeaway")}
+                  {t("lesson.miniExercise")}
+                </Text>
+                <Text
+                  style={[
+                    styles.calloutBody,
+                    { color: colors.neutral.textPrimary },
+                  ]}
+                >
+                  {L(section.miniExercise.prompt)}
+                </Text>
+                {section.miniExercise.hint ? (
+                  <Text
+                    style={[
+                      styles.calloutBody,
+                      { color: colors.neutral.textSecondary, marginTop: 6 },
+                    ]}
+                  >
+                    {L(section.miniExercise.hint)}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+          {section.callout ? (
+            <View
+              style={[
+                styles.callout,
+                (() => {
+                  const kind = section.calloutKind ?? "key";
+                  switch (kind) {
+                    case "warning":
+                      return {
+                        backgroundColor: darkMode ? "#3B2F05" : "#FFFBEB",
+                        borderColor: colors.semantic.warning,
+                      };
+                    case "mistake":
+                      return {
+                        backgroundColor: errorBg,
+                        borderColor: colors.semantic.error,
+                      };
+                    case "tip":
+                      return {
+                        backgroundColor: successBg,
+                        borderColor: colors.semantic.success,
+                      };
+                    case "key":
+                    default:
+                      return {
+                        backgroundColor: colors.soft.blueBg,
+                        borderColor: colors.soft.blueBorder,
+                      };
+                  }
+                })(),
+              ]}
+            >
+              <IconBadge
+                name={
+                  section.calloutKind === "mistake" ||
+                  section.calloutKind === "warning"
+                    ? "zap"
+                    : section.calloutKind === "tip"
+                      ? "award"
+                      : "sparkles"
+                }
+                size="sm"
+              />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.calloutTitle,
+                    {
+                      color:
+                        section.calloutKind === "mistake"
+                          ? colors.semantic.error
+                          : section.calloutKind === "warning"
+                            ? "#D97706"
+                            : section.calloutKind === "tip"
+                              ? colors.semantic.success
+                              : colors.primary.blue,
+                    },
+                  ]}
+                >
+                  {section.calloutKind === "mistake"
+                    ? t("lesson.commonMistake")
+                    : section.calloutKind === "warning"
+                      ? t("lesson.warning")
+                      : section.calloutKind === "tip"
+                        ? t("lesson.tip")
+                        : t("lesson.keyTakeaway")}
                 </Text>
                 <Text
                   style={[
@@ -745,6 +882,24 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     fontSize: 14,
     lineHeight: 22,
+  },
+  codeCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  codeCaption: {
+    fontFamily: fontFamily.medium,
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 8,
+  },
+  codeText: {
+    fontFamily: fontFamily.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#E2E8F0",
   },
   vocabCard: {
     borderWidth: 1,

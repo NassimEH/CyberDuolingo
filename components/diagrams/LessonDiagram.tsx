@@ -588,6 +588,1095 @@ function NatFirewallDiagram({ colors, label }: DiagramProps) {
   );
 }
 
+function RequestLifecycleDiagram({ colors, label }: DiagramProps) {
+  const steps = [
+    label("DNS", "DNS"),
+    label("TCP", "TCP"),
+    "HTTP",
+    label("Réponse", "Response"),
+  ];
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect
+        x={16}
+        y={50}
+        width={60}
+        height={50}
+        rx={10}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={46}
+        y={80}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Client", "Client")}
+      </SvgText>
+      {steps.map((name, i) => {
+        const x = 90 + i * 55;
+        return (
+          <Rect
+            key={name}
+            x={x}
+            y={55}
+            width={48}
+            height={40}
+            rx={8}
+            fill={i % 2 === 0 ? colors.soft.blueBg : colors.soft.blueMuted}
+            stroke={colors.soft.blueBorder}
+            strokeWidth={1.5}
+          />
+        );
+      })}
+      {steps.map((name, i) => {
+        const x = 114 + i * 55;
+        return (
+          <SvgText
+            key={`t-${name}`}
+            x={x}
+            y={80}
+            fill={colors.neutral.textPrimary}
+            fontSize={9}
+            fontWeight="600"
+            textAnchor="middle"
+          >
+            {name}
+          </SvgText>
+        );
+      })}
+      <Line
+        x1={76}
+        y1={75}
+        x2={90}
+        y2={75}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={130}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("cycle d'une requête", "request lifecycle")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function RestApiDiagram({ colors, label }: DiagramProps) {
+  const methods = [
+    { name: "GET", hint: label("lire", "read") },
+    { name: "POST", hint: label("créer", "create") },
+    { name: "PUT", hint: label("modifier", "update") },
+    { name: "DELETE", hint: label("supprimer", "delete") },
+  ];
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      {methods.map((m, i) => {
+        const x = 18 + (i % 2) * 152;
+        const y = 20 + Math.floor(i / 2) * 70;
+        return (
+          <Rect
+            key={m.name}
+            x={x}
+            y={y}
+            width={132}
+            height={55}
+            rx={10}
+            fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+            stroke={colors.primary.blue}
+            strokeWidth={2}
+          />
+        );
+      })}
+      {methods.map((m, i) => {
+        const x = 84 + (i % 2) * 152;
+        const y = 42 + Math.floor(i / 2) * 70;
+        return (
+          <SvgText
+            key={`n-${m.name}`}
+            x={x}
+            y={y}
+            fill={colors.neutral.textPrimary}
+            fontSize={13}
+            fontWeight="600"
+            textAnchor="middle"
+          >
+            {m.name}
+          </SvgText>
+        );
+      })}
+      {methods.map((m, i) => {
+        const x = 84 + (i % 2) * 152;
+        const y = 60 + Math.floor(i / 2) * 70;
+        return (
+          <SvgText
+            key={`h-${m.name}`}
+            x={x}
+            y={y}
+            fill={colors.neutral.textSecondary}
+            fontSize={10}
+            textAnchor="middle"
+          >
+            {m.hint}
+          </SvgText>
+        );
+      })}
+    </Svg>
+  );
+}
+
+function JwtFlowDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      <Rect
+        x={20}
+        y={20}
+        width={80}
+        height={45}
+        rx={10}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={60}
+        y={47}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Login", "Login")}
+      </SvgText>
+      <Line
+        x1={100}
+        y1={42}
+        x2={130}
+        y2={42}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={130}
+        y={20}
+        width={80}
+        height={45}
+        rx={10}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={170}
+        y={47}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        JWT
+      </SvgText>
+      <Line
+        x1={210}
+        y1={42}
+        x2={240}
+        y2={42}
+        stroke={colors.semantic.success}
+        strokeWidth={2}
+      />
+      <Rect
+        x={240}
+        y={20}
+        width={60}
+        height={45}
+        rx={10}
+        fill={colors.soft.blueMuted}
+        stroke={colors.semantic.success}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={270}
+        y={47}
+        fill={colors.neutral.textPrimary}
+        fontSize={10}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        API
+      </SvgText>
+      <Line
+        x1={60}
+        y1={65}
+        x2={60}
+        y2={100}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={60}
+        y1={100}
+        x2={270}
+        y2={100}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={270}
+        y1={100}
+        x2={270}
+        y2={65}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={90}
+        y={115}
+        width={140}
+        height={36}
+        rx={8}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={1.5}
+      />
+      <SvgText
+        x={160}
+        y={138}
+        fill={colors.neutral.textPrimary}
+        fontSize={10}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Bearer token", "Bearer token")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function CorsDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect
+        x={16}
+        y={40}
+        width={90}
+        height={70}
+        rx={12}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={61}
+        y={70}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Navigateur", "Browser")}
+      </SvgText>
+      <SvgText
+        x={61}
+        y={90}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        a.com
+      </SvgText>
+      <Rect
+        x={125}
+        y={50}
+        width={70}
+        height={50}
+        rx={10}
+        fill={colors.soft.blueBg}
+        stroke={colors.semantic.success}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={72}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        CORS
+      </SvgText>
+      <SvgText
+        x={160}
+        y={88}
+        fill={colors.semantic.success}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        {label("autorise ?", "allow?")}
+      </SvgText>
+      <Rect
+        x={214}
+        y={40}
+        width={90}
+        height={70}
+        rx={12}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={259}
+        y={70}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("API", "API")}
+      </SvgText>
+      <SvgText
+        x={259}
+        y={90}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        b.com
+      </SvgText>
+      <Line
+        x1={106}
+        y1={75}
+        x2={125}
+        y2={75}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={195}
+        y1={75}
+        x2={214}
+        y2={75}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={140}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("origine croisée", "cross-origin")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function GitBranchDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Line
+        x1={40}
+        y1={110}
+        x2={280}
+        y2={110}
+        stroke={colors.primary.blue}
+        strokeWidth={3}
+      />
+      <Circle cx={70} cy={110} r={8} fill={colors.primary.blue} />
+      <Circle cx={140} cy={110} r={8} fill={colors.primary.blue} />
+      <Circle cx={210} cy={110} r={8} fill={colors.primary.blue} />
+      <Circle cx={270} cy={110} r={8} fill={colors.semantic.success} />
+      <Line
+        x1={140}
+        y1={110}
+        x2={140}
+        y2={50}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <Line
+        x1={140}
+        y1={50}
+        x2={210}
+        y2={50}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <Line
+        x1={210}
+        y1={50}
+        x2={210}
+        y2={110}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <Circle cx={175} cy={50} r={7} fill={colors.soft.blueBorder} />
+      <SvgText
+        x={160}
+        y={140}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        main
+      </SvgText>
+      <SvgText
+        x={175}
+        y={32}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("feature", "feature")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function CiCdDiagram({ colors, label }: DiagramProps) {
+  const steps = [
+    label("Code", "Code"),
+    label("Build", "Build"),
+    label("Test", "Test"),
+    label("Deploy", "Deploy"),
+  ];
+  return (
+    <Svg width="100%" height={150} viewBox="0 0 320 150">
+      {steps.map((name, i) => (
+        <Rect
+          key={name}
+          x={16 + i * 76}
+          y={45}
+          width={68}
+          height={50}
+          rx={10}
+          fill={i === 3 ? colors.soft.blueMuted : colors.soft.blueBg}
+          stroke={i === 3 ? colors.semantic.success : colors.primary.blue}
+          strokeWidth={2}
+        />
+      ))}
+      {steps.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={50 + i * 76}
+          y={75}
+          fill={colors.neutral.textPrimary}
+          fontSize={11}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      {[0, 1, 2].map((i) => (
+        <Line
+          key={`l-${i}`}
+          x1={84 + i * 76}
+          y1={70}
+          x2={92 + i * 76}
+          y2={70}
+          stroke={colors.primary.blue}
+          strokeWidth={2}
+        />
+      ))}
+      <SvgText
+        x={160}
+        y={125}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        CI / CD
+      </SvgText>
+    </Svg>
+  );
+}
+
+function SolidOverviewDiagram({ colors, label }: DiagramProps) {
+  const letters = [
+    { letter: "S", hint: label("Unique", "Single") },
+    { letter: "O", hint: label("Ouvert", "Open") },
+    { letter: "L", hint: "Liskov" },
+    { letter: "I", hint: label("Interface", "Interface") },
+    { letter: "D", hint: label("Dépendance", "Dependency") },
+  ];
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      {letters.map((item, i) => (
+        <Rect
+          key={item.letter}
+          x={14 + i * 62}
+          y={35}
+          width={54}
+          height={80}
+          rx={10}
+          fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+          stroke={colors.primary.blue}
+          strokeWidth={2}
+        />
+      ))}
+      {letters.map((item, i) => (
+        <SvgText
+          key={`l-${item.letter}`}
+          x={41 + i * 62}
+          y={70}
+          fill={colors.primary.blue}
+          fontSize={18}
+          fontWeight="700"
+          textAnchor="middle"
+        >
+          {item.letter}
+        </SvgText>
+      ))}
+      {letters.map((item, i) => (
+        <SvgText
+          key={`h-${item.letter}`}
+          x={41 + i * 62}
+          y={95}
+          fill={colors.neutral.textSecondary}
+          fontSize={8}
+          textAnchor="middle"
+        >
+          {item.hint}
+        </SvgText>
+      ))}
+    </Svg>
+  );
+}
+
+function ClientServerWebDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect
+        x={16}
+        y={45}
+        width={85}
+        height={60}
+        rx={12}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={58}
+        y={72}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Navigateur", "Browser")}
+      </SvgText>
+      <SvgText
+        x={58}
+        y={90}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        HTML / JS
+      </SvgText>
+      <Line
+        x1={101}
+        y1={75}
+        x2={125}
+        y2={75}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={125}
+        y={45}
+        width={85}
+        height={60}
+        rx={12}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={167}
+        y={72}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Serveur", "Server")}
+      </SvgText>
+      <SvgText
+        x={167}
+        y={90}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        Web
+      </SvgText>
+      <Line
+        x1={210}
+        y1={75}
+        x2={234}
+        y2={75}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={234}
+        y={45}
+        width={70}
+        height={60}
+        rx={12}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={269}
+        y={72}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        DB
+      </SvgText>
+      <SvgText
+        x={269}
+        y={90}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        SQL
+      </SvgText>
+      <SvgText
+        x={160}
+        y={135}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("architecture web", "web architecture")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function DomTreeDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={180} viewBox="0 0 320 180">
+      <Rect
+        x={120}
+        y={12}
+        width={80}
+        height={32}
+        rx={8}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={33}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        html
+      </SvgText>
+      <Line
+        x1={160}
+        y1={44}
+        x2={160}
+        y2={60}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={120}
+        y={60}
+        width={80}
+        height={32}
+        rx={8}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={81}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        body
+      </SvgText>
+      <Line
+        x1={160}
+        y1={92}
+        x2={160}
+        y2={108}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={80}
+        y1={108}
+        x2={240}
+        y2={108}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={80}
+        y1={108}
+        x2={80}
+        y2={120}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={160}
+        y1={108}
+        x2={160}
+        y2={120}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={240}
+        y1={108}
+        x2={240}
+        y2={120}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={45}
+        y={120}
+        width={70}
+        height={32}
+        rx={8}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={1.5}
+      />
+      <SvgText
+        x={80}
+        y={141}
+        fill={colors.neutral.textPrimary}
+        fontSize={10}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        header
+      </SvgText>
+      <Rect
+        x={125}
+        y={120}
+        width={70}
+        height={32}
+        rx={8}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={1.5}
+      />
+      <SvgText
+        x={160}
+        y={141}
+        fill={colors.neutral.textPrimary}
+        fontSize={10}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        main
+      </SvgText>
+      <Rect
+        x={205}
+        y={120}
+        width={70}
+        height={32}
+        rx={8}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={1.5}
+      />
+      <SvgText
+        x={240}
+        y={141}
+        fill={colors.neutral.textPrimary}
+        fontSize={10}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        footer
+      </SvgText>
+      <SvgText
+        x={160}
+        y={172}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("arbre DOM", "DOM tree")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function DockerLayersDiagram({ colors, label }: DiagramProps) {
+  const layers = [
+    label("App", "App"),
+    label("Dépendances", "Dependencies"),
+    label("OS / Base", "OS / Base"),
+  ];
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      {layers.map((name, i) => (
+        <Rect
+          key={name}
+          x={50}
+          y={25 + i * 40}
+          width={220}
+          height={34}
+          rx={8}
+          fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+          stroke={colors.primary.blue}
+          strokeWidth={2}
+        />
+      ))}
+      {layers.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={160}
+          y={47 + i * 40}
+          fill={colors.neutral.textPrimary}
+          fontSize={12}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      <SvgText
+        x={160}
+        y={155}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("couches image", "image layers")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function MvcArchitectureDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      <Rect
+        x={110}
+        y={12}
+        width={100}
+        height={40}
+        rx={10}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={37}
+        fill={colors.neutral.textPrimary}
+        fontSize={12}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Contrôleur", "Controller")}
+      </SvgText>
+      <Line
+        x1={110}
+        y1={52}
+        x2={70}
+        y2={85}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Line
+        x1={210}
+        y1={52}
+        x2={250}
+        y2={85}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <Rect
+        x={20}
+        y={90}
+        width={100}
+        height={45}
+        rx={10}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={70}
+        y={110}
+        fill={colors.neutral.textPrimary}
+        fontSize={12}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Vue", "View")}
+      </SvgText>
+      <SvgText
+        x={70}
+        y={126}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        UI
+      </SvgText>
+      <Rect
+        x={200}
+        y={90}
+        width={100}
+        height={45}
+        rx={10}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={250}
+        y={110}
+        fill={colors.neutral.textPrimary}
+        fontSize={12}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        Model
+      </SvgText>
+      <SvgText
+        x={250}
+        y={126}
+        fill={colors.neutral.textSecondary}
+        fontSize={9}
+        textAnchor="middle"
+      >
+        {label("données", "data")}
+      </SvgText>
+      <Line
+        x1={120}
+        y1={112}
+        x2={200}
+        y2={112}
+        stroke={colors.semantic.success}
+        strokeWidth={1.5}
+      />
+      <SvgText
+        x={160}
+        y={155}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        MVC
+      </SvgText>
+    </Svg>
+  );
+}
+
+function TestPyramidDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={180} viewBox="0 0 320 180">
+      <Rect
+        x={110}
+        y={20}
+        width={100}
+        height={36}
+        rx={6}
+        fill={colors.soft.blueBg}
+        stroke={colors.soft.blueBorder}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={43}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        E2E
+      </SvgText>
+      <Rect
+        x={75}
+        y={64}
+        width={170}
+        height={36}
+        rx={6}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={87}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Intégration", "Integration")}
+      </SvgText>
+      <Rect
+        x={40}
+        y={108}
+        width={240}
+        height={36}
+        rx={6}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={160}
+        y={131}
+        fill={colors.neutral.textPrimary}
+        fontSize={11}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Unitaires", "Unit")}
+      </SvgText>
+      <SvgText
+        x={160}
+        y={165}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("pyramide de tests", "test pyramid")}
+      </SvgText>
+    </Svg>
+  );
+}
+
 const DIAGRAMS: Record<
   DiagramId,
   (props: DiagramProps) => ReactElement
@@ -601,6 +1690,18 @@ const DIAGRAMS: Record<
   "tcp-udp": TcpUdpDiagram,
   "network-devices": NetworkDevicesDiagram,
   "nat-firewall": NatFirewallDiagram,
+  "request-lifecycle": RequestLifecycleDiagram,
+  "rest-api": RestApiDiagram,
+  "jwt-flow": JwtFlowDiagram,
+  cors: CorsDiagram,
+  "git-branch": GitBranchDiagram,
+  "ci-cd": CiCdDiagram,
+  "solid-overview": SolidOverviewDiagram,
+  "client-server-web": ClientServerWebDiagram,
+  "dom-tree": DomTreeDiagram,
+  "docker-layers": DockerLayersDiagram,
+  "mvc-architecture": MvcArchitectureDiagram,
+  "test-pyramid": TestPyramidDiagram,
 };
 
 const TITLES: Record<DiagramId, { fr: string; en: string }> = {
@@ -616,6 +1717,24 @@ const TITLES: Record<DiagramId, { fr: string; en: string }> = {
     en: "Network devices",
   },
   "nat-firewall": { fr: "NAT et pare-feu", en: "NAT and firewall" },
+  "request-lifecycle": {
+    fr: "Cycle d'une requête",
+    en: "Request lifecycle",
+  },
+  "rest-api": { fr: "Méthodes REST", en: "REST methods" },
+  "jwt-flow": { fr: "Flux JWT", en: "JWT flow" },
+  cors: { fr: "CORS", en: "CORS" },
+  "git-branch": { fr: "Branches Git", en: "Git branches" },
+  "ci-cd": { fr: "Pipeline CI/CD", en: "CI/CD pipeline" },
+  "solid-overview": { fr: "Principes SOLID", en: "SOLID principles" },
+  "client-server-web": {
+    fr: "Client, serveur et DB",
+    en: "Client, server and DB",
+  },
+  "dom-tree": { fr: "Arbre DOM", en: "DOM tree" },
+  "docker-layers": { fr: "Couches Docker", en: "Docker layers" },
+  "mvc-architecture": { fr: "Architecture MVC", en: "MVC architecture" },
+  "test-pyramid": { fr: "Pyramide de tests", en: "Test pyramid" },
 };
 
 type Props = { id: DiagramId };

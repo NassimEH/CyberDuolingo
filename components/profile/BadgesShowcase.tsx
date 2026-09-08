@@ -20,6 +20,8 @@ type Props = {
   challengesCompleted: number;
   labsCompleted: number;
   certificationsObtained: number;
+  /** When true, omit the section title (parent provides SectionHeader). */
+  hideTitle?: boolean;
 };
 
 export function BadgesShowcase({
@@ -29,6 +31,7 @@ export function BadgesShowcase({
   challengesCompleted,
   labsCompleted,
   certificationsObtained,
+  hideTitle = false,
 }: Props) {
   const t = useT();
   const { colors } = useTheme();
@@ -72,29 +75,36 @@ export function BadgesShowcase({
     },
   ];
 
+  const sorted = [...badges].sort(
+    (a, b) => Number(b.unlocked) - Number(a.unlocked)
+  );
   const unlockedCount = badges.filter((b) => b.unlocked).length;
 
   return (
     <View style={styles.wrap}>
-      <Text style={[styles.title, { color: colors.neutral.textPrimary }]}>
-        {t("profile.badges")}
-      </Text>
+      {!hideTitle ? (
+        <Text style={[styles.title, { color: colors.neutral.textPrimary }]}>
+          {t("profile.badges")}
+        </Text>
+      ) : null}
       <Text style={[styles.sub, { color: colors.neutral.textSecondary }]}>
         {t("profile.badgesUnlocked", {
           done: unlockedCount,
           total: badges.length,
         })}
       </Text>
-      <View style={styles.grid}>
-        {badges.map((b) => (
+      <View style={styles.row}>
+        {sorted.map((b) => (
           <View
             key={b.id}
             style={[
               styles.badge,
               {
                 backgroundColor: colors.neutral.card,
-                borderColor: colors.neutral.border,
-                opacity: b.unlocked ? 1 : 0.4,
+                borderColor: b.unlocked
+                  ? colors.primary.blue
+                  : colors.neutral.border,
+                opacity: b.unlocked ? 1 : 0.45,
               },
             ]}
           >
@@ -109,7 +119,7 @@ export function BadgesShowcase({
             />
             <Text
               style={[styles.badgeLabel, { color: colors.neutral.textPrimary }]}
-              numberOfLines={2}
+              numberOfLines={1}
             >
               {t(b.titleKey)}
             </Text>
@@ -121,7 +131,7 @@ export function BadgesShowcase({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 20 },
+  wrap: { marginBottom: 8 },
   title: {
     fontFamily: fontFamily.semiBold,
     fontSize: 17,
@@ -130,27 +140,28 @@ const styles = StyleSheet.create({
   sub: {
     fontFamily: fontFamily.regular,
     fontSize: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  grid: {
+  row: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   badge: {
-    width: "30%",
+    width: "31%",
     flexGrow: 1,
-    minWidth: 96,
+    minWidth: 100,
     maxWidth: "32%",
     alignItems: "center",
     borderRadius: radius.md,
     borderWidth: 1,
-    padding: 10,
-    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    gap: 4,
   },
   badgeLabel: {
     fontFamily: fontFamily.medium,
-    fontSize: 11,
+    fontSize: 10,
     textAlign: "center",
   },
 });

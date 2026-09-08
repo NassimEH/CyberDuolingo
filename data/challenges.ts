@@ -1,5 +1,7 @@
 import type { LocalizedString } from "@/lib/i18n/translations";
 import type { SkillId } from "@/data/skills";
+import { getUnitById } from "@/data/units";
+import type { TrackId } from "@/types/learning";
 
 export interface ChallengeQuestion {
   id: string;
@@ -511,20 +513,452 @@ export const CHALLENGES: Challenge[] = [
       },
     ],
   },
-];
+    {
+      id: "ch-web-http",
+      skillId: "web-fundamentals",
+      unitId: "web-fundamentals",
+      title: { fr: "HTTP en situation", en: "HTTP in practice" },
+      description: {
+        fr: "Lire une requête et un code de statut.",
+        en: "Read a request and a status code.",
+      },
+      difficulty: "medium",
+      xpBonus: 22,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Que signifie principalement un 404 ?",
+            en: "What does a 404 mainly mean?",
+          },
+          options: [
+            { fr: "Ressource introuvable", en: "Resource not found" },
+            { fr: "Serveur en panne totale", en: "Server totally down" },
+            { fr: "Mot de passe incorrect", en: "Wrong password" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "404 = la ressource demandée n’existe pas (ou pas à cette URL).",
+            en: "404 = the requested resource doesn’t exist (or not at that URL).",
+          },
+        },
+        {
+          id: "q2",
+          question: {
+            fr: "HTTPS ajoute surtout…",
+            en: "HTTPS mainly adds…",
+          },
+          options: [
+            { fr: "Chiffrement TLS", en: "TLS encryption" },
+            { fr: "Plus de publicités", en: "More ads" },
+            { fr: "Une base de données", en: "A database" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "HTTPS = HTTP + TLS pour protéger le trafic.",
+            en: "HTTPS = HTTP + TLS to protect traffic.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-web-rest",
+      skillId: "web-backend",
+      unitId: "web-backend",
+      title: { fr: "API REST", en: "REST API" },
+      description: {
+        fr: "Verbes HTTP et ressources.",
+        en: "HTTP verbs and resources.",
+      },
+      difficulty: "medium",
+      xpBonus: 24,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Quel verbe crée typiquement une ressource ?",
+            en: "Which verb typically creates a resource?",
+          },
+          options: [
+            { fr: "POST", en: "POST" },
+            { fr: "GET", en: "GET" },
+            { fr: "HEAD", en: "HEAD" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "POST est souvent utilisé pour créer ; GET pour lire.",
+            en: "POST is often used to create; GET to read.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-sw-git",
+      skillId: "software-engineering",
+      unitId: "sw-engineering",
+      title: { fr: "Git essentiels", en: "Git essentials" },
+      description: {
+        fr: "Commit, branche, merge.",
+        en: "Commit, branch, merge.",
+      },
+      difficulty: "easy",
+      xpBonus: 20,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Un commit représente…",
+            en: "A commit represents…",
+          },
+          options: [
+            {
+              fr: "Un instantané du projet avec message",
+              en: "A project snapshot with a message",
+            },
+            { fr: "Un serveur web", en: "A web server" },
+            { fr: "Un certificat TLS", en: "A TLS certificate" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "Le commit fige un état du code + métadonnées.",
+            en: "A commit freezes a code state + metadata.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-sw-solid",
+      skillId: "software-architecture",
+      unitId: "sw-oop-architecture",
+      title: { fr: "SOLID express", en: "SOLID express" },
+      description: {
+        fr: "Un principe, un cas.",
+        en: "One principle, one case.",
+      },
+      difficulty: "hard",
+      xpBonus: 26,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Le S de SOLID (Single Responsibility) veut dire…",
+            en: "The S in SOLID (Single Responsibility) means…",
+          },
+          options: [
+            {
+              fr: "Une classe / module a une raison principale de changer",
+              en: "A class/module has one main reason to change",
+            },
+            {
+              fr: "Tout doit être dans un seul fichier",
+              en: "Everything must be in one file",
+            },
+            {
+              fr: "On n’écrit jamais de tests",
+              en: "You never write tests",
+            },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "SRP = une responsabilité claire, pas « un seul fichier ».",
+            en: "SRP = one clear responsibility, not “one file”.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-web-frontend",
+      skillId: "web-frontend",
+      unitId: "web-frontend",
+      title: { fr: "Frontend express", en: "Frontend express" },
+      description: {
+        fr: "HTML, CSS et JavaScript : les rôles de chacun.",
+        en: "HTML, CSS, and JavaScript: each one’s role.",
+      },
+      difficulty: "easy",
+      xpBonus: 20,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "HTML sert surtout à…",
+            en: "HTML is mainly used to…",
+          },
+          options: [
+            {
+              fr: "Structurer le contenu de la page",
+              en: "Structure the page content",
+            },
+            {
+              fr: "Styliser les couleurs uniquement",
+              en: "Style colors only",
+            },
+            { fr: "Remplacer le serveur", en: "Replace the server" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "HTML = structure (titres, paragraphes, liens). CSS = style. JS = comportement.",
+            en: "HTML = structure (headings, paragraphs, links). CSS = style. JS = behavior.",
+          },
+        },
+        {
+          id: "q2",
+          question: {
+            fr: "Le DOM représente…",
+            en: "The DOM represents…",
+          },
+          options: [
+            {
+              fr: "L’arbre d’éléments de la page manipulable en JS",
+              en: "The page’s element tree that JS can manipulate",
+            },
+            { fr: "Un protocole réseau", en: "A network protocol" },
+            { fr: "Un type de base de données", en: "A database type" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "Le DOM est le modèle objet du document : JS lit et modifie les nœuds.",
+            en: "The DOM is the document object model: JS reads and updates nodes.",
+          },
+        },
+        {
+          id: "q3",
+          question: {
+            fr: "CSS contrôle principalement l’apparence visuelle. Vrai ou faux ?",
+            en: "CSS mainly controls visual appearance. True or false?",
+          },
+          options: [
+            { fr: "Vrai", en: "True" },
+            { fr: "Faux", en: "False" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "Vrai : mise en page, couleurs, typo, responsive — c’est le rôle du CSS.",
+            en: "True: layout, colors, type, responsive — that’s CSS’s job.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-web-xss",
+      skillId: "web-security",
+      unitId: "web-security",
+      title: { fr: "XSS & CORS", en: "XSS & CORS" },
+      description: {
+        fr: "Attaques navigateur et politiques d’origine.",
+        en: "Browser attacks and origin policies.",
+      },
+      difficulty: "medium",
+      xpBonus: 24,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Une attaque XSS consiste typiquement à…",
+            en: "An XSS attack typically consists of…",
+          },
+          options: [
+            {
+              fr: "Injecter du JS malveillant dans une page vue par d’autres",
+              en: "Injecting malicious JS into a page others view",
+            },
+            {
+              fr: "Couper le câble Ethernet",
+              en: "Cutting the Ethernet cable",
+            },
+            {
+              fr: "Changer le TTL DNS uniquement",
+              en: "Only changing DNS TTL",
+            },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "XSS = script non fiable exécuté dans le navigateur de la victime (souvent via HTML non échappé).",
+            en: "XSS = untrusted script running in the victim’s browser (often via unescaped HTML).",
+          },
+        },
+        {
+          id: "q2",
+          question: {
+            fr: "CORS sert surtout à…",
+            en: "CORS is mainly used to…",
+          },
+          options: [
+            {
+              fr: "Contrôler quelles origines peuvent appeler une API depuis le navigateur",
+              en: "Control which origins can call an API from the browser",
+            },
+            {
+              fr: "Chiffrer les disques durs",
+              en: "Encrypt hard drives",
+            },
+            {
+              fr: "Remplacer HTTPS",
+              en: "Replace HTTPS",
+            },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "CORS = politique navigateur/serveur sur les requêtes cross-origin ; ce n’est pas du chiffrement.",
+            en: "CORS = browser/server policy for cross-origin requests; it’s not encryption.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-sw-basics",
+      skillId: "software-basics",
+      unitId: "sw-fundamentals",
+      title: { fr: "Algo & structures", en: "Algo & structures" },
+      description: {
+        fr: "Complexité et structures de données de base.",
+        en: "Complexity and basic data structures.",
+      },
+      difficulty: "medium",
+      xpBonus: 22,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "Une recherche dans un tableau non trié est typiquement…",
+            en: "Searching an unsorted array is typically…",
+          },
+          options: [
+            { fr: "O(n) au pire cas", en: "O(n) in the worst case" },
+            { fr: "O(1) toujours", en: "Always O(1)" },
+            { fr: "O(log n) sans triage", en: "O(log n) without sorting" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "Sans ordre, on peut devoir parcourir tous les éléments → O(n).",
+            en: "Without order, you may scan every element → O(n).",
+          },
+        },
+        {
+          id: "q2",
+          question: {
+            fr: "Une pile (stack) suit le principe…",
+            en: "A stack follows the principle…",
+          },
+          options: [
+            { fr: "LIFO (dernier entré, premier sorti)", en: "LIFO (last in, first out)" },
+            { fr: "FIFO uniquement", en: "FIFO only" },
+            { fr: "Aléatoire", en: "Random" },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "Stack = LIFO. Queue = FIFO.",
+            en: "Stack = LIFO. Queue = FIFO.",
+          },
+        },
+      ],
+    },
+    {
+      id: "ch-sw-cicd",
+      skillId: "software-delivery",
+      unitId: "sw-delivery",
+      title: { fr: "CI/CD & revue", en: "CI/CD & review" },
+      description: {
+        fr: "Livrer du code avec filet de sécurité.",
+        en: "Ship code with a safety net.",
+      },
+      difficulty: "medium",
+      xpBonus: 24,
+      questions: [
+        {
+          id: "q1",
+          question: {
+            fr: "La CI (Continuous Integration) vise surtout à…",
+            en: "CI (Continuous Integration) mainly aims to…",
+          },
+          options: [
+            {
+              fr: "Intégrer et tester souvent les changements automatiquement",
+              en: "Integrate and test changes often, automatically",
+            },
+            {
+              fr: "Éviter tout usage de Git",
+              en: "Avoid using Git entirely",
+            },
+            {
+              fr: "Remplacer les développeurs",
+              en: "Replace developers",
+            },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "CI = builds/tests automatiques à chaque changement pour détecter les régressions tôt.",
+            en: "CI = automated builds/tests on each change to catch regressions early.",
+          },
+        },
+        {
+          id: "q2",
+          question: {
+            fr: "Une code review sert principalement à…",
+            en: "A code review is mainly for…",
+          },
+          options: [
+            {
+              fr: "Partager le savoir et détecter bugs / risques avant merge",
+              en: "Share knowledge and catch bugs/risks before merge",
+            },
+            {
+              fr: "Ralentir volontairement sans but",
+              en: "Slow things down with no purpose",
+            },
+            {
+              fr: "Générer des certificats TLS",
+              en: "Generate TLS certificates",
+            },
+          ],
+          correctIndex: 0,
+          explanation: {
+            fr: "La revue améliore qualité, lisibilité et alignement d’équipe — pas un frein gratuit.",
+            en: "Review improves quality, readability, and team alignment — not pointless friction.",
+          },
+        },
+      ],
+    },
+  ];
 
 export function getChallenge(id: string) {
   return CHALLENGES.find((c) => c.id === id);
 }
 
-export function getDailyChallenge(date = new Date()) {
+const DAILY_XP_MULTIPLIER = 1.75;
+
+export function getDailyChallenge(date = new Date()): Challenge {
   const key = date.toISOString().slice(0, 10);
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (hash + key.charCodeAt(i) * (i + 1)) % 997;
-  return CHALLENGES[hash % CHALLENGES.length];
+  const base = CHALLENGES[hash % CHALLENGES.length];
+  return {
+    ...base,
+    xpBonus: Math.round(base.xpBonus * DAILY_XP_MULTIPLIER),
+  };
 }
 
 export function getChallengesBySkill(skillId: SkillId | "all") {
   if (skillId === "all") return CHALLENGES;
   return CHALLENGES.filter((c) => c.skillId === skillId);
+}
+
+function skillToTrack(skillId: SkillId): TrackId {
+  if (skillId.startsWith("web-")) return "web";
+  if (skillId.startsWith("software-")) return "software";
+  return "networking";
+}
+
+/** Resolve which learning track a challenge belongs to. */
+export function getChallengeTrackId(challenge: Challenge): TrackId {
+  if (challenge.unitId) {
+    const unit = getUnitById(challenge.unitId);
+    if (unit?.trackId) return unit.trackId;
+  }
+  return skillToTrack(challenge.skillId);
+}
+
+export function getChallengesByTrack(trackId: TrackId | "all") {
+  if (trackId === "all") return CHALLENGES;
+  return CHALLENGES.filter((c) => getChallengeTrackId(c) === trackId);
 }

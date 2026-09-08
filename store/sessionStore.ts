@@ -6,9 +6,11 @@ interface SessionState {
   userId: string | null;
   email: string | null;
   firstName: string | null;
+  avatarUri: string | null;
   isSignedIn: boolean;
   signIn: (input: { email: string; firstName?: string }) => void;
   signInAsGuest: () => void;
+  setAvatarUri: (uri: string | null) => void;
   signOut: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useSessionStore = create<SessionState>()(
       userId: null,
       email: null,
       firstName: null,
+      avatarUri: null,
       isSignedIn: false,
       signIn: ({ email, firstName }) => {
         const name = firstName ?? email.split("@")[0] ?? "Learner";
@@ -39,11 +42,13 @@ export const useSessionStore = create<SessionState>()(
           firstName: "Invité",
           isSignedIn: true,
         }),
+      setAvatarUri: (avatarUri) => set({ avatarUri }),
       signOut: () =>
         set({
           userId: null,
           email: null,
           firstName: null,
+          avatarUri: null,
           isSignedIn: false,
         }),
     }),

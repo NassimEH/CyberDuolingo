@@ -1,7 +1,13 @@
 import type { LocalizedString } from "@/lib/i18n/translations";
 import type { AppIcon } from "@/constants/icons";
 
-export type TrackId = "networking" | "cloud" | "security" | "ai";
+export type TrackId =
+  | "networking"
+  | "cloud"
+  | "security"
+  | "ai"
+  | "web"
+  | "software";
 
 export interface Track {
   id: TrackId;
@@ -33,7 +39,32 @@ export type DiagramId =
   | "client-server"
   | "tcp-udp"
   | "network-devices"
-  | "nat-firewall";
+  | "nat-firewall"
+  | "request-lifecycle"
+  | "rest-api"
+  | "jwt-flow"
+  | "cors"
+  | "git-branch"
+  | "ci-cd"
+  | "solid-overview"
+  | "client-server-web"
+  | "dom-tree"
+  | "docker-layers"
+  | "mvc-architecture"
+  | "test-pyramid";
+
+export type CalloutKind = "key" | "tip" | "warning" | "mistake";
+
+export interface CodeExample {
+  code: string;
+  language?: string;
+  caption?: LocalizedString;
+}
+
+export interface MiniExercise {
+  prompt: LocalizedString;
+  hint?: LocalizedString;
+}
 
 export interface LessonSection {
   id: string;
@@ -41,7 +72,11 @@ export interface LessonSection {
   body: LocalizedString;
   bullets?: LocalizedString[];
   callout?: LocalizedString;
+  calloutKind?: CalloutKind;
   diagram?: DiagramId;
+  codeExample?: CodeExample;
+  analogy?: LocalizedString;
+  miniExercise?: MiniExercise;
 }
 
 export interface Activity {

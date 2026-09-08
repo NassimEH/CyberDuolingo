@@ -1,53 +1,16 @@
 import type { ComponentType } from "react";
 
-// Deep imports bypass broken lucide package.json "exports" for renamed icons.
-import Award from "lucide-react-native/dist/esm/icons/award.mjs";
-import ArrowRight from "lucide-react-native/dist/esm/icons/arrow-right.mjs";
-import Bell from "lucide-react-native/dist/esm/icons/bell.mjs";
-import BookOpen from "lucide-react-native/dist/esm/icons/book-open.mjs";
-import Check from "lucide-react-native/dist/esm/icons/check.mjs";
-import CheckCircle2 from "lucide-react-native/dist/esm/icons/circle-check-big.mjs";
-import ChevronDown from "lucide-react-native/dist/esm/icons/chevron-down.mjs";
-import ChevronRight from "lucide-react-native/dist/esm/icons/chevron-right.mjs";
-import CircleHelp from "lucide-react-native/dist/esm/icons/circle-question-mark.mjs";
-import Clock from "lucide-react-native/dist/esm/icons/clock.mjs";
-import Cloud from "lucide-react-native/dist/esm/icons/cloud.mjs";
-import Flame from "lucide-react-native/dist/esm/icons/flame.mjs";
-import Globe from "lucide-react-native/dist/esm/icons/globe.mjs";
-import Home from "lucide-react-native/dist/esm/icons/house.mjs";
-import Languages from "lucide-react-native/dist/esm/icons/languages.mjs";
-import Layers from "lucide-react-native/dist/esm/icons/layers.mjs";
-import Locate from "lucide-react-native/dist/esm/icons/locate.mjs";
-import Lock from "lucide-react-native/dist/esm/icons/lock.mjs";
-import LogOut from "lucide-react-native/dist/esm/icons/log-out.mjs";
-import MessageCircle from "lucide-react-native/dist/esm/icons/message-circle.mjs";
-import Moon from "lucide-react-native/dist/esm/icons/moon.mjs";
-import Network from "lucide-react-native/dist/esm/icons/network.mjs";
-import Search from "lucide-react-native/dist/esm/icons/search.mjs";
-import ShieldCheck from "lucide-react-native/dist/esm/icons/shield-check.mjs";
-import Sparkles from "lucide-react-native/dist/esm/icons/sparkles.mjs";
-import Trophy from "lucide-react-native/dist/esm/icons/trophy.mjs";
-import User from "lucide-react-native/dist/esm/icons/user.mjs";
-import Volume2 from "lucide-react-native/dist/esm/icons/volume-2.mjs";
-import Zap from "lucide-react-native/dist/esm/icons/zap.mjs";
-
-import type { TrackId } from "@/types/learning";
-
-export type LucideIcon = ComponentType<{
-  size?: number | string;
-  color?: string;
-  strokeWidth?: number | string;
-  absoluteStrokeWidth?: boolean;
-}>;
-
-export {
+// Named imports via package root (supported by lucide-react-native exports).
+import {
   Award,
   ArrowRight,
   Bell,
   BookOpen,
+  Camera,
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   CircleHelp,
   Clock,
@@ -64,6 +27,51 @@ export {
   Moon,
   Network,
   Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
+  User,
+  Volume2,
+  Zap,
+} from "lucide-react-native";
+
+import type { TrackId } from "@/types/learning";
+
+export type LucideIcon = ComponentType<{
+  size?: number | string;
+  color?: string;
+  strokeWidth?: number | string;
+  absoluteStrokeWidth?: boolean;
+}>;
+
+export {
+  Award,
+  ArrowRight,
+  Bell,
+  BookOpen,
+  Camera,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Clock,
+  Cloud,
+  Flame,
+  Globe,
+  Home,
+  Languages,
+  Layers,
+  Locate,
+  Lock,
+  LogOut,
+  MessageCircle,
+  Moon,
+  Network,
+  Search,
+  Send,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -114,6 +122,8 @@ export const trackIcons: Record<TrackId, AppIcon> = {
   cloud: "cloud",
   security: "shield",
   ai: "sparkles",
+  web: "layers",
+  software: "book",
 };
 
 export const lessonIcons: Record<string, AppIcon> = {
@@ -125,6 +135,31 @@ export const lessonIcons: Record<string, AppIcon> = {
   "net-dns": "search",
   "net-http-https": "lock",
   "net-nat-firewall": "shield",
+  "web-internet-vs-web": "globe",
+  "web-http": "network",
+  "web-urls": "search",
+  "web-html-basics": "layers",
+  "web-css-basics": "sparkles",
+  "web-javascript-basics": "zap",
+  "web-frontend-backend": "network",
+  "web-apis": "layers",
+  "web-rest-api": "layers",
+  "web-auth": "lock",
+  "web-databases": "book",
+  "web-deployment": "cloud",
+  "sw-what-is-software": "book",
+  "sw-dev-basics": "book",
+  "sw-algorithms": "zap",
+  "sw-data-structures": "layers",
+  "sw-programming-basics": "book",
+  "sw-oop": "layers",
+  "sw-git": "network",
+  "sw-testing": "shield",
+  "sw-debugging": "search",
+  "sw-architecture": "layers",
+  "sw-design-patterns": "sparkles",
+  "sw-api-docs": "book",
+  "sw-cicd": "zap",
 };
 
 export const chatTopicIcons: Record<string, AppIcon> = {

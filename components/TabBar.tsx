@@ -35,7 +35,7 @@ type TabConfig = {
     | "tabs.home"
     | "tabs.learn"
     | "tabs.challenges"
-    | "tabs.coach"
+    | "tabs.lab"
     | "tabs.profile";
   Icon: LucideIcon;
 };
@@ -44,7 +44,7 @@ const TABS: TabConfig[] = [
   { labelKey: "tabs.home", Icon: Home },
   { labelKey: "tabs.learn", Icon: BookOpen },
   { labelKey: "tabs.challenges", Icon: Trophy },
-  { labelKey: "tabs.coach", Icon: MessageCircle },
+  { labelKey: "tabs.lab", Icon: MessageCircle },
   { labelKey: "tabs.profile", Icon: User },
 ];
 

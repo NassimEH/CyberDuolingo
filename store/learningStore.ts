@@ -36,6 +36,10 @@ interface LearningState {
   activityLogs: ActivityLog[];
   activeDays: string[];
   completedChallengeIds: string[];
+  completedLabIds: string[];
+  startedLabIds: string[];
+  labBeatIndex: Record<string, number>;
+  activitySeenAt: string | null;
   skillXP: Partial<Record<SkillId, number>>;
   addXP: (amount: number, opts?: { silent?: boolean; skillId?: SkillId }) => void;
   completeLesson: (
@@ -44,10 +48,13 @@ interface LearningState {
   ) => void;
   recordQuizAnswer: (activityId: string, correct: boolean) => void;
   completeChallenge: (challengeId: string, xpBonus: number, skillId: SkillId) => void;
+  startLab: (labId: string) => void;
+  setLabBeatIndex: (labId: string, index: number) => void;
   completeLab: (labId: string, xpBonus?: number) => void;
   pushLog: (log: Omit<ActivityLog, "id" | "createdAt">) => void;
   setSoundEnabled: (value: boolean) => void;
   touchStreak: () => void;
+  markActivitySeen: () => void;
 }
 
 const MAX_LOGS = 30;
@@ -157,8 +164,28 @@ export const useLearningStore = create<LearningState>()(
       activityLogs: [],
       activeDays: [],
       completedChallengeIds: [],
+      completedLabIds: [],
+      startedLabIds: [],
+      labBeatIndex: {},
+      activitySeenAt: null,
       skillXP: {},
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      markActivitySeen: () =>
+        set({ activitySeenAt: new Date().toISOString() }),
+      startLab: (labId) =>
+        set((state) => {
+          if (
+            state.startedLabIds.includes(labId) ||
+            state.completedLabIds.includes(labId)
+          ) {
+            return {};
+          }
+          return { startedLabIds: [...state.startedLabIds, labId] };
+        }),
+      setLabBeatIndex: (labId, index) =>
+        set((state) => ({
+          labBeatIndex: { ...state.labBeatIndex, [labId]: index },
+        })),
       pushLog: (log) =>
         set((state) => ({
           activityLogs: prependLog(state.activityLogs, log),
@@ -281,13 +308,20 @@ export const useLearningStore = create<LearningState>()(
         }),
       completeLab: (labId, xpBonus = 12) =>
         set((state) => {
+          if (state.completedLabIds.includes(labId)) return {};
           const streakPatch = applyStreak(state);
           const totalXP = state.totalXP + xpBonus;
           const xpToday = state.xpToday + xpBonus;
+          const completedLabIds = [...state.completedLabIds, labId];
+          const startedLabIds = state.startedLabIds.filter((id) => id !== labId);
+          const { [labId]: _cleared, ...labBeatIndex } = state.labBeatIndex;
           return {
             ...streakPatch,
             totalXP,
             xpToday,
+            completedLabIds,
+            startedLabIds,
+            labBeatIndex,
             skillXP: bumpSkill(state.skillXP, "labs", xpBonus),
             activityLogs: prependLog(state.activityLogs, {
               type: "lab_complete",
@@ -303,9 +337,35 @@ export const useLearningStore = create<LearningState>()(
     {
       name: "learning-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<LearningState>;
+        const completedLabIds =
+          p.completedLabIds ??
+          (p.activityLogs ?? [])
+            .filter((l) => l.type === "lab_complete" && l.meta?.labId)
+            .map((l) => String(l.meta!.labId));
+        return {
+          ...current,
+          ...p,
+          completedLabIds: Array.from(new Set(completedLabIds)),
+          startedLabIds: p.startedLabIds ?? [],
+          labBeatIndex: p.labBeatIndex ?? {},
+          activitySeenAt: p.activitySeenAt ?? null,
+        };
+      },
     }
   )
 );
+
+/** True if at least one activity log is newer than the last “seen” timestamp. */
+export function hasUnreadActivity(
+  logs: ActivityLog[],
+  seenAt: string | null
+): boolean {
+  if (logs.length === 0) return false;
+  if (!seenAt) return true;
+  return logs.some((log) => log.createdAt > seenAt);
+}
 
 // Ensure tip exists for empty feeds (call from UI if needed)
 export function ensureTipLog() {

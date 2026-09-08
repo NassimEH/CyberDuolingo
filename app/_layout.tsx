@@ -94,6 +94,7 @@ export default function RootLayout() {
         <Stack.Screen name="certifications/index" />
         <Stack.Screen name="certifications/[id]" />
         <Stack.Screen name="certifications/finder" />
+        <Stack.Screen name="notifications" />
       </Stack>
     </PostHogProvider>
   );

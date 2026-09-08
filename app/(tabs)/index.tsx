@@ -1,6 +1,6 @@
 import { Bell } from "@/constants/icons";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Image,
   ScrollView,
@@ -14,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { DailyChallengeCard } from "@/components/home/DailyChallengeCard";
 import { HomeHero } from "@/components/home/HomeHero";
 import { ModuleProgressList } from "@/components/home/ModuleProgressList";
-import { NotificationsSheet } from "@/components/home/NotificationsSheet";
 import { ReviewSection } from "@/components/home/ReviewSection";
 import { WeekStrip } from "@/components/home/WeekStrip";
 import { MotionView } from "@/components/motion/MotionView";
@@ -28,7 +27,10 @@ import { getTrack } from "@/data/tracks";
 import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
 import { useTheme } from "@/lib/useTheme";
-import { useLearningStore } from "@/store/learningStore";
+import {
+  hasUnreadActivity,
+  useLearningStore,
+} from "@/store/learningStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { getSelectedUnit, useUnitStore } from "@/store/unitStore";
@@ -37,7 +39,6 @@ export default function HomeScreen() {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
-  const [notifOpen, setNotifOpen] = useState(false);
   const firstName = useSessionStore((s) => s.firstName);
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
   const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
@@ -49,6 +50,7 @@ export default function HomeScreen() {
     totalXP,
     reviewQuestionIds,
     activityLogs,
+    activitySeenAt,
     activeDays,
   } = useLearningStore();
 
@@ -57,7 +59,7 @@ export default function HomeScreen() {
   const displayName = firstName ?? "Learner";
   const { level } = getLevelProgress(totalXP);
   const daily = useMemo(() => getDailyChallenge(), []);
-  const unreadHint = activityLogs.length > 0;
+  const unreadHint = hasUnreadActivity(activityLogs, activitySeenAt);
 
   const lessons = useMemo(
     () =>
@@ -107,16 +109,6 @@ export default function HomeScreen() {
                     {t("home.level", { level })}
                   </Text>
                 </View>
-                {track ? (
-                  <Text
-                    style={[
-                      styles.trackMeta,
-                      { color: colors.neutral.textSecondary },
-                    ]}
-                  >
-                    {L(track.shortName)}
-                  </Text>
-                ) : null}
               </View>
             </View>
             <View style={styles.headerRight}>
@@ -137,7 +129,7 @@ export default function HomeScreen() {
               </View>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => setNotifOpen(true)}
+                onPress={() => router.push("/notifications")}
                 style={styles.bellBtn}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
@@ -176,7 +168,7 @@ export default function HomeScreen() {
         <View style={styles.motivation}>
           <View
             style={[
-              styles.streakCard,
+              styles.metricCard,
               {
                 backgroundColor: colors.neutral.card,
                 borderColor: colors.neutral.border,
@@ -184,17 +176,20 @@ export default function HomeScreen() {
             ]}
           >
             <Text
-              style={[styles.streakValue, { color: colors.semantic.streak }]}
+              style={[
+                styles.metricValue,
+                { color: colors.neutral.textPrimary },
+              ]}
             >
-              {streak}
+              {completedLessonIds.length}
             </Text>
             <Text
               style={[
-                styles.streakLabel,
+                styles.metricLabel,
                 { color: colors.neutral.textSecondary },
               ]}
             >
-              {t("profile.dayStreak")}
+              {t("profile.lessons")}
             </Text>
           </View>
           <View style={{ flex: 1 }}>
@@ -215,11 +210,6 @@ export default function HomeScreen() {
 
         <ModuleProgressList completedLessonIds={completedLessonIds} />
       </ScrollView>
-
-      <NotificationsSheet
-        visible={notifOpen}
-        onClose={() => setNotifOpen(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -263,10 +253,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 12,
   },
-  trackMeta: {
-    fontFamily: fontFamily.medium,
-    fontSize: 13,
-  },
   flamePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -274,10 +260,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 2,
   },
-  flameIcon: { width: 22, height: 22 },
+  flameIcon: { width: 34, height: 34 },
   flameValue: {
     fontFamily: fontFamily.bold,
-    fontSize: 16,
+    fontSize: 18,
   },
   bellBtn: {
     alignItems: "center",
@@ -297,7 +283,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: spacing.section,
   },
-  streakCard: {
+  metricCard: {
     width: 88,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -306,11 +292,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     ...shadows.card,
   },
-  streakValue: {
+  metricValue: {
     fontFamily: fontFamily.bold,
     fontSize: 28,
   },
-  streakLabel: {
+  metricLabel: {
     fontFamily: fontFamily.regular,
     fontSize: 11,
     marginTop: 2,
