@@ -1,6 +1,6 @@
-import { getLevelProgress, XP_PER_LEVEL } from "@/data/achievements";
+import { getLevelProgress, xpRequiredForLevel, XP_PER_LEVEL } from "@/data/achievements";
 
-export { getLevelProgress, XP_PER_LEVEL };
+export { getLevelProgress, xpRequiredForLevel, XP_PER_LEVEL };
 
 export function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10);

@@ -1,6 +1,6 @@
 import type { LucideIcon } from "@/constants/icons";
-import { Bell, ChevronRight, Volume2 } from "@/constants/icons";
-import { Switch, Text, View } from "react-native";
+import { ChevronRight } from "@/constants/icons";
+import { Platform, StyleSheet, Switch, Text, View } from "react-native";
 
 import { fontFamily } from "@/constants/theme";
 import { useTheme } from "@/lib/useTheme";
@@ -29,58 +29,53 @@ export function SettingsRow({
   const { colors } = useTheme();
   const resolvedIconColor = iconColor ?? colors.neutral.textPrimary;
   const resolvedIconBg = iconBg ?? "transparent";
+  const hasSwitch = onValueChange !== undefined && value !== undefined;
+  const switchOn = hasSwitch && value;
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-      }}
-    >
+    <View style={styles.row}>
       <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 12,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: resolvedIconBg,
-        }}
+        style={[
+          styles.iconWrap,
+          { backgroundColor: resolvedIconBg },
+        ]}
       >
         <Icon size={18} color={resolvedIconColor} strokeWidth={2} />
       </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text
-          style={{
-            fontFamily: fontFamily.medium,
-            fontSize: 14,
-            color: colors.neutral.textPrimary,
-          }}
-        >
+      <View style={styles.labelCol}>
+        <Text style={[styles.label, { color: colors.neutral.textPrimary }]}>
           {label}
         </Text>
         {subtitle ? (
-          <Text
-            style={{
-              fontFamily: fontFamily.regular,
-              fontSize: 11,
-              color: colors.neutral.textSecondary,
-              marginTop: 2,
-            }}
-          >
+          <Text style={[styles.subtitle, { color: colors.neutral.textSecondary }]}>
             {subtitle}
           </Text>
         ) : null}
       </View>
-      {onValueChange !== undefined && value !== undefined ? (
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          trackColor={{ false: colors.neutral.border, true: colors.soft.blueBorder }}
-          thumbColor={value ? colors.primary.blue : "#f4f4f5"}
-        />
+      {hasSwitch ? (
+        <View
+          style={[
+            styles.switchOutline,
+            { borderColor: colors.neutral.border },
+          ]}
+        >
+          <Switch
+            value={value}
+            onValueChange={onValueChange}
+            trackColor={{
+              false: colors.neutral.border,
+              true: colors.primary.blue,
+            }}
+            thumbColor={
+              Platform.OS === "ios"
+                ? "#ffffff"
+                : switchOn
+                  ? "#ffffff"
+                  : "#f3f4f6"
+            }
+            ios_backgroundColor={colors.neutral.border}
+          />
+        </View>
       ) : showChevron ? (
         <ChevronRight size={18} color={colors.neutral.textSecondary} />
       ) : null}
@@ -88,4 +83,39 @@ export function SettingsRow({
   );
 }
 
-export const settingsIcons = { Bell, Volume2 };
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  labelCol: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 10,
+  },
+  label: {
+    fontFamily: fontFamily.medium,
+    fontSize: 14,
+  },
+  subtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  switchOutline: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 16,
+    padding: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

@@ -73,11 +73,35 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-export const XP_PER_LEVEL = 100;
+/** Base XP to clear level 1 → 2. Each next level costs +XP_LEVEL_STEP more. */
+export const XP_BASE_LEVEL = 80;
+export const XP_LEVEL_STEP = 20;
+
+/** @deprecated Prefer xpRequiredForLevel — kept for callers expecting a constant. */
+export const XP_PER_LEVEL = XP_BASE_LEVEL;
+
+/** XP needed to go from `level` to `level + 1` (1-indexed). */
+export function xpRequiredForLevel(level: number): number {
+  const safe = Math.max(1, Math.floor(level));
+  return XP_BASE_LEVEL + (safe - 1) * XP_LEVEL_STEP;
+}
 
 export function getLevelProgress(totalXP: number) {
-  const level = Math.floor(totalXP / XP_PER_LEVEL) + 1;
-  const xpIntoLevel = totalXP % XP_PER_LEVEL;
-  const percent = Math.round((xpIntoLevel / XP_PER_LEVEL) * 100);
-  return { level, xpIntoLevel, xpForNext: XP_PER_LEVEL, percent };
+  let remaining = Math.max(0, Math.floor(totalXP));
+  let level = 1;
+  let need = xpRequiredForLevel(level);
+
+  while (remaining >= need) {
+    remaining -= need;
+    level += 1;
+    need = xpRequiredForLevel(level);
+  }
+
+  const percent = need > 0 ? Math.round((remaining / need) * 100) : 100;
+  return {
+    level,
+    xpIntoLevel: remaining,
+    xpForNext: need,
+    percent: Math.min(100, Math.max(0, percent)),
+  };
 }

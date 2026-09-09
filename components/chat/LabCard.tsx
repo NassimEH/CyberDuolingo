@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Lock, Zap } from "@/constants/icons";
-import { fontFamily, radius } from "@/constants/theme";
+import { fontFamily, radius, spacing } from "@/constants/theme";
 import type { LabScenario } from "@/data/labScenarios";
 import { TRACKS } from "@/data/tracks";
 import { useLocalize, useT } from "@/lib/i18n";
@@ -54,14 +54,13 @@ export function LabCard({
         styles.card,
         featured && styles.featured,
         {
-          backgroundColor: completed
-            ? "rgba(33,193,107,0.08)"
-            : colors.neutral.card,
+          backgroundColor: colors.neutral.card,
           borderColor: completed
             ? colors.semantic.success
             : featured
               ? colors.primary.blue
               : colors.neutral.border,
+          borderWidth: completed || featured ? 1.5 : 1,
           opacity: locked ? 0.72 : 1,
         },
       ]}
@@ -83,17 +82,15 @@ export function LabCard({
                 {t("lab.featured")}
               </Text>
             </View>
+          ) : status === "in_progress" ? (
+            <Text style={[styles.metaPrimary, { color: colors.primary.blue }]}>
+              {t("lab.continue")}
+            </Text>
           ) : completed ? (
             <Text
               style={[styles.metaPrimary, { color: colors.semantic.success }]}
             >
-              {t("lab.replay")}
-            </Text>
-          ) : status === "in_progress" ? (
-            <Text
-              style={[styles.metaPrimary, { color: colors.primary.blue }]}
-            >
-              {t("lab.continue")}
+              {t("lab.doneStatus")}
             </Text>
           ) : (
             <Text style={[styles.metaPrimary, { color: difficultyColor }]}>
@@ -104,11 +101,7 @@ export function LabCard({
         <Text
           style={[
             featured ? styles.xpFeatured : styles.xpInline,
-            {
-              color: completed
-                ? colors.semantic.success
-                : colors.primary.blue,
-            },
+            { color: colors.primary.blue },
           ]}
         >
           +{lab.xpReward} XP
@@ -156,6 +149,23 @@ export function LabCard({
                 {L(track.shortName)}
               </Text>
             ) : null}
+            {completed && !locked ? (
+              <View
+                style={[
+                  styles.replayChip,
+                  { borderColor: colors.semantic.success },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.replayChipText,
+                    { color: colors.semantic.success },
+                  ]}
+                >
+                  {t("lab.replay")}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
         <View
@@ -165,15 +175,19 @@ export function LabCard({
               backgroundColor: locked
                 ? colors.neutral.border
                 : completed
-                  ? colors.semantic.success
+                  ? "transparent"
                   : colors.primary.blue,
+              borderWidth: completed ? 1.5 : 0,
+              borderColor: completed
+                ? colors.semantic.success
+                : "transparent",
             },
           ]}
         >
           {locked ? (
             <Lock size={18} color={colors.neutral.textSecondary} />
           ) : completed ? (
-            <Check size={18} color="#fff" strokeWidth={2.5} />
+            <Check size={18} color={colors.semantic.success} strokeWidth={2.5} />
           ) : (
             <ChevronRight size={18} color="#fff" strokeWidth={2.5} />
           )}
@@ -188,18 +202,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: spacing.cardGap,
   },
   featured: {
-    padding: 16,
-    marginBottom: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   topRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   topLeft: {
     flex: 1,
@@ -259,6 +273,17 @@ const styles = StyleSheet.create({
   metaDot: {
     fontFamily: fontFamily.medium,
     fontSize: 12,
+  },
+  replayChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginLeft: 2,
+  },
+  replayChipText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 11,
   },
   cta: {
     width: 36,

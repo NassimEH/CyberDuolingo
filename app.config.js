@@ -1,19 +1,19 @@
 export default {
   expo: {
-    name: "Tech",
-    slug: "tech",
+    name: "Stack",
+    slug: "stack",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "tech",
+    scheme: "stack",
     userInterfaceStyle: "automatic",
     newArchEnabled: false,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.tech.app",
+      bundleIdentifier: "com.stack.app",
     },
     android: {
-      package: "com.tech.app",
+      package: "com.stack.app",
       adaptiveIcon: {
         backgroundColor: "#DBEAFE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -29,6 +29,15 @@ export default {
     },
     plugins: [
       "expo-router",
+      "expo-updates",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#2563EB",
+          defaultChannel: "stack-reminders",
+        },
+      ],
       [
         "expo-splash-screen",
         {
@@ -59,9 +68,9 @@ export default {
         "@config-plugins/react-native-webrtc",
         {
           cameraPermission:
-            "Allow $(PRODUCT_NAME) to access your camera for tech lessons.",
+            "Allow $(PRODUCT_NAME) to access your camera for Stack lessons.",
           microphonePermission:
-            "Allow $(PRODUCT_NAME) to access your microphone for tech lessons.",
+            "Allow $(PRODUCT_NAME) to access your microphone for Stack lessons.",
         },
       ],
       [
@@ -77,10 +86,24 @@ export default {
       typedRoutes: true,
       reactCompiler: true,
     },
+    runtimeVersion: {
+      policy: "appVersion",
+    },
+    updates: {
+      url: "https://u.expo.dev/placeholder-project-id",
+      fallbackToCacheTimeout: 0,
+    },
     extra: {
-      posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
-      posthogHost: process.env.POSTHOG_HOST,
+      posthogProjectToken:
+        process.env.POSTHOG_PROJECT_TOKEN || "phc_your_project_token_here",
+      posthogHost: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
       streamApiKey: process.env.STREAM_API_KEY,
+      neonAuthUrl: process.env.EXPO_PUBLIC_NEON_AUTH_URL,
+      neonDataApiUrl: process.env.EXPO_PUBLIC_NEON_DATA_API_URL,
+      authOrigin: process.env.EXPO_PUBLIC_AUTH_ORIGIN,
+      eas: {
+        projectId: process.env.EAS_PROJECT_ID || "placeholder-project-id",
+      },
     },
   },
 };

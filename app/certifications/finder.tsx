@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 16,
   },
-  pad: { padding: spacing.screen, paddingBottom: 40 },
+  pad: { padding: spacing.screen, paddingBottom: spacing.scrollBottom },
   title: {
     fontFamily: fontFamily.semiBold,
     fontSize: 18,

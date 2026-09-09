@@ -1677,6 +1677,637 @@ function TestPyramidDiagram({ colors, label }: DiagramProps) {
   );
 }
 
+function EncapsulationDiagram({ colors, label }: DiagramProps) {
+  const layers = [
+    { name: "HTTP", w: 100 },
+    { name: "TCP", w: 140 },
+    { name: "IP", w: 180 },
+    { name: label("Trame", "Frame"), w: 220 },
+  ];
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      {layers.map((layer, i) => {
+        const x = 160 - layer.w / 2;
+        const y = 20 + i * 32;
+        return (
+          <Rect
+            key={layer.name}
+            x={x}
+            y={y}
+            width={layer.w}
+            height={28}
+            rx={8}
+            fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+            stroke={colors.primary.blue}
+            strokeWidth={1.5}
+          />
+        );
+      })}
+      {layers.map((layer, i) => (
+        <SvgText
+          key={`t-${layer.name}`}
+          x={160}
+          y={39 + i * 32}
+          fill={colors.neutral.textPrimary}
+          fontSize={11}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {layer.name}
+        </SvgText>
+      ))}
+      <SvgText
+        x={160}
+        y={160}
+        fill={colors.neutral.textSecondary}
+        fontSize={10}
+        textAnchor="middle"
+      >
+        {label("enveloppes imbriquées", "nested envelopes")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function PortsMapDiagram({ colors, label }: DiagramProps) {
+  const ports = [
+    { port: "22", name: "SSH" },
+    { port: "53", name: "DNS" },
+    { port: "80", name: "HTTP" },
+    { port: "443", name: "HTTPS" },
+  ];
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect
+        x={20}
+        y={30}
+        width={90}
+        height={100}
+        rx={12}
+        fill={colors.soft.blueMuted}
+        stroke={colors.primary.blue}
+        strokeWidth={2}
+      />
+      <SvgText
+        x={65}
+        y={85}
+        fill={colors.neutral.textPrimary}
+        fontSize={12}
+        fontWeight="600"
+        textAnchor="middle"
+      >
+        {label("Machine", "Host")}
+      </SvgText>
+      {ports.map((p, i) => {
+        const y = 28 + i * 28;
+        return (
+          <Rect
+            key={p.port}
+            x={140}
+            y={y}
+            width={160}
+            height={24}
+            rx={8}
+            fill={colors.soft.blueBg}
+            stroke={colors.soft.blueBorder}
+            strokeWidth={1.5}
+          />
+        );
+      })}
+      {ports.map((p, i) => {
+        const y = 45 + i * 28;
+        return (
+          <SvgText
+            key={`t-${p.port}`}
+            x={220}
+            y={y}
+            fill={colors.neutral.textPrimary}
+            fontSize={11}
+            fontWeight="600"
+            textAnchor="middle"
+          >
+            {`:${p.port}  ${p.name}`}
+          </SvgText>
+        );
+      })}
+      <Line x1={110} y1={80} x2={140} y2={80} stroke={colors.primary.blue} strokeWidth={2} />
+    </Svg>
+  );
+}
+
+function DnsHierarchyDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      <Circle cx={160} cy={28} r={16} fill={colors.primary.blue} />
+      <SvgText x={160} y={33} fill="#fff" fontSize={12} fontWeight="700" textAnchor="middle">
+        .
+      </SvgText>
+      <Line x1={160} y1={44} x2={160} y2={62} stroke={colors.primary.blue} strokeWidth={2} />
+      <Rect x={110} y={62} width={100} height={28} rx={8} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <SvgText x={160} y={81} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        .com
+      </SvgText>
+      <Line x1={160} y1={90} x2={160} y2={108} stroke={colors.primary.blue} strokeWidth={2} />
+      <Rect x={95} y={108} width={130} height={28} rx={8} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={160} y={127} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        example.com
+      </SvgText>
+      <Line x1={120} y1={136} x2={90} y2={152} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <Line x1={200} y1={136} x2={230} y2={152} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={70} y={162} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        www
+      </SvgText>
+      <SvgText x={250} y={162} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        api
+      </SvgText>
+      <SvgText x={160} y={18} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        {label("racine", "root")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function SdlcCycleDiagram({ colors, label }: DiagramProps) {
+  const steps = [
+    label("Plan", "Plan"),
+    label("Code", "Code"),
+    label("Test", "Test"),
+    label("Déployer", "Deploy"),
+  ];
+  return (
+    <Svg width="100%" height={150} viewBox="0 0 320 150">
+      {steps.map((name, i) => {
+        const x = 18 + i * 76;
+        return (
+          <Rect
+            key={name}
+            x={x}
+            y={50}
+            width={68}
+            height={44}
+            rx={10}
+            fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+            stroke={colors.primary.blue}
+            strokeWidth={1.5}
+          />
+        );
+      })}
+      {steps.map((name, i) => {
+        const x = 52 + i * 76;
+        return (
+          <SvgText
+            key={`t-${name}`}
+            x={x}
+            y={77}
+            fill={colors.neutral.textPrimary}
+            fontSize={11}
+            fontWeight="600"
+            textAnchor="middle"
+          >
+            {name}
+          </SvgText>
+        );
+      })}
+      {[0, 1, 2].map((i) => (
+        <Line
+          key={`a-${i}`}
+          x1={86 + i * 76}
+          y1={72}
+          x2={94 + i * 76}
+          y2={72}
+          stroke={colors.primary.blue}
+          strokeWidth={2}
+        />
+      ))}
+      <SvgText x={160} y={130} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("cycle de vie logiciel", "software lifecycle")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function AlgoSearchDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <SvgText x={80} y={24} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {label("Linéaire", "Linear")}
+      </SvgText>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Rect
+          key={`l-${i}`}
+          x={20 + i * 24}
+          y={36}
+          width={20}
+          height={28}
+          rx={4}
+          fill={i === 3 ? colors.semantic.success : colors.soft.blueMuted}
+          stroke={colors.primary.blue}
+          strokeWidth={1}
+        />
+      ))}
+      <SvgText x={80} y={84} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        {label("1 → 2 → 3 → …", "1 → 2 → 3 → …")}
+      </SvgText>
+      <SvgText x={240} y={24} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {label("Dichotomique", "Binary")}
+      </SvgText>
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <Rect
+          key={`b-${i}`}
+          x={168 + i * 18}
+          y={36}
+          width={16}
+          height={28}
+          rx={3}
+          fill={i === 3 ? colors.semantic.success : i < 2 || i > 4 ? colors.soft.blueBg : colors.soft.blueMuted}
+          stroke={colors.soft.blueBorder}
+          strokeWidth={1}
+        />
+      ))}
+      <SvgText x={240} y={84} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        {label("milieu → moitié", "mid → half")}
+      </SvgText>
+      <Rect x={40} y={105} width={240} height={36} rx={10} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={160} y={128} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        O(n)  vs  O(log n)
+      </SvgText>
+    </Svg>
+  );
+}
+
+function StackQueueDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <SvgText x={80} y={22} fill={colors.neutral.textPrimary} fontSize={12} fontWeight="600" textAnchor="middle">
+        {label("Pile", "Stack")}
+      </SvgText>
+      {[0, 1, 2].map((i) => (
+        <Rect
+          key={`s-${i}`}
+          x={40}
+          y={110 - i * 28}
+          width={80}
+          height={24}
+          rx={6}
+          fill={colors.soft.blueMuted}
+          stroke={colors.primary.blue}
+          strokeWidth={1.5}
+        />
+      ))}
+      <SvgText x={80} y={148} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        LIFO
+      </SvgText>
+      <SvgText x={240} y={22} fill={colors.neutral.textPrimary} fontSize={12} fontWeight="600" textAnchor="middle">
+        {label("File", "Queue")}
+      </SvgText>
+      {[0, 1, 2, 3].map((i) => (
+        <Rect
+          key={`q-${i}`}
+          x={170 + i * 32}
+          y={70}
+          width={28}
+          height={36}
+          rx={6}
+          fill={colors.soft.blueBg}
+          stroke={colors.soft.blueBorder}
+          strokeWidth={1.5}
+        />
+      ))}
+      <SvgText x={180} y={128} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        in
+      </SvgText>
+      <SvgText x={290} y={128} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        out
+      </SvgText>
+      <SvgText x={240} y={148} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        FIFO
+      </SvgText>
+    </Svg>
+  );
+}
+
+function ControlFlowDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect x={110} y={12} width={100} height={28} rx={8} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <SvgText x={160} y={31} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        if ?
+      </SvgText>
+      <Line x1={160} y1={40} x2={80} y2={70} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <Line x1={160} y1={40} x2={240} y2={70} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <Rect x={30} y={70} width={100} height={28} rx={8} fill={colors.soft.blueBg} stroke={colors.semantic.success} strokeWidth={1.5} />
+      <SvgText x={80} y={89} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {label("oui → action", "yes → action")}
+      </SvgText>
+      <Rect x={190} y={70} width={100} height={28} rx={8} fill={colors.soft.blueBg} stroke={colors.semantic.error} strokeWidth={1.5} />
+      <SvgText x={240} y={89} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {label("non → else", "no → else")}
+      </SvgText>
+      <Rect x={70} y={118} width={180} height={28} rx={8} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <SvgText x={160} y={137} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {label("boucle : tant que…", "loop: while…")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function OopInheritanceDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={160} viewBox="0 0 320 160">
+      <Rect x={110} y={16} width={100} height={36} rx={10} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={160} y={38} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {label("Classe", "Class")}
+      </SvgText>
+      <Line x1={160} y1={52} x2={80} y2={88} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <Line x1={160} y1={52} x2={240} y2={88} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <Rect x={30} y={88} width={100} height={36} rx={10} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={80} y={110} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {label("Instance A", "Instance A")}
+      </SvgText>
+      <Rect x={190} y={88} width={100} height={36} rx={10} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={240} y={110} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {label("Instance B", "Instance B")}
+      </SvgText>
+      <SvgText x={160} y={148} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("1 plan → plusieurs objets", "1 blueprint → many objects")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function MonolithMicroDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={150} viewBox="0 0 320 150">
+      <Rect x={20} y={35} width={120} height={80} rx={12} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={80} y={70} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {label("Monolithe", "Monolith")}
+      </SvgText>
+      <SvgText x={80} y={90} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        {label("1 app", "1 app")}
+      </SvgText>
+      <Rect x={180} y={28} width={55} height={36} rx={8} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <Rect x={245} y={28} width={55} height={36} rx={8} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <Rect x={180} y={78} width={55} height={36} rx={8} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <Rect x={245} y={78} width={55} height={36} rx={8} fill={colors.soft.blueBg} stroke={colors.soft.blueBorder} strokeWidth={1.5} />
+      <SvgText x={207} y={50} fill={colors.neutral.textPrimary} fontSize={9} fontWeight="600" textAnchor="middle">
+        API
+      </SvgText>
+      <SvgText x={272} y={50} fill={colors.neutral.textPrimary} fontSize={9} fontWeight="600" textAnchor="middle">
+        Auth
+      </SvgText>
+      <SvgText x={207} y={100} fill={colors.neutral.textPrimary} fontSize={9} fontWeight="600" textAnchor="middle">
+        Pay
+      </SvgText>
+      <SvgText x={272} y={100} fill={colors.neutral.textPrimary} fontSize={9} fontWeight="600" textAnchor="middle">
+        Notif
+      </SvgText>
+      <SvgText x={240} y={140} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        {label("services", "services")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function DebugLoopDiagram({ colors, label }: DiagramProps) {
+  const steps = [
+    label("Reproduire", "Reproduce"),
+    label("Isoler", "Isolate"),
+    label("Corriger", "Fix"),
+    label("Vérifier", "Verify"),
+  ];
+  return (
+    <Svg width="100%" height={140} viewBox="0 0 320 140">
+      {steps.map((name, i) => {
+        const x = 12 + i * 78;
+        return (
+          <Rect
+            key={name}
+            x={x}
+            y={45}
+            width={70}
+            height={40}
+            rx={10}
+            fill={i % 2 === 0 ? colors.soft.blueMuted : colors.soft.blueBg}
+            stroke={colors.primary.blue}
+            strokeWidth={1.5}
+          />
+        );
+      })}
+      {steps.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={47 + i * 78}
+          y={70}
+          fill={colors.neutral.textPrimary}
+          fontSize={9}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      <SvgText x={160} y={120} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("méthode de débogage", "debugging method")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function GitStageDiagram({ colors, label }: DiagramProps) {
+  const zones = [
+    label("Working", "Working"),
+    label("Stage", "Stage"),
+    label("Commit", "Commit"),
+  ];
+  return (
+    <Svg width="100%" height={140} viewBox="0 0 320 140">
+      {zones.map((name, i) => (
+        <Rect
+          key={name}
+          x={20 + i * 100}
+          y={40}
+          width={88}
+          height={50}
+          rx={12}
+          fill={i === 1 ? colors.soft.blueMuted : colors.soft.blueBg}
+          stroke={colors.primary.blue}
+          strokeWidth={1.5}
+        />
+      ))}
+      {zones.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={64 + i * 100}
+          y={70}
+          fill={colors.neutral.textPrimary}
+          fontSize={11}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      <Line x1={108} y1={65} x2={120} y2={65} stroke={colors.primary.blue} strokeWidth={2} />
+      <Line x1={208} y1={65} x2={220} y2={65} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={160} y={120} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        add → commit
+      </SvgText>
+    </Svg>
+  );
+}
+
+function AgileBoardDiagram({ colors, label }: DiagramProps) {
+  const cols = [
+    label("Backlog", "Backlog"),
+    label("Sprint", "Sprint"),
+    label("Done", "Done"),
+  ];
+  return (
+    <Svg width="100%" height={150} viewBox="0 0 320 150">
+      {cols.map((name, i) => (
+        <Rect
+          key={name}
+          x={18 + i * 100}
+          y={20}
+          width={90}
+          height={100}
+          rx={10}
+          fill={colors.soft.blueBg}
+          stroke={colors.soft.blueBorder}
+          strokeWidth={1.5}
+        />
+      ))}
+      {cols.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={63 + i * 100}
+          y={42}
+          fill={colors.neutral.textPrimary}
+          fontSize={11}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      <Rect x={28} y={55} width={70} height={18} rx={4} fill={colors.soft.blueMuted} />
+      <Rect x={28} y={80} width={70} height={18} rx={4} fill={colors.soft.blueMuted} />
+      <Rect x={128} y={55} width={70} height={18} rx={4} fill={colors.primary.blue} />
+      <Rect x={228} y={55} width={70} height={18} rx={4} fill={colors.semantic.success} />
+    </Svg>
+  );
+}
+
+function CodeReviewFlowDiagram({ colors, label }: DiagramProps) {
+  const steps = [
+    label("Auteur", "Author"),
+    "PR",
+    label("Revue", "Review"),
+    label("Merge", "Merge"),
+  ];
+  return (
+    <Svg width="100%" height={130} viewBox="0 0 320 130">
+      {steps.map((name, i) => (
+        <Rect
+          key={name}
+          x={12 + i * 78}
+          y={40}
+          width={70}
+          height={40}
+          rx={10}
+          fill={i === 2 ? colors.soft.blueMuted : colors.soft.blueBg}
+          stroke={colors.primary.blue}
+          strokeWidth={1.5}
+        />
+      ))}
+      {steps.map((name, i) => (
+        <SvgText
+          key={`t-${name}`}
+          x={47 + i * 78}
+          y={65}
+          fill={colors.neutral.textPrimary}
+          fontSize={10}
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {name}
+        </SvgText>
+      ))}
+      <SvgText x={160} y={110} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("flux de revue de code", "code review flow")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function HtmlSkeletonDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      <Rect x={40} y={16} width={240} height={130} rx={10} fill={colors.soft.blueBg} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={160} y={38} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {"<html>"}
+      </SvgText>
+      <Rect x={60} y={50} width={200} height={28} rx={6} fill={colors.soft.blueMuted} stroke={colors.soft.blueBorder} strokeWidth={1} />
+      <SvgText x={160} y={69} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {"<head>"}
+      </SvgText>
+      <Rect x={60} y={90} width={200} height={40} rx={6} fill={colors.soft.blueMuted} stroke={colors.soft.blueBorder} strokeWidth={1} />
+      <SvgText x={160} y={115} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        {"<body>"}
+      </SvgText>
+      <SvgText x={160} y={162} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("squelette HTML", "HTML skeleton")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function CssBoxModelDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={170} viewBox="0 0 320 170">
+      <Rect x={30} y={20} width={260} height={120} rx={8} fill={colors.soft.blueBg} stroke={colors.semantic.warning} strokeWidth={2} />
+      <SvgText x={160} y={38} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        margin
+      </SvgText>
+      <Rect x={55} y={45} width={210} height={80} rx={6} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <SvgText x={160} y={60} fill={colors.neutral.textSecondary} fontSize={9} textAnchor="middle">
+        border / padding
+      </SvgText>
+      <Rect x={95} y={70} width={130} height={40} rx={4} fill={colors.neutral.card} stroke={colors.primary.blue} strokeWidth={1.5} />
+      <SvgText x={160} y={95} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        content
+      </SvgText>
+      <SvgText x={160} y={160} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("modèle de boîte CSS", "CSS box model")}
+      </SvgText>
+    </Svg>
+  );
+}
+
+function CacheCdnDiagram({ colors, label }: DiagramProps) {
+  return (
+    <Svg width="100%" height={150} viewBox="0 0 320 150">
+      <Rect x={20} y={50} width={70} height={50} rx={10} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={55} y={80} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        {label("User", "User")}
+      </SvgText>
+      <Line x1={90} y1={75} x2={130} y2={75} stroke={colors.primary.blue} strokeWidth={2} />
+      <Rect x={130} y={50} width={70} height={50} rx={10} fill={colors.soft.blueBg} stroke={colors.semantic.success} strokeWidth={2} />
+      <SvgText x={165} y={80} fill={colors.neutral.textPrimary} fontSize={11} fontWeight="600" textAnchor="middle">
+        CDN
+      </SvgText>
+      <Line x1={200} y1={75} x2={240} y2={75} stroke={colors.soft.blueBorder} strokeWidth={2} strokeDasharray="4 3" />
+      <Rect x={240} y={50} width={60} height={50} rx={10} fill={colors.soft.blueMuted} stroke={colors.primary.blue} strokeWidth={2} />
+      <SvgText x={270} y={80} fill={colors.neutral.textPrimary} fontSize={10} fontWeight="600" textAnchor="middle">
+        Origin
+      </SvgText>
+      <SvgText x={160} y={130} fill={colors.neutral.textSecondary} fontSize={10} textAnchor="middle">
+        {label("cache proche de l'utilisateur", "cache near the user")}
+      </SvgText>
+    </Svg>
+  );
+}
+
 const DIAGRAMS: Record<
   DiagramId,
   (props: DiagramProps) => ReactElement
@@ -1702,6 +2333,22 @@ const DIAGRAMS: Record<
   "docker-layers": DockerLayersDiagram,
   "mvc-architecture": MvcArchitectureDiagram,
   "test-pyramid": TestPyramidDiagram,
+  encapsulation: EncapsulationDiagram,
+  "ports-map": PortsMapDiagram,
+  "dns-hierarchy": DnsHierarchyDiagram,
+  "sdlc-cycle": SdlcCycleDiagram,
+  "algo-search": AlgoSearchDiagram,
+  "stack-queue": StackQueueDiagram,
+  "control-flow": ControlFlowDiagram,
+  "oop-inheritance": OopInheritanceDiagram,
+  "monolith-micro": MonolithMicroDiagram,
+  "debug-loop": DebugLoopDiagram,
+  "git-stage": GitStageDiagram,
+  "agile-board": AgileBoardDiagram,
+  "code-review-flow": CodeReviewFlowDiagram,
+  "html-skeleton": HtmlSkeletonDiagram,
+  "css-box-model": CssBoxModelDiagram,
+  "cache-cdn": CacheCdnDiagram,
 };
 
 const TITLES: Record<DiagramId, { fr: string; en: string }> = {
@@ -1735,6 +2382,22 @@ const TITLES: Record<DiagramId, { fr: string; en: string }> = {
   "docker-layers": { fr: "Couches Docker", en: "Docker layers" },
   "mvc-architecture": { fr: "Architecture MVC", en: "MVC architecture" },
   "test-pyramid": { fr: "Pyramide de tests", en: "Test pyramid" },
+  encapsulation: { fr: "Encapsulation", en: "Encapsulation" },
+  "ports-map": { fr: "Ports et services", en: "Ports and services" },
+  "dns-hierarchy": { fr: "Hiérarchie DNS", en: "DNS hierarchy" },
+  "sdlc-cycle": { fr: "Cycle de vie logiciel", en: "Software lifecycle" },
+  "algo-search": { fr: "Recherche linéaire vs dichotomique", en: "Linear vs binary search" },
+  "stack-queue": { fr: "Pile et file", en: "Stack and queue" },
+  "control-flow": { fr: "Conditions et boucles", en: "Conditions and loops" },
+  "oop-inheritance": { fr: "Classe et instances", en: "Class and instances" },
+  "monolith-micro": { fr: "Monolithe vs services", en: "Monolith vs services" },
+  "debug-loop": { fr: "Boucle de débogage", en: "Debug loop" },
+  "git-stage": { fr: "Zones Git", en: "Git areas" },
+  "agile-board": { fr: "Tableau Agile", en: "Agile board" },
+  "code-review-flow": { fr: "Revue de code", en: "Code review" },
+  "html-skeleton": { fr: "Squelette HTML", en: "HTML skeleton" },
+  "css-box-model": { fr: "Modèle de boîte CSS", en: "CSS box model" },
+  "cache-cdn": { fr: "Cache et CDN", en: "Cache and CDN" },
 };
 
 type Props = { id: DiagramId };

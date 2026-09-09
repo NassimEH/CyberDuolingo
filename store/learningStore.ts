@@ -3,8 +3,11 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import type { AchievementId } from "@/data/achievements";
+import type { AnswerVerdict } from "@/data/labScenarios";
 import { LESSON_SKILL, type SkillId } from "@/data/skills";
+import { todayDateKey } from "@/lib/labEngine";
 import { daysBetween, todayKey } from "@/lib/level";
+import type { LocalizedString } from "@/lib/i18n/translations";
 
 export type ActivityLogType =
   | "lesson_complete"
@@ -22,6 +25,27 @@ export interface ActivityLog {
   meta?: Record<string, string | number>;
 }
 
+export type LabAnswerRecord = {
+  stepId: string;
+  userText: string;
+  choiceId: string | null;
+  verdict: AnswerVerdict;
+  explanation: LocalizedString;
+  expectedAnswer: LocalizedString;
+  tutorReply: LocalizedString;
+};
+
+export type LabSessionProgress = {
+  stepId: string;
+  answers: LabAnswerRecord[];
+};
+
+/** Local daily quota — replace with backend gate later. */
+export const DAILY_LAB_LIMIT = 2;
+
+export const DAILY_GOAL_OPTIONS = [10, 20, 50] as const;
+export type DailyGoalOption = (typeof DAILY_GOAL_OPTIONS)[number];
+
 interface LearningState {
   xpToday: number;
   dailyGoal: number;
@@ -32,15 +56,26 @@ interface LearningState {
   completedLessonIds: string[];
   unlockedAchievementIds: AchievementId[];
   reviewQuestionIds: string[];
-  soundEnabled: boolean;
   activityLogs: ActivityLog[];
   activeDays: string[];
   completedChallengeIds: string[];
   completedLabIds: string[];
+  /** Labs finished with only correct answers (may or may not have earned XP). */
+  perfectLabIds: string[];
+  /** Labs that already granted XP (never grant twice). */
+  rewardedLabIds: string[];
   startedLabIds: string[];
-  labBeatIndex: Record<string, number>;
+  labSessions: Record<string, LabSessionProgress>;
+  /** YYYY-MM-DD of the daily lab counter. */
+  labsDayKey: string | null;
+  /** Lab ids that consumed a daily start slot today. */
+  labsStartedToday: string[];
   activitySeenAt: string | null;
   skillXP: Partial<Record<SkillId, number>>;
+  /** True after XP crosses dailyGoal until the user dismisses the celebration. */
+  pendingGoalCelebration: boolean;
+  setDailyGoal: (goal: number) => void;
+  acknowledgeGoalCelebration: () => void;
   addXP: (amount: number, opts?: { silent?: boolean; skillId?: SkillId }) => void;
   completeLesson: (
     lessonId: string,
@@ -48,13 +83,19 @@ interface LearningState {
   ) => void;
   recordQuizAnswer: (activityId: string, correct: boolean) => void;
   completeChallenge: (challengeId: string, xpBonus: number, skillId: SkillId) => void;
-  startLab: (labId: string) => void;
-  setLabBeatIndex: (labId: string, index: number) => void;
-  completeLab: (labId: string, xpBonus?: number) => void;
+  /** Returns false if daily limit reached (new starts only). */
+  startLab: (labId: string) => boolean;
+  setLabSession: (labId: string, progress: LabSessionProgress) => void;
+  clearLabSession: (labId: string) => void;
+  finishLab: (
+    labId: string,
+    opts: { perfect: boolean; xpBonus: number }
+  ) => { awardedXp: number };
+  getDailyLabUsage: () => { used: number; limit: number; remaining: number };
   pushLog: (log: Omit<ActivityLog, "id" | "createdAt">) => void;
-  setSoundEnabled: (value: boolean) => void;
   touchStreak: () => void;
   markActivitySeen: () => void;
+  clearAllLocalData: () => void;
 }
 
 const MAX_LOGS = 30;
@@ -160,32 +201,84 @@ export const useLearningStore = create<LearningState>()(
       completedLessonIds: [],
       unlockedAchievementIds: [],
       reviewQuestionIds: [],
-      soundEnabled: true,
       activityLogs: [],
       activeDays: [],
       completedChallengeIds: [],
       completedLabIds: [],
+      perfectLabIds: [],
+      rewardedLabIds: [],
       startedLabIds: [],
-      labBeatIndex: {},
+      labSessions: {},
+      labsDayKey: null,
+      labsStartedToday: [],
       activitySeenAt: null,
       skillXP: {},
-      setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      pendingGoalCelebration: false,
+      setDailyGoal: (goal) =>
+        set((state) => {
+          const next = DAILY_GOAL_OPTIONS.includes(goal as DailyGoalOption)
+            ? goal
+            : state.dailyGoal;
+          return {
+            dailyGoal: next,
+            pendingGoalCelebration:
+              state.xpToday >= next ? false : state.pendingGoalCelebration,
+          };
+        }),
+      acknowledgeGoalCelebration: () => set({ pendingGoalCelebration: false }),
       markActivitySeen: () =>
         set({ activitySeenAt: new Date().toISOString() }),
-      startLab: (labId) =>
-        set((state) => {
+      getDailyLabUsage: () => {
+        const state = get();
+        const today = todayDateKey();
+        const used =
+          state.labsDayKey === today ? state.labsStartedToday.length : 0;
+        return {
+          used,
+          limit: DAILY_LAB_LIMIT,
+          remaining: Math.max(0, DAILY_LAB_LIMIT - used),
+        };
+      },
+      startLab: (labId) => {
+        const state = get();
+        const today = todayDateKey();
+        const dayIds =
+          state.labsDayKey === today ? [...state.labsStartedToday] : [];
+        const isResumeOrReplay =
+          state.startedLabIds.includes(labId) ||
+          state.completedLabIds.includes(labId) ||
+          dayIds.includes(labId);
+
+        if (isResumeOrReplay) {
           if (
-            state.startedLabIds.includes(labId) ||
-            state.completedLabIds.includes(labId)
+            !state.startedLabIds.includes(labId) &&
+            !state.completedLabIds.includes(labId)
           ) {
-            return {};
+            set({ startedLabIds: [...state.startedLabIds, labId] });
           }
-          return { startedLabIds: [...state.startedLabIds, labId] };
-        }),
-      setLabBeatIndex: (labId, index) =>
+          return true;
+        }
+
+        if (dayIds.length >= DAILY_LAB_LIMIT) {
+          return false;
+        }
+
+        set({
+          startedLabIds: [...state.startedLabIds, labId],
+          labsDayKey: today,
+          labsStartedToday: [...dayIds, labId],
+        });
+        return true;
+      },
+      setLabSession: (labId, progress) =>
         set((state) => ({
-          labBeatIndex: { ...state.labBeatIndex, [labId]: index },
+          labSessions: { ...state.labSessions, [labId]: progress },
         })),
+      clearLabSession: (labId) =>
+        set((state) => {
+          const { [labId]: _removed, ...labSessions } = state.labSessions;
+          return { labSessions };
+        }),
       pushLog: (log) =>
         set((state) => ({
           activityLogs: prependLog(state.activityLogs, log),
@@ -196,6 +289,10 @@ export const useLearningStore = create<LearningState>()(
           const streakPatch = applyStreak(state);
           const totalXP = state.totalXP + amount;
           const xpToday = state.xpToday + amount;
+          const crossedGoal =
+            state.dailyGoal > 0 &&
+            state.xpToday < state.dailyGoal &&
+            xpToday >= state.dailyGoal;
           const skillXP = bumpSkill(state.skillXP, opts?.skillId, amount);
           const merged = { ...state, ...streakPatch, totalXP, xpToday };
           const logs = opts?.silent
@@ -214,6 +311,8 @@ export const useLearningStore = create<LearningState>()(
             xpToday,
             skillXP,
             activityLogs: logs,
+            pendingGoalCelebration:
+              crossedGoal || state.pendingGoalCelebration,
             unlockedAchievementIds: computeAchievements(merged),
           };
         }),
@@ -285,12 +384,18 @@ export const useLearningStore = create<LearningState>()(
           const streakPatch = applyStreak(state);
           const totalXP = state.totalXP + xpBonus;
           const xpToday = state.xpToday + xpBonus;
+          const crossedGoal =
+            state.dailyGoal > 0 &&
+            state.xpToday < state.dailyGoal &&
+            xpToday >= state.dailyGoal;
           return {
             ...streakPatch,
             completedChallengeIds: [...state.completedChallengeIds, challengeId],
             totalXP,
             xpToday,
             skillXP: bumpSkill(state.skillXP, skillId, xpBonus),
+            pendingGoalCelebration:
+              crossedGoal || state.pendingGoalCelebration,
             activityLogs: prependLog(state.activityLogs, {
               type: "challenge_complete",
               message: {
@@ -306,33 +411,104 @@ export const useLearningStore = create<LearningState>()(
             }),
           };
         }),
-      completeLab: (labId, xpBonus = 12) =>
+      finishLab: (labId, opts) => {
+        let awardedXp = 0;
         set((state) => {
-          if (state.completedLabIds.includes(labId)) return {};
           const streakPatch = applyStreak(state);
-          const totalXP = state.totalXP + xpBonus;
-          const xpToday = state.xpToday + xpBonus;
-          const completedLabIds = [...state.completedLabIds, labId];
+          const completedLabIds = state.completedLabIds.includes(labId)
+            ? state.completedLabIds
+            : [...state.completedLabIds, labId];
           const startedLabIds = state.startedLabIds.filter((id) => id !== labId);
-          const { [labId]: _cleared, ...labBeatIndex } = state.labBeatIndex;
+          const { [labId]: _cleared, ...labSessions } = state.labSessions;
+          const perfectLabIds =
+            opts.perfect && !state.perfectLabIds.includes(labId)
+              ? [...state.perfectLabIds, labId]
+              : state.perfectLabIds;
+
+          const canReward =
+            opts.perfect && !state.rewardedLabIds.includes(labId);
+          awardedXp = canReward ? opts.xpBonus : 0;
+          const rewardedLabIds = canReward
+            ? [...state.rewardedLabIds, labId]
+            : state.rewardedLabIds;
+
+          const totalXP = state.totalXP + awardedXp;
+          const xpToday = state.xpToday + awardedXp;
+          const crossedGoal =
+            awardedXp > 0 &&
+            state.dailyGoal > 0 &&
+            state.xpToday < state.dailyGoal &&
+            xpToday >= state.dailyGoal;
+          const skillXP =
+            awardedXp > 0
+              ? bumpSkill(state.skillXP, "labs", awardedXp)
+              : state.skillXP;
+
+          const message = opts.perfect
+            ? awardedXp > 0
+              ? {
+                  fr: `Lab réussi · +${awardedXp} XP`,
+                  en: `Lab passed · +${awardedXp} XP`,
+                }
+              : {
+                  fr: "Lab réussi (XP déjà attribuée)",
+                  en: "Lab passed (XP already awarded)",
+                }
+            : {
+                fr: "Lab terminé sans réussite",
+                en: "Lab finished without a pass",
+              };
+
           return {
             ...streakPatch,
             totalXP,
             xpToday,
             completedLabIds,
+            perfectLabIds,
+            rewardedLabIds,
             startedLabIds,
-            labBeatIndex,
-            skillXP: bumpSkill(state.skillXP, "labs", xpBonus),
+            labSessions,
+            skillXP,
+            pendingGoalCelebration:
+              crossedGoal || state.pendingGoalCelebration,
             activityLogs: prependLog(state.activityLogs, {
               type: "lab_complete",
-              message: {
-                fr: `Lab terminé · +${xpBonus} XP`,
-                en: `Lab complete · +${xpBonus} XP`,
+              message,
+              meta: {
+                labId,
+                xpBonus: awardedXp,
+                perfect: opts.perfect ? 1 : 0,
               },
-              meta: { labId, xpBonus },
             }),
           };
-        }),
+        });
+        return { awardedXp };
+      },
+      clearAllLocalData: () =>
+        set((state) => ({
+          xpToday: 0,
+          dailyGoal: 20,
+          totalXP: 0,
+          streak: 0,
+          streakFreezes: 1,
+          lastActiveDate: null,
+          completedLessonIds: [],
+          unlockedAchievementIds: [],
+          reviewQuestionIds: [],
+          activityLogs: [],
+          activeDays: [],
+          completedChallengeIds: [],
+          completedLabIds: [],
+          perfectLabIds: [],
+          rewardedLabIds: [],
+          startedLabIds: [],
+          labSessions: {},
+          labsDayKey: null,
+          labsStartedToday: [],
+          activitySeenAt: null,
+          skillXP: {},
+          pendingGoalCelebration: false,
+        })),
     }),
     {
       name: "learning-storage",
@@ -348,9 +524,14 @@ export const useLearningStore = create<LearningState>()(
           ...current,
           ...p,
           completedLabIds: Array.from(new Set(completedLabIds)),
+          perfectLabIds: p.perfectLabIds ?? [],
+          rewardedLabIds: p.rewardedLabIds ?? completedLabIds,
           startedLabIds: p.startedLabIds ?? [],
-          labBeatIndex: p.labBeatIndex ?? {},
+          labSessions: p.labSessions ?? {},
+          labsDayKey: p.labsDayKey ?? null,
+          labsStartedToday: p.labsStartedToday ?? [],
           activitySeenAt: p.activitySeenAt ?? null,
+          pendingGoalCelebration: p.pendingGoalCelebration ?? false,
         };
       },
     }

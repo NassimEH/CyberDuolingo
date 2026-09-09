@@ -28,6 +28,7 @@ import {
   feedbackError,
   feedbackSuccess,
 } from "@/lib/feedback";
+import { trackEvent } from "@/lib/analytics";
 import { enterFade } from "@/lib/motion";
 import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
@@ -130,7 +131,7 @@ export function LessonPlayer({ lessonId }: Props) {
   const activity = lesson.activities[quizIndex];
   const totalQuiz = lesson.activities.length;
   const icon = getLessonIcon(lesson.id, lesson.icon);
-  const breadcrumb = `${unit ? L(unit.title) : "Tech"}  ›  ${L(lesson.title)}`;
+  const breadcrumb = `${unit ? L(unit.title) : "Stack"}  ›  ${L(lesson.title)}`;
 
   const percent = computePercent(
     phase,
@@ -185,6 +186,15 @@ export function LessonPlayer({ lessonId }: Props) {
     });
     addXP(lesson.xpReward);
     setAwarded(true);
+    trackEvent("lesson_completed", {
+      lesson_id: lesson.id,
+      unit_id: lesson.unitId,
+      xp_reward: lesson.xpReward,
+      perfect: correctCount === totalQuiz,
+      quiz_correct: correctCount,
+      quiz_total: totalQuiz,
+      module_percent: modulePercent,
+    });
   };
 
   const chrome = (
@@ -273,7 +283,15 @@ export function LessonPlayer({ lessonId }: Props) {
         </ScrollView>
         <TouchableOpacity
           style={primaryBtn}
-          onPress={() => setPhase("content")}
+          onPress={() => {
+            trackEvent("lesson_started", {
+              lesson_id: lesson.id,
+              unit_id: lesson.unitId,
+              xp_reward: lesson.xpReward,
+              estimated_minutes: lesson.estimatedMinutes,
+            });
+            setPhase("content");
+          }}
         >
           <Text style={primaryBtnText}>{t("lesson.start")}</Text>
         </TouchableOpacity>
@@ -680,6 +698,12 @@ export function LessonPlayer({ lessonId }: Props) {
               setChecked(true);
               if (ok) setCorrectCount((c) => c + 1);
               recordQuizAnswer(activity.id, ok);
+              trackEvent("quiz_answered", {
+                lesson_id: lesson.id,
+                activity_id: activity.id,
+                quiz_index: quizIndex,
+                correct: ok,
+              });
               if (ok) feedbackSuccess();
               else feedbackError();
             }}

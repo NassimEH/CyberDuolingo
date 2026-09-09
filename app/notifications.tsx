@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RequireAuth } from "@/components/RequireAuth";
 import { fontFamily, spacing } from "@/constants/theme";
 import { useLocalize, useT, type TranslationKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
@@ -36,6 +37,9 @@ const FILTER_LABEL_KEY: Record<(typeof FILTERS)[number], TranslationKey> = {
   lesson_complete: "home.notif.lesson",
   challenge_complete: "home.notif.challenge",
   lab_complete: "home.notif.lab",
+  tip: "home.notif.tip",
+  xp: "home.notif.xp",
+  quiz_miss: "home.notif.quizMiss",
 };
 
 function formatTime(iso: string, locale: "fr" | "en") {
@@ -73,6 +77,7 @@ export default function NotificationsScreen() {
   );
 
   return (
+    <RequireAuth>
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.neutral.background }]}
       edges={["top", "bottom"]}
@@ -185,6 +190,7 @@ export default function NotificationsScreen() {
         )}
       />
     </SafeAreaView>
+    </RequireAuth>
   );
 }
 
@@ -232,14 +238,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chips: {
-    gap: 8,
-    paddingRight: 8,
+    gap: spacing.chipGap,
+    paddingRight: spacing.xs,
     alignItems: "center",
   },
   chip: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     backgroundColor: "transparent",
   },
@@ -249,7 +255,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.screen,
     paddingTop: 4,
-    paddingBottom: 32,
+    paddingBottom: spacing.scrollBottom,
     flexGrow: 1,
   },
   emptyWrap: {

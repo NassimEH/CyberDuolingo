@@ -1,6 +1,6 @@
 import { Bell } from "@/constants/icons";
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -12,9 +12,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { DailyChallengeCard } from "@/components/home/DailyChallengeCard";
+import { DailyGoalCelebration } from "@/components/home/DailyGoalCelebration";
+import { DailyGoalPicker } from "@/components/home/DailyGoalPicker";
 import { HomeHero } from "@/components/home/HomeHero";
 import { ModuleProgressList } from "@/components/home/ModuleProgressList";
 import { ReviewSection } from "@/components/home/ReviewSection";
+import { SyncStatusBanner } from "@/components/home/SyncStatusBanner";
 import { WeekStrip } from "@/components/home/WeekStrip";
 import { MotionView } from "@/components/motion/MotionView";
 import { ProgressCard } from "@/components/ProgressCard";
@@ -52,7 +55,9 @@ export default function HomeScreen() {
     activityLogs,
     activitySeenAt,
     activeDays,
+    setDailyGoal,
   } = useLearningStore();
+  const [goalPickerOpen, setGoalPickerOpen] = useState(false);
 
   const track = getTrack(selectedTrack);
   const unit = getSelectedUnit(selectedUnitId);
@@ -90,59 +95,61 @@ export default function HomeScreen() {
       >
         <MotionView index={0} variant="fade">
           <View style={styles.header}>
-            <View style={styles.headerLeft}>
+            <SyncStatusBanner />
+            <View style={styles.headerTop}>
               <Text
                 style={[styles.greeting, { color: colors.neutral.textPrimary }]}
+                numberOfLines={1}
               >
                 {t("home.greeting")}, {displayName}
               </Text>
-              <View style={styles.metaRow}>
-                <View
-                  style={[
-                    styles.levelPill,
-                    { backgroundColor: colors.soft.blueBg },
-                  ]}
-                >
+              <View style={styles.headerRight}>
+                <View style={styles.flamePill}>
+                  <Image
+                    source={images.streakFlame}
+                    style={styles.flameIcon}
+                    resizeMode="contain"
+                  />
                   <Text
-                    style={[styles.levelText, { color: colors.primary.blue }]}
+                    style={[
+                      styles.flameValue,
+                      { color: colors.neutral.textPrimary },
+                    ]}
                   >
-                    {t("home.level", { level })}
+                    {streak}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/notifications")}
+                  style={styles.bellBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Bell size={28} color={colors.neutral.textPrimary} />
+                  {unreadHint ? (
+                    <View
+                      style={[
+                        styles.dot,
+                        { backgroundColor: colors.primary.blue },
+                      ]}
+                    />
+                  ) : null}
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.headerRight}>
-              <View style={styles.flamePill}>
-                <Image
-                  source={images.streakFlame}
-                  style={styles.flameIcon}
-                  resizeMode="contain"
-                />
+            <View style={styles.metaRow}>
+              <View
+                style={[
+                  styles.levelPill,
+                  { backgroundColor: colors.soft.blueBg },
+                ]}
+              >
                 <Text
-                  style={[
-                    styles.flameValue,
-                    { color: colors.neutral.textPrimary },
-                  ]}
+                  style={[styles.levelText, { color: colors.primary.blue }]}
                 >
-                  {streak}
+                  {t("home.level", { level })}
                 </Text>
               </View>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => router.push("/notifications")}
-                style={styles.bellBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Bell size={28} color={colors.neutral.textPrimary} />
-                {unreadHint ? (
-                  <View
-                    style={[
-                      styles.dot,
-                      { backgroundColor: colors.primary.blue },
-                    ]}
-                  />
-                ) : null}
-              </TouchableOpacity>
             </View>
           </View>
         </MotionView>
@@ -151,7 +158,7 @@ export default function HomeScreen() {
 
         {nextLesson ? (
           <HomeHero
-            eyebrow={`${t("home.continueLearning")} · ${track ? L(track.name) : "Tech"}`}
+            eyebrow={`${t("home.continueLearning")} · ${track ? L(track.name) : "Stack"}`}
             title={L(nextLesson.title)}
             meta={`${nextLesson.estimatedMinutes} ${t("lesson.minutes")} · ${modulePercent}%`}
             ctaLabel={t("home.startLesson")}
@@ -197,6 +204,7 @@ export default function HomeScreen() {
               label={t("home.dailyGoal")}
               xpToday={xpToday}
               dailyGoal={dailyGoal}
+              onPress={() => setGoalPickerOpen(true)}
             />
           </View>
         </View>
@@ -210,6 +218,17 @@ export default function HomeScreen() {
 
         <ModuleProgressList completedLessonIds={completedLessonIds} />
       </ScrollView>
+
+      <DailyGoalPicker
+        visible={goalPickerOpen}
+        current={dailyGoal}
+        onClose={() => setGoalPickerOpen(false)}
+        onSelect={(goal) => {
+          setDailyGoal(goal);
+          posthog.capture("daily_goal_changed", { daily_goal: goal });
+        }}
+      />
+      <DailyGoalCelebration />
     </SafeAreaView>
   );
 }
@@ -218,31 +237,35 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing.screen,
-    paddingTop: 8,
-    paddingBottom: 28,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.tabScrollBottom,
   },
   header: {
+    marginBottom: 14,
+  },
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    gap: 10,
   },
-  headerLeft: { flex: 1, paddingRight: 10 },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flexShrink: 0,
   },
   greeting: {
+    flex: 1,
     fontFamily: fontFamily.bold,
     fontSize: 26,
-    lineHeight: 32,
+    lineHeight: 34,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: 6,
+    marginTop: 8,
   },
   levelPill: {
     borderRadius: 20,
@@ -280,7 +303,7 @@ const styles = StyleSheet.create({
   },
   motivation: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.cardGap,
     marginBottom: spacing.section,
   },
   metricCard: {

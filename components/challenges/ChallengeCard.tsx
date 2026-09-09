@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Lock, Zap } from "@/constants/icons";
-import { fontFamily, radius } from "@/constants/theme";
+import { fontFamily, radius, spacing } from "@/constants/theme";
 import type { Challenge } from "@/data/challenges";
 import { SKILLS } from "@/data/skills";
 import { useLocalize, useT } from "@/lib/i18n";
@@ -189,18 +189,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: spacing.cardGap,
   },
   featured: {
-    padding: 16,
-    marginBottom: 16,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   topRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   topLeft: {
     flex: 1,

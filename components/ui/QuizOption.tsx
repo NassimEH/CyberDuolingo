@@ -1,6 +1,8 @@
+import { PressScale } from "@/components/motion/PressScale";
 import { fontFamily, radius } from "@/constants/theme";
+import { feedbackLight } from "@/lib/feedback";
 import { useTheme } from "@/lib/useTheme";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Text } from "react-native";
 
 type Props = {
   label: string;
@@ -38,33 +40,31 @@ export function QuizOption({
   }
 
   return (
-    <TouchableOpacity
-      disabled={disabled || checked}
-      onPress={onPress}
-      activeOpacity={0.85}
-      style={[styles.opt, { borderColor: border, backgroundColor: bg }]}
-      accessibilityRole="button"
-      accessibilityState={{ selected, disabled: disabled || checked }}
+    <PressScale
+      disabled={disabled}
+      onPress={() => {
+        void feedbackLight();
+        onPress();
+      }}
+      style={[styles.option, { borderColor: border, backgroundColor: bg }]}
     >
       <Text style={[styles.label, { color: colors.neutral.textPrimary }]}>
         {label}
       </Text>
-    </TouchableOpacity>
+    </PressScale>
   );
 }
 
 const styles = StyleSheet.create({
-  opt: {
-    borderWidth: 1,
+  option: {
+    borderWidth: 1.5,
     borderRadius: radius.md,
-    padding: 14,
-    marginBottom: 8,
-    minHeight: 48,
-    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   label: {
-    fontFamily: fontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontFamily: fontFamily.medium,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });

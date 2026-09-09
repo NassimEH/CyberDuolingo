@@ -15,6 +15,16 @@ const streamStub = path.resolve(__dirname, "shims/stream-web-stub.js");
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === "@better-auth/expo/client") {
+    return {
+      filePath: path.resolve(
+        __dirname,
+        "node_modules/@better-auth/expo/dist/client.js"
+      ),
+      type: "sourceFile",
+    };
+  }
+
   if (
     platform === "web" &&
     (moduleName === "@stream-io/video-react-native-sdk" ||

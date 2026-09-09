@@ -1,289 +1,173 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Award } from "@/constants/icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CertificationCard } from "@/components/certifications/CertificationCard";
-import { fontFamily, radius, spacing } from "@/constants/theme";
-import { filterCertifications } from "@/data/certifications";
-import { useT } from "@/lib/i18n";
+import { BackHeader } from "@/components/ui/BackHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { fontFamily, spacing } from "@/constants/theme";
+import {
+  CERTIFICATIONS,
+  TRACK_CERT_DOMAINS,
+  filterCertifications,
+} from "@/data/certifications";
+import { TRACKS } from "@/data/tracks";
+import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
-import type {
-  CertDomain,
-  CertLevel,
-  CertPriceTier,
-} from "@/types/certification";
+import { useTrackStore } from "@/store/trackStore";
+import type { TrackId } from "@/types/learning";
 
-const DOMAINS: (CertDomain | "all")[] = [
-  "all",
-  "cybersecurity",
-  "cloud",
-  "networking",
-  "devops",
-  "programming",
-  "data",
-  "ai",
-];
+/** The 3 learning modules currently offered in the app. */
+const MODULE_TRACKS = TRACKS.filter((t) => t.available).map((t) => t.id);
 
-const LEVELS: (CertLevel | "all")[] = [
-  "all",
-  "beginner",
-  "intermediate",
-  "advanced",
-  "expert",
-];
+type TrackFilter = "all" | TrackId;
 
-const PRICES: (CertPriceTier | "all")[] = [
-  "all",
-  "free",
-  "under100",
-  "100to300",
-  "over300",
-];
+function certMatchesModuleTrack(
+  cert: (typeof CERTIFICATIONS)[number],
+  trackId: TrackId
+): boolean {
+  if (cert.tracks?.includes(trackId)) return true;
+  return TRACK_CERT_DOMAINS[trackId]?.includes(cert.domain) ?? false;
+}
 
 export default function CertificationsIndex() {
   const t = useT();
+  const L = useLocalize();
   const { colors } = useTheme();
-  const [q, setQ] = useState("");
-  const [domain, setDomain] = useState<CertDomain | "all">("all");
-  const [level, setLevel] = useState<CertLevel | "all">("all");
-  const [price, setPrice] = useState<CertPriceTier | "all">("all");
+  const selectedTrack = useTrackStore((s) => s.selectedTrack);
 
-  const list = useMemo(
-    () =>
-      filterCertifications({
-        q,
-        domain: domain === "all" ? undefined : domain,
-        level: level === "all" ? undefined : level,
-        priceTier: price === "all" ? undefined : price,
+  const initial: TrackFilter =
+    selectedTrack && MODULE_TRACKS.includes(selectedTrack)
+      ? selectedTrack
+      : "all";
+
+  const [trackFilter, setTrackFilter] = useState<TrackFilter>(initial);
+
+  const list = useMemo(() => {
+    if (trackFilter === "all") {
+      return CERTIFICATIONS.filter((cert) =>
+        MODULE_TRACKS.some((trackId) => certMatchesModuleTrack(cert, trackId))
+      );
+    }
+    return filterCertifications({ trackId: trackFilter });
+  }, [trackFilter]);
+
+  const chips: { id: TrackFilter; label: string }[] = useMemo(
+    () => [
+      { id: "all", label: t("certs.filterAll") },
+      ...MODULE_TRACKS.map((id) => {
+        const track = TRACKS.find((tr) => tr.id === id)!;
+        return { id, label: L(track.shortName) };
       }),
-    [q, domain, level, price]
+    ],
+    [L, t]
   );
 
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.neutral.background }]}
+      edges={["top", "bottom"]}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.neutral.textPrimary}
-            />
-          </TouchableOpacity>
-          <Text style={[styles.h2, { color: colors.neutral.textPrimary }]}>
-            {t("certs.title")}
-          </Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <FlatList
-          data={list}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.pad}
-          ListHeaderComponent={
-            <View>
-              <Text
-                style={[styles.sub, { color: colors.neutral.textSecondary }]}
-              >
-                {t("certs.subtitle")}
-              </Text>
-              <TextInput
-                value={q}
-                onChangeText={setQ}
-                placeholder={t("certs.search")}
-                placeholderTextColor={colors.neutral.textSecondary}
-                style={[
-                  styles.search,
-                  {
-                    borderColor: colors.neutral.border,
-                    color: colors.neutral.textPrimary,
-                    backgroundColor: colors.neutral.card,
-                  },
-                ]}
-              />
-              <ChipRow
-                items={DOMAINS.map((d) => ({
-                  id: d,
-                  label:
-                    d === "all"
-                      ? t("certs.filterAll")
-                      : t(`certs.domain.${d}`),
-                }))}
-                active={domain}
-                onChange={(id) => setDomain(id as CertDomain | "all")}
-              />
-              <ChipRow
-                items={LEVELS.map((d) => ({
-                  id: d,
-                  label:
-                    d === "all"
-                      ? t("certs.filterAll")
-                      : t(`certs.level.${d}`),
-                }))}
-                active={level}
-                onChange={(id) => setLevel(id as CertLevel | "all")}
-              />
-              <ChipRow
-                items={PRICES.map((d) => ({
-                  id: d,
-                  label:
-                    d === "all"
-                      ? t("certs.filterAll")
-                      : t(`certs.price.${d}`),
-                }))}
-                active={price}
-                onChange={(id) => setPrice(id as CertPriceTier | "all")}
-              />
+      <BackHeader title={t("certs.title")} />
+      <View style={styles.chipsWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.chips}
+        >
+          {chips.map((item) => {
+            const on = item.id === trackFilter;
+            return (
               <TouchableOpacity
+                key={item.id}
+                onPress={() => setTrackFilter(item.id)}
                 style={[
-                  styles.finder,
+                  styles.chip,
                   {
-                    backgroundColor: colors.soft.blueBg,
-                    borderColor: colors.soft.blueBorder,
+                    backgroundColor: on
+                      ? colors.soft.blueBg
+                      : colors.neutral.surface,
+                    borderColor: on
+                      ? colors.primary.blue
+                      : colors.neutral.border,
                   },
                 ]}
-                onPress={() => router.push("/certifications/finder")}
               >
                 <Text
-                  style={[styles.finderTitle, { color: colors.primary.blue }]}
+                  style={{
+                    fontFamily: fontFamily.medium,
+                    fontSize: 13,
+                    color: on
+                      ? colors.primary.blue
+                      : colors.neutral.textSecondary,
+                  }}
                 >
-                  {t("certs.finderCard")}
-                </Text>
-                <Text
-                  style={[
-                    styles.finderSub,
-                    { color: colors.neutral.textSecondary },
-                  ]}
-                >
-                  {t("certs.finderSub")}
+                  {item.label}
                 </Text>
               </TouchableOpacity>
-            </View>
-          }
-          ListEmptyComponent={
-            <Text
-              style={{
-                textAlign: "center",
-                color: colors.neutral.textSecondary,
-                marginTop: 24,
-              }}
-            >
-              {t("certs.empty")}
-            </Text>
-          }
-          renderItem={({ item }) => (
-            <CertificationCard
-              cert={item}
-              onPress={() =>
-                router.push({
-                  pathname: "/certifications/[id]",
-                  params: { id: item.id },
-                })
-              }
-            />
-          )}
-        />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-}
+            );
+          })}
+        </ScrollView>
+      </View>
 
-function ChipRow({
-  items,
-  active,
-  onChange,
-}: {
-  items: { id: string; label: string }[];
-  active: string;
-  onChange: (id: string) => void;
-}) {
-  const { colors } = useTheme();
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingVertical: 6 }}
-    >
-      {items.map((item) => {
-        const on = item.id === active;
-        return (
-          <TouchableOpacity
-            key={item.id}
-            onPress={() => onChange(item.id)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: on ? colors.soft.blueBg : colors.neutral.surface,
-                borderColor: on ? colors.primary.blue : colors.neutral.border,
-              },
-            ]}
-          >
-            <Text
-              style={{
-                fontFamily: fontFamily.medium,
-                fontSize: 12,
-                color: on ? colors.primary.blue : colors.neutral.textSecondary,
-              }}
-            >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+      <FlatList
+        data={list}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.pad}
+        renderItem={({ item }) => (
+          <CertificationCard
+            cert={item}
+            onPress={() =>
+              router.push({
+                pathname: "/certifications/[id]",
+                params: { id: item.id },
+              })
+            }
+          />
+        )}
+        ListEmptyComponent={
+          <EmptyState
+            icon={
+              <Award
+                size={28}
+                color={colors.neutral.textSecondary}
+                strokeWidth={2}
+              />
+            }
+            title={t("certs.empty")}
+          />
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  chipsWrap: {
     paddingHorizontal: spacing.screen,
-    paddingVertical: 10,
+    paddingBottom: 8,
   },
-  h2: { fontFamily: fontFamily.semiBold, fontSize: 18 },
-  pad: { paddingHorizontal: spacing.screen, paddingBottom: 40 },
-  sub: { fontFamily: fontFamily.regular, fontSize: 14, marginBottom: 12 },
-  search: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: fontFamily.regular,
-    fontSize: 14,
-    marginBottom: 8,
-  },
+  chips: { gap: 8, paddingRight: 8 },
   chip: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  finder: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: 14,
-    marginVertical: 12,
+  pad: {
+    paddingHorizontal: spacing.screen,
+    paddingBottom: spacing.scrollBottom,
+    flexGrow: 1,
   },
-  finderTitle: { fontFamily: fontFamily.semiBold, fontSize: 15 },
-  finderSub: { fontFamily: fontFamily.regular, fontSize: 12, marginTop: 4 },
 });

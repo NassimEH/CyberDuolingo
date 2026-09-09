@@ -1,6 +1,7 @@
-import { MessageCircle } from "@/constants/icons";
+import { Check, MessageCircle } from "@/constants/icons";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,8 +16,7 @@ import { LabSession } from "@/components/lab/LabSession";
 import { MotionView } from "@/components/motion/MotionView";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { SectionHeader } from "@/components/SectionHeader";
-import { fontFamily, spacing } from "@/constants/theme";
+import { fontFamily, radius, spacing } from "@/constants/theme";
 import {
   getAllLabScenarios,
   type LabScenario,
@@ -26,7 +26,7 @@ import { getTrackLessonIds } from "@/lib/learnProgress";
 import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
 import { useTheme } from "@/lib/useTheme";
-import { useLearningStore } from "@/store/learningStore";
+import { DAILY_LAB_LIMIT, useLearningStore } from "@/store/learningStore";
 import type { TrackId } from "@/types/learning";
 
 type TrackFilter = "all" | TrackId;
@@ -34,21 +34,44 @@ type LabStatus = "available" | "in_progress" | "completed";
 
 const AVAILABLE_TRACKS = TRACKS.filter((t) => t.available);
 
+function ModuleSectionTitle({
+  title,
+  meta,
+}: {
+  title: string;
+  meta?: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.headerBlock}>
+      <Text style={[styles.sectionTitle, { color: colors.neutral.textPrimary }]}>
+        {title}
+      </Text>
+      {meta ? (
+        <Text style={[styles.sectionMeta, { color: colors.neutral.textSecondary }]}>
+          {meta}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 export default function LabScreen() {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
   const completeLabIds = useLearningStore((s) => s.completedLabIds);
   const startedLabIds = useLearningStore((s) => s.startedLabIds);
-  const labBeatIndex = useLearningStore((s) => s.labBeatIndex);
   const completedLessonIds = useLearningStore((s) => s.completedLessonIds);
   const startLab = useLearningStore((s) => s.startLab);
+  const labsDayKey = useLearningStore((s) => s.labsDayKey);
+  const labsStartedToday = useLearningStore((s) => s.labsStartedToday);
+  const getDailyLabUsage = useLearningStore((s) => s.getDailyLabUsage);
 
   const [trackFilter, setTrackFilter] = useState<TrackFilter>("all");
   const [briefLab, setBriefLab] = useState<LabScenario | null>(null);
   const [activeLab, setActiveLab] = useState<LabScenario | null>(null);
   const [sessionReplay, setSessionReplay] = useState(false);
-  const [resumeBeat, setResumeBeat] = useState(0);
 
   const allScenarios = getAllLabScenarios();
 
@@ -58,19 +81,16 @@ export default function LabScreen() {
     });
   }, [allScenarios.length]);
 
+  const dailyUsed = useMemo(() => {
+    void labsDayKey;
+    void labsStartedToday;
+    return getDailyLabUsage().used;
+  }, [labsDayKey, labsStartedToday, getDailyLabUsage]);
+
   const scenarios = useMemo(() => {
     if (trackFilter === "all") return allScenarios;
     return allScenarios.filter((s) => s.trackId === trackFilter);
   }, [allScenarios, trackFilter]);
-
-  const featured = useMemo(() => {
-    return (
-      scenarios.find(
-        (s) =>
-          !completeLabIds.includes(s.id) && !startedLabIds.includes(s.id)
-      ) ?? null
-    );
-  }, [scenarios, completeLabIds, startedLabIds]);
 
   const inProgress = useMemo(
     () =>
@@ -81,34 +101,25 @@ export default function LabScreen() {
     [scenarios, startedLabIds, completeLabIds]
   );
 
-  const available = useMemo(
-    () =>
-      scenarios.filter(
-        (s) =>
-          !completeLabIds.includes(s.id) &&
-          !startedLabIds.includes(s.id) &&
-          s.id !== featured?.id
-      ),
-    [scenarios, completeLabIds, startedLabIds, featured?.id]
-  );
+  const sections = useMemo(() => {
+    const tracks =
+      trackFilter === "all"
+        ? AVAILABLE_TRACKS
+        : AVAILABLE_TRACKS.filter((tr) => tr.id === trackFilter);
 
-  const completed = useMemo(
-    () => scenarios.filter((s) => completeLabIds.includes(s.id)),
-    [scenarios, completeLabIds]
-  );
+    return tracks
+      .map((track) => {
+        const labs = scenarios.filter((s) => s.trackId === track.id);
+        return { track, labs };
+      })
+      .filter((s) => s.labs.length > 0);
+  }, [scenarios, trackFilter]);
 
   const doneCount = scenarios.filter((s) =>
     completeLabIds.includes(s.id)
   ).length;
-  const xpLeft = scenarios
-    .filter((s) => !completeLabIds.includes(s.id))
-    .reduce((sum, s) => sum + s.xpReward, 0);
 
-  const isEmpty =
-    !featured &&
-    inProgress.length === 0 &&
-    available.length === 0 &&
-    completed.length === 0;
+  const isEmpty = scenarios.length === 0;
 
   function labStatus(lab: LabScenario): LabStatus {
     if (completeLabIds.includes(lab.id)) return "completed";
@@ -128,13 +139,15 @@ export default function LabScreen() {
     if (isLocked(lab)) return;
     const status = labStatus(lab);
     if (status === "available") {
+      const usage = getDailyLabUsage();
+      if (usage.remaining <= 0) {
+        Alert.alert(t("lab.dailyLimitTitle"), t("lab.dailyLimitMessage"));
+        return;
+      }
       setBriefLab(lab);
       return;
     }
     setSessionReplay(status === "completed");
-    setResumeBeat(
-      status === "in_progress" ? labBeatIndex[lab.id] ?? 0 : 0
-    );
     if (status !== "completed") {
       startLab(lab.id);
     }
@@ -143,9 +156,12 @@ export default function LabScreen() {
 
   function startFromBrief() {
     if (!briefLab) return;
-    startLab(briefLab.id);
+    const ok = startLab(briefLab.id);
+    if (!ok) {
+      Alert.alert(t("lab.dailyLimitTitle"), t("lab.dailyLimitMessage"));
+      return;
+    }
     setSessionReplay(false);
-    setResumeBeat(0);
     setActiveLab(briefLab);
     setBriefLab(null);
   }
@@ -153,7 +169,6 @@ export default function LabScreen() {
   function closeSession() {
     setActiveLab(null);
     setBriefLab(null);
-    setResumeBeat(0);
   }
 
   if (briefLab) {
@@ -178,7 +193,6 @@ export default function LabScreen() {
         <LabSession
           lab={activeLab}
           isReplay={sessionReplay}
-          initialBeatIndex={resumeBeat}
           onClose={closeSession}
         />
       </SafeAreaView>
@@ -205,6 +219,85 @@ export default function LabScreen() {
             </Text>
           }
         />
+
+        <View
+          style={[
+            styles.dailyCard,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
+        >
+          <View style={styles.dailyRow}>
+            <Text
+              style={[styles.dailyLabel, { color: colors.neutral.textPrimary }]}
+            >
+              {t("lab.dailyLabel")}
+            </Text>
+            <View style={styles.dailyRight}>
+              <Text
+                style={[
+                  styles.dailyFraction,
+                  {
+                    color:
+                      dailyUsed >= DAILY_LAB_LIMIT
+                        ? colors.semantic.warning
+                        : colors.neutral.textPrimary,
+                  },
+                ]}
+              >
+                <Text style={styles.dailyUsed}>{dailyUsed}</Text>
+                <Text style={{ color: colors.neutral.textSecondary }}>
+                  {` / ${DAILY_LAB_LIMIT}`}
+                </Text>
+              </Text>
+              {dailyUsed >= DAILY_LAB_LIMIT ? (
+                <View
+                  style={[
+                    styles.dailyCheck,
+                    { backgroundColor: "rgba(255, 203, 0, 0.18)" },
+                  ]}
+                >
+                  <Check
+                    size={12}
+                    color={colors.semantic.warning}
+                    strokeWidth={3}
+                  />
+                </View>
+              ) : null}
+            </View>
+          </View>
+          <View
+            style={[
+              styles.dailyTrack,
+              { backgroundColor: colors.neutral.border },
+            ]}
+          >
+            <View
+              style={[
+                styles.dailyFill,
+                {
+                  width: `${Math.round(
+                    (Math.min(dailyUsed, DAILY_LAB_LIMIT) / DAILY_LAB_LIMIT) *
+                      100
+                  )}%`,
+                  backgroundColor:
+                    dailyUsed >= DAILY_LAB_LIMIT
+                      ? colors.semantic.warning
+                      : colors.primary.blue,
+                },
+              ]}
+            />
+          </View>
+          {dailyUsed >= DAILY_LAB_LIMIT ? (
+            <Text
+              style={[styles.dailyHint, { color: colors.neutral.textSecondary }]}
+            >
+              {t("lab.dailyLimitShort")}
+            </Text>
+          ) : null}
+        </View>
 
         <ScrollView
           horizontal
@@ -286,22 +379,9 @@ export default function LabScreen() {
           </View>
         ) : null}
 
-        {featured ? (
-          <MotionView index={0}>
-            <SectionHeader title={t("lab.featured")} />
-            <LabCard
-              lab={featured}
-              status={labStatus(featured)}
-              featured
-              locked={isLocked(featured)}
-              onPress={() => openLab(featured)}
-            />
-          </MotionView>
-        ) : null}
-
         {inProgress.length > 0 ? (
           <>
-            <SectionHeader title={t("lab.inProgress")} />
+            <ModuleSectionTitle title={t("lab.inProgress")} />
             {inProgress.map((lab, i) => (
               <MotionView key={lab.id} index={i}>
                 <LabCard
@@ -314,64 +394,124 @@ export default function LabScreen() {
           </>
         ) : null}
 
-        {available.length > 0 ? (
-          <>
-            <SectionHeader
-              title={t("lab.available")}
-              meta={
-                xpLeft > 0
-                  ? t("lab.xpAvailable", { xp: xpLeft })
-                  : undefined
-              }
-            />
-            {available.map((lab, i) => (
-              <MotionView key={lab.id} index={i}>
-                <LabCard
-                  lab={lab}
-                  status="available"
-                  locked={isLocked(lab)}
-                  onPress={() => openLab(lab)}
-                />
-              </MotionView>
-            ))}
-          </>
-        ) : null}
-
-        {completed.length > 0 ? (
-          <>
-            <SectionHeader title={t("lab.completed")} />
-            {completed.map((lab, i) => (
-              <MotionView key={lab.id} index={i}>
-                <LabCard
-                  lab={lab}
-                  status="completed"
-                  onPress={() => openLab(lab)}
-                />
-              </MotionView>
-            ))}
-          </>
-        ) : null}
+        {sections.map(({ track, labs }) => {
+          const incomplete = labs.filter(
+            (l) => !completeLabIds.includes(l.id)
+          ).length;
+          return (
+            <View key={track.id} style={{ marginBottom: 8 }}>
+              <ModuleSectionTitle
+                title={L(track.name)}
+                meta={t("lab.sectionMeta", {
+                  left: incomplete,
+                  total: labs.length,
+                })}
+              />
+              {labs.map((lab, i) => (
+                <MotionView key={lab.id} index={i}>
+                  <LabCard
+                    lab={lab}
+                    status={labStatus(lab)}
+                    locked={isLocked(lab)}
+                    onPress={() => openLab(lab)}
+                  />
+                </MotionView>
+              ))}
+            </View>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  pad: { padding: spacing.screen, paddingBottom: 40 },
+  pad: { padding: spacing.screen, paddingBottom: spacing.tabScrollBottom },
   headerProgress: {
     fontFamily: fontFamily.semiBold,
     fontSize: 16,
   },
-  filters: {
-    gap: 8,
+  dailyCard: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
     paddingVertical: 12,
+    marginBottom: spacing.xs,
+  },
+  dailyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  dailyLabel: {
+    flex: 1,
+    fontFamily: fontFamily.medium,
+    fontSize: 14,
+  },
+  dailyRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dailyFraction: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 15,
+  },
+  dailyUsed: {
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
+  },
+  dailyCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dailyTrack: {
+    height: 4,
+    borderRadius: 2,
+    marginTop: 10,
+    overflow: "hidden",
+  },
+  dailyFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  dailyHint: {
+    fontFamily: fontFamily.regular,
+    fontSize: 11,
+    marginTop: 8,
+    lineHeight: 15,
+  },
+  filters: {
+    gap: spacing.chipGap,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   chip: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     backgroundColor: "transparent",
+  },
+  headerBlock: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    marginTop: spacing.xs,
+  },
+  sectionTitle: {
+    fontFamily: fontFamily.bold,
+    fontSize: 22,
+    letterSpacing: -0.3,
+    flex: 1,
+  },
+  sectionMeta: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
   },
 });

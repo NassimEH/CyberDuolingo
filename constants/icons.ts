@@ -16,8 +16,10 @@ import {
   Clock,
   Cloud,
   Flame,
+  FileText,
   Globe,
   Home,
+  Info,
   Languages,
   Layers,
   Locate,
@@ -30,9 +32,9 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Trophy,
   User,
-  Volume2,
   Zap,
 } from "lucide-react-native";
 
@@ -60,8 +62,10 @@ export {
   Clock,
   Cloud,
   Flame,
+  FileText,
   Globe,
   Home,
+  Info,
   Languages,
   Layers,
   Locate,
@@ -74,9 +78,9 @@ export {
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Trophy,
   User,
-  Volume2,
   Zap,
 };
 

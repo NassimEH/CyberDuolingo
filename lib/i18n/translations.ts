@@ -19,22 +19,26 @@ export type TranslationKey =
   | "brand.name"
   | "brand.tagline"
   | "brand.subtitle"
-  | "onboarding.guest"
   | "onboarding.createAccount"
+  | "onboarding.skip"
+  | "onboarding.next"
+  | "onboarding.hasAccount"
+  | "onboarding.startApp"
   | "auth.welcomeBack"
   | "auth.continueJourney"
   | "auth.startJourney"
-  | "auth.guest"
   | "auth.signIn"
   | "auth.signUp"
   | "auth.noAccount"
   | "auth.hasAccount"
   | "trackSelect.title"
   | "trackSelect.subtitle"
-  | "trackSelect.search"
   | "trackSelect.popular"
   | "trackSelect.continue"
   | "trackSelect.comingSoon"
+  | "trackSelect.notifyMe"
+  | "trackSelect.notified"
+  | "trackSelect.comingTopics"
   | "home.greeting"
   | "home.dailyGoal"
   | "home.continueLearning"
@@ -49,7 +53,19 @@ export type TranslationKey =
   | "home.dailyChallenge"
   | "home.dailyChallengeDone"
   | "home.reviews"
+  | "home.reviewsToday"
+  | "home.reviewsTodayHint"
+  | "home.reviewsStart"
   | "home.reviewsEmpty"
+  | "home.dailyGoalEdit"
+  | "home.dailyGoalHint"
+  | "home.goalReachedTitle"
+  | "home.goalReachedBody"
+  | "home.goalReachedCta"
+  | "home.syncOffline"
+  | "home.syncPending"
+  | "home.syncError"
+  | "home.syncRetry"
   | "home.progress"
   | "home.notifications"
   | "home.notificationsEmpty"
@@ -117,6 +133,7 @@ export type TranslationKey =
   | "lab.inProgress"
   | "lab.available"
   | "lab.completed"
+  | "lab.doneStatus"
   | "lab.start"
   | "lab.continue"
   | "lab.replay"
@@ -135,6 +152,32 @@ export type TranslationKey =
   | "lab.difficulty.easy"
   | "lab.difficulty.medium"
   | "lab.difficulty.hard"
+  | "lab.verdictCorrect"
+  | "lab.verdictPartial"
+  | "lab.verdictIncorrect"
+  | "lab.dailyLabel"
+  | "lab.dailyProgress"
+  | "lab.dailyLimitTitle"
+  | "lab.dailyLimitMessage"
+  | "lab.dailyLimitShort"
+  | "lab.sectionMeta"
+  | "lab.reportPassed"
+  | "lab.reportFailed"
+  | "lab.reportPassedHint"
+  | "lab.reportFailedHint"
+  | "lab.reportCorrect"
+  | "lab.reportPartial"
+  | "lab.reportIncorrect"
+  | "lab.reportXp"
+  | "lab.reportStatus"
+  | "lab.statusPassed"
+  | "lab.statusFailed"
+  | "lab.reportAnswers"
+  | "lab.reportStep"
+  | "lab.reportYourAnswer"
+  | "lab.reportExpected"
+  | "lab.reportWhy"
+  | "lab.reportTakeaways"
   | "ai.title"
   | "ai.subtitle"
   | "ai.online"
@@ -156,14 +199,13 @@ export type TranslationKey =
   | "profile.moduleProgress"
   | "profile.achievements"
   | "profile.settings"
-  | "profile.guest"
   | "profile.darkMode"
-  | "profile.sound"
   | "profile.notifications"
   | "profile.languageToggle"
   | "profile.languageSubtitle"
   | "profile.rank"
   | "profile.nextRank"
+  | "profile.rankMax"
   | "profile.calendar"
   | "profile.calendarHint"
   | "profile.stats"
@@ -186,7 +228,6 @@ export type TranslationKey =
   | "profile.certsEmpty"
   | "profile.certsExplore"
   | "profile.subtitle"
-  | "profile.createAccount"
   | "profile.activityLink"
   | "profile.activitySubtitle"
   | "profile.certsSummary"
@@ -195,6 +236,57 @@ export type TranslationKey =
   | "profile.shortcuts"
   | "profile.changePhoto"
   | "profile.photoPermission"
+  | "profile.photoAccess"
+  | "profile.notificationsAccess"
+  | "profile.notificationsEnabledHint"
+  | "profile.permissionOpenSettings"
+  | "profile.permissionRevokeHint"
+  | "profile.openSettings"
+  | "profile.sectionAccount"
+  | "profile.sectionPrivacy"
+  | "profile.sectionLegal"
+  | "profile.sectionSupport"
+  | "profile.sectionApp"
+  | "profile.editInfo"
+  | "profile.deleteData"
+  | "profile.deleteAccount"
+  | "profile.privacyPrefs"
+  | "profile.dataCollected"
+  | "profile.dataUsage"
+  | "profile.gdprRights"
+  | "profile.privacyPolicy"
+  | "profile.legalMentions"
+  | "profile.legalTerms"
+  | "profile.supportLink"
+  | "profile.about"
+  | "profile.replayOnboarding"
+  | "profile.appVersion"
+  | "profile.versionLabel"
+  | "profile.signOutConfirmTitle"
+  | "profile.signOutConfirmMessage"
+  | "profile.deleteDataConfirmTitle"
+  | "profile.deleteDataConfirmMessage"
+  | "profile.deleteDataDone"
+  | "profile.deleteAccountConfirmTitle"
+  | "profile.deleteAccountConfirmMessage"
+  | "profile.deleteAccountPassword"
+  | "profile.deleteAccountPasswordHint"
+  | "profile.confirm"
+  | "profile.cancel"
+  | "account.editTitle"
+  | "account.firstName"
+  | "account.email"
+  | "account.save"
+  | "account.editLocalHint"
+  | "privacy.prefsTitle"
+  | "privacy.prefsIntro"
+  | "privacy.analytics"
+  | "privacy.analyticsSubtitle"
+  | "legal.notFound"
+  | "about.title"
+  | "about.body"
+  | "support.title"
+  | "support.body"
   | "certs.title"
   | "certs.subtitle"
   | "certs.search"
@@ -204,6 +296,7 @@ export type TranslationKey =
   | "certs.view"
   | "certs.official"
   | "certs.addPath"
+  | "certs.prepareWith"
   | "certs.statusTodo"
   | "certs.statusPreparing"
   | "certs.statusObtained"
@@ -212,6 +305,18 @@ export type TranslationKey =
   | "certs.why"
   | "certs.skills"
   | "certs.empty"
+  | "certs.emptyHint"
+  | "certs.count"
+  | "certs.myPath"
+  | "certs.pathSummary"
+  | "certs.catalog"
+  | "certs.results"
+  | "certs.filterTrack"
+  | "certs.filterDomain"
+  | "certs.filterLevel"
+  | "certs.filterPrice"
+  | "certs.filterMyTrack"
+  | "certs.resetFilters"
   | "certs.finderTitle"
   | "certs.finderDomain"
   | "certs.finderLevel"
@@ -313,28 +418,41 @@ export const fr: Record<TranslationKey, string> = {
   "tabs.challenges": "Défis",
   "tabs.lab": "Lab",
   "tabs.profile": "Profil",
-  "brand.name": "Tech",
+  "brand.name": "Stack",
   "brand.tagline": "Le Duolingo de la tech.",
   "brand.subtitle":
     "Leçons courtes, quiz et pratique — commence par les réseaux.",
-  "onboarding.guest": "Tester sans connexion",
   "onboarding.createAccount": "Créer un compte",
+  "onboarding.skip": "Passer",
+  "onboarding.next": "Continuer",
+  "onboarding.hasAccount": "Déjà un compte ? ",
+  "onboarding.startApp": "C'est parti",
   "auth.welcomeBack": "Bon retour !",
   "auth.continueJourney": "Continue ton parcours tech",
   "auth.startJourney": "Commence ton parcours tech aujourd’hui",
-  "auth.guest": "Accéder sans connexion",
   "auth.signIn": "Se connecter",
   "auth.signUp": "S’inscrire",
   "auth.noAccount": "Pas encore de compte ? ",
   "auth.hasAccount": "Déjà un compte ? ",
   "trackSelect.title": "Choisis ton parcours",
-  "trackSelect.subtitle": "Un module à la fois, comme Duolingo.",
-  "trackSelect.search": "Rechercher un parcours",
-  "trackSelect.popular": "Populaires",
+  "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
+  "trackSelect.popular": "Nos modules",
   "trackSelect.continue": "Continuer",
-  "trackSelect.comingSoon": "Bientôt",
+  "trackSelect.comingSoon": "Bientôt disponibles",
+  "trackSelect.notifyMe": "Me prévenir",
+  "trackSelect.notified": "Tu seras prévenu",
+  "trackSelect.comingTopics": "Aperçu : {topics}",
   "home.greeting": "Salut",
   "home.dailyGoal": "Objectif du jour",
+  "home.dailyGoalEdit": "Choisir l’objectif du jour",
+  "home.dailyGoalHint": "10 XP = session courte · 50 XP = journée solide.",
+  "home.goalReachedTitle": "Objectif atteint !",
+  "home.goalReachedBody": "Tu as validé tes {goal} XP du jour. Belle série.",
+  "home.goalReachedCta": "Continuer",
+  "home.syncOffline": "Hors ligne — ta progression reste locale.",
+  "home.syncPending": "Sync en attente…",
+  "home.syncError": "Sync impossible. Réessaie.",
+  "home.syncRetry": "Réessayer",
   "home.continueLearning": "Continuer",
   "home.todaysPlan": "Plan du jour",
   "home.viewModule": "Voir le module",
@@ -347,6 +465,9 @@ export const fr: Record<TranslationKey, string> = {
   "home.dailyChallenge": "Défi du jour",
   "home.dailyChallengeDone": "Défi du jour terminé",
   "home.reviews": "Révisions",
+  "home.reviewsToday": "À revoir aujourd’hui",
+  "home.reviewsTodayHint": "{count} notion(s) issue(s) de tes erreurs",
+  "home.reviewsStart": "Réviser maintenant",
   "home.reviewsEmpty": "Rien à revoir pour l’instant",
   "home.progress": "Progression",
   "home.notifications": "Activité récente",
@@ -407,7 +528,7 @@ export const fr: Record<TranslationKey, string> = {
   "challenges.timer": "{seconds}s",
   "challenges.timeUp": "Temps écoulé",
   "challenges.timeUpHint": "Le chronomètre est tombé à zéro — défi perdu.",
-  "lab.subtitle": "Labs guidés avec réponses suggérées",
+  "lab.subtitle": "Scénarios immersifs, décisions et feedback",
   "lab.placeholder": "Ta réponse…",
   "lab.tutor": "Tuteur",
   "lab.complete": "Lab terminé · +{xp} XP",
@@ -415,12 +536,13 @@ export const fr: Record<TranslationKey, string> = {
   "lab.inProgress": "En cours",
   "lab.available": "Disponibles",
   "lab.completed": "Terminés",
+  "lab.doneStatus": "Terminé",
   "lab.start": "Lancer",
   "lab.continue": "Continuer",
   "lab.replay": "Rejouer",
   "lab.progress": "{current}/{total}",
   "lab.briefStart": "Commencer",
-  "lab.suggestHint": "Les pistes guidées sont le chemin prévu",
+  "lab.suggestHint": "Choisis une piste ou écris ta propre réponse",
   "lab.suggested": "Pistes guidées",
   "lab.lockedHint": "Termine une leçon du parcours pour débloquer",
   "lab.emptyFilter": "Aucun lab pour ce parcours",
@@ -433,6 +555,32 @@ export const fr: Record<TranslationKey, string> = {
   "lab.difficulty.easy": "Facile",
   "lab.difficulty.medium": "Moyen",
   "lab.difficulty.hard": "Difficile",
+  "lab.verdictCorrect": "Réponse correcte",
+  "lab.verdictPartial": "Réponse partielle",
+  "lab.verdictIncorrect": "Réponse incorrecte",
+  "lab.dailyLabel": "Labs aujourd’hui",
+  "lab.dailyProgress": "{used} / {limit}",
+  "lab.dailyLimitTitle": "Limite quotidienne",
+  "lab.dailyLimitMessage": "Tu as déjà utilisé tes 2 labs du jour. Reviens demain pour en lancer de nouveaux. Tu peux encore continuer ou rejouer un lab déjà commencé.",
+  "lab.dailyLimitShort": "Limite atteinte pour aujourd’hui",
+  "lab.sectionMeta": "{left} restants · {total}",
+  "lab.reportPassed": "Lab réussi",
+  "lab.reportFailed": "Lab terminé",
+  "lab.reportPassedHint": "Toutes tes réponses étaient correctes. Bravo.",
+  "lab.reportFailedHint": "Au moins une réponse était incorrecte ou partielle. Relis les corrections pour progresser.",
+  "lab.reportCorrect": "Bonnes réponses",
+  "lab.reportPartial": "Partielles",
+  "lab.reportIncorrect": "Incorrectes",
+  "lab.reportXp": "XP obtenue",
+  "lab.reportStatus": "Statut",
+  "lab.statusPassed": "Réussi",
+  "lab.statusFailed": "Non réussi",
+  "lab.reportAnswers": "Détail des réponses",
+  "lab.reportStep": "Étape {n}",
+  "lab.reportYourAnswer": "Ta réponse",
+  "lab.reportExpected": "Correction attendue",
+  "lab.reportWhy": "Explication",
+  "lab.reportTakeaways": "À retenir",
   "ai.title": "Prof IA",
   "ai.subtitle": "Révise les fondamentaux avec Nova",
   "ai.online": "Nova en ligne",
@@ -450,18 +598,17 @@ export const fr: Record<TranslationKey, string> = {
   "profile.languageFr": "Français",
   "profile.languageEn": "English",
   "profile.signOut": "Se déconnecter",
-  "profile.version": "Tech · v1.0.0",
+  "profile.version": "Stack · v1.0.0",
   "profile.moduleProgress": "Progression du module",
   "profile.achievements": "Succès",
   "profile.settings": "Réglages",
-  "profile.guest": "Invité",
   "profile.darkMode": "Mode sombre",
-  "profile.sound": "Sons",
   "profile.notifications": "Notifications",
   "profile.languageToggle": "English",
   "profile.languageSubtitle": "Interface · {lang}",
   "profile.rank": "Rang",
   "profile.nextRank": "Prochain · {rank}",
+  "profile.rankMax": "Max",
   "profile.calendar": "Calendrier d’activité",
   "profile.calendarHint": "Plus la grille est remplie, plus ta série tient",
   "profile.stats": "Statistiques",
@@ -484,7 +631,6 @@ export const fr: Record<TranslationKey, string> = {
   "profile.certsEmpty": "Ajoute ta première certification pour construire ton parcours professionnel.",
   "profile.certsExplore": "Explorer les certifications",
   "profile.subtitle": "Compte, progression et préférences",
-  "profile.createAccount": "Créer un compte",
   "profile.activityLink": "Activité",
   "profile.activitySubtitle": "Voir ton fil d’activité",
   "profile.certsSummary": "{preparing} en cours · {obtained} obtenue(s)",
@@ -493,15 +639,78 @@ export const fr: Record<TranslationKey, string> = {
   "profile.shortcuts": "Raccourcis",
   "profile.changePhoto": "Changer la photo",
   "profile.photoPermission": "Autorise l’accès à la galerie pour choisir une photo.",
+  "profile.photoAccess": "Accès photo",
+  "profile.notificationsAccess": "Notifications",
+  "profile.notificationsEnabledHint": "On te préviendra seulement si ta série est en danger le soir, ou rarement pour reprendre une courte session. Jamais de spam.",
+  "profile.permissionOpenSettings": "Active cette autorisation dans les réglages de ton téléphone.",
+  "profile.permissionRevokeHint": "Pour retirer l’accès, désactive-le dans les réglages système.",
+  "profile.openSettings": "Ouvrir les réglages",
+  "profile.sectionAccount": "Compte",
+  "profile.sectionPrivacy": "Confidentialité et données",
+  "profile.sectionLegal": "Informations légales",
+  "profile.sectionSupport": "Support",
+  "profile.sectionApp": "Application",
+  "profile.editInfo": "Modifier mes infos",
+  "profile.deleteData": "Supprimer mes données",
+  "profile.deleteAccount": "Supprimer mon compte",
+  "profile.privacyPrefs": "Préférences de confidentialité",
+  "profile.dataCollected": "Données collectées",
+  "profile.dataUsage": "Utilisation des données",
+  "profile.gdprRights": "Droits RGPD",
+  "profile.privacyPolicy": "Politique de confidentialité",
+  "profile.legalMentions": "Mentions légales",
+  "profile.legalTerms": "CGU",
+  "profile.supportLink": "Contact / Support",
+  "profile.about": "À propos",
+  "profile.replayOnboarding": "Revoir l'intro",
+  "profile.appVersion": "Version",
+  "profile.versionLabel": "Stack · v{version}",
+  "profile.signOutConfirmTitle": "Se déconnecter ?",
+  "profile.signOutConfirmMessage": "Tu pourras te reconnecter plus tard. La progression reste sur cet appareil.",
+  "profile.deleteDataConfirmTitle": "Supprimer les données ?",
+  "profile.deleteDataConfirmMessage": "XP, leçons, défis, labs et certifications suivies seront effacés sur cet appareil et sur Neon. Ton compte Auth reste actif. Irréversible.",
+  "profile.deleteDataDone": "Données d’apprentissage effacées (local + serveur).",
+  "profile.deleteAccountConfirmTitle": "Supprimer le compte ?",
+  "profile.deleteAccountConfirmMessage": "Tes données Neon (profil + progression) et ton compte Auth seront définitivement effacés. Confirme avec ton mot de passe.",
+  "profile.deleteAccountPassword": "Mot de passe",
+  "profile.deleteAccountPasswordHint": "Entre ton mot de passe (8 caractères minimum) pour confirmer.",
+  "profile.confirm": "Confirmer",
+  "profile.cancel": "Annuler",
+  "account.editTitle": "Modifier mes infos",
+  "account.firstName": "Prénom",
+  "account.email": "E-mail",
+  "account.save": "Enregistrer",
+  "account.editLocalHint": "Ton prénom s’affiche sur l’accueil (« Salut, … ») et reste synchronisé avec ton compte.",
+  "privacy.prefsTitle": "Préférences",
+  "privacy.prefsIntro": "Seules les préférences réellement utilisées par l’app sont listées ici.",
+  "privacy.analytics": "Analytics",
+  "privacy.analyticsSubtitle": "Autoriser l’envoi d’événements d’usage à PostHog",
+  "legal.notFound": "Document introuvable",
+  "about.title": "À propos",
+  "about.body": "Stack est une app d’apprentissage informatique inspirée de Duolingo : leçons courtes, défis, labs et pratique guidée.",
+  "support.title": "Support",
+  "support.body": "Une question ou un bug ? Écris-nous. Nous répondrons dès que possible.",
   "certs.title": "Certifications",
-  "certs.subtitle": "Explore les certifications les plus reconnues dans la tech.",
+  "certs.subtitle": "Références marché alignées sur tes modules Stack (réseau, web, logiciel) et les domaines voisins.",
   "certs.search": "Rechercher une certification…",
   "certs.filterAll": "Toutes",
+  "certs.filterTrack": "Parcours / modules",
+  "certs.filterDomain": "Domaine",
+  "certs.filterLevel": "Niveau",
+  "certs.filterPrice": "Budget",
+  "certs.filterMyTrack": "Filtrer sur mon parcours actuel",
+  "certs.resetFilters": "Réinitialiser les filtres",
+  "certs.count": "{count} certifications référencées",
+  "certs.myPath": "Mon parcours",
+  "certs.pathSummary": "{preparing} en préparation · {obtained} obtenue(s)",
+  "certs.catalog": "Catalogue",
+  "certs.results": "{count} résultat(s)",
   "certs.finderCard": "Trouver ma certification",
-  "certs.finderSub": "Découvre les certifications adaptées à ton objectif.",
+  "certs.finderSub": "Quiz court pour cibler les certifications adaptées à ton objectif.",
   "certs.view": "Voir",
   "certs.official": "Voir la certification officielle",
   "certs.addPath": "Ajouter à mon parcours",
+  "certs.prepareWith": "Préparer avec {track}",
   "certs.statusTodo": "À faire",
   "certs.statusPreparing": "En préparation",
   "certs.statusObtained": "Obtenue",
@@ -510,6 +719,7 @@ export const fr: Record<TranslationKey, string> = {
   "certs.why": "Pourquoi la passer ?",
   "certs.skills": "Compétences couvertes",
   "certs.empty": "Aucune certification ne correspond",
+  "certs.emptyHint": "Élargis les filtres (parcours, domaine, niveau ou prix) pour revoir le catalogue.",
   "certs.finderTitle": "Trouver ma certification",
   "certs.finderDomain": "Quel domaine t’intéresse ?",
   "certs.finderLevel": "Quel est ton niveau ?",
@@ -520,13 +730,13 @@ export const fr: Record<TranslationKey, string> = {
   "certs.level.intermediate": "Intermédiaire",
   "certs.level.advanced": "Avancé",
   "certs.level.expert": "Expert",
-  "certs.domain.cybersecurity": "Cybersecurity",
+  "certs.domain.cybersecurity": "Cybersécurité",
   "certs.domain.cloud": "Cloud",
-  "certs.domain.networking": "Networking",
+  "certs.domain.networking": "Réseau",
   "certs.domain.devops": "DevOps",
-  "certs.domain.programming": "Programming",
+  "certs.domain.programming": "Web & logiciel",
   "certs.domain.data": "Data",
-  "certs.domain.ai": "AI",
+  "certs.domain.ai": "IA",
   "certs.price.free": "Gratuit",
   "certs.price.under100": "< 100 €",
   "certs.price.100to300": "100–300 €",
@@ -612,28 +822,41 @@ export const en: Record<TranslationKey, string> = {
   "tabs.challenges": "Challenges",
   "tabs.lab": "Lab",
   "tabs.profile": "Profile",
-  "brand.name": "Tech",
+  "brand.name": "Stack",
   "brand.tagline": "The Duolingo of tech.",
   "brand.subtitle":
     "Short lessons, quizzes, and practice — start with networking.",
-  "onboarding.guest": "Try without signing in",
   "onboarding.createAccount": "Create an account",
+  "onboarding.skip": "Skip",
+  "onboarding.next": "Continue",
+  "onboarding.hasAccount": "Already have an account? ",
+  "onboarding.startApp": "Let's go",
   "auth.welcomeBack": "Welcome back!",
   "auth.continueJourney": "Continue your tech journey",
   "auth.startJourney": "Start your tech journey today",
-  "auth.guest": "Continue without signing in",
   "auth.signIn": "Sign In",
   "auth.signUp": "Sign Up",
   "auth.noAccount": "Don't have an account? ",
   "auth.hasAccount": "Already have an account? ",
   "trackSelect.title": "Choose your track",
-  "trackSelect.subtitle": "One module at a time, Duolingo-style.",
-  "trackSelect.search": "Search tracks",
-  "trackSelect.popular": "Popular",
+  "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",
+  "trackSelect.popular": "Our modules",
   "trackSelect.continue": "Continue",
   "trackSelect.comingSoon": "Coming soon",
+  "trackSelect.notifyMe": "Notify me",
+  "trackSelect.notified": "You're on the list",
+  "trackSelect.comingTopics": "Preview: {topics}",
   "home.greeting": "Hey",
   "home.dailyGoal": "Daily goal",
+  "home.dailyGoalEdit": "Choose today's goal",
+  "home.dailyGoalHint": "10 XP = short session · 50 XP = solid day.",
+  "home.goalReachedTitle": "Goal reached!",
+  "home.goalReachedBody": "You hit your {goal} XP for today. Nice work.",
+  "home.goalReachedCta": "Keep going",
+  "home.syncOffline": "Offline — progress stays on this device.",
+  "home.syncPending": "Sync pending…",
+  "home.syncError": "Sync failed. Try again.",
+  "home.syncRetry": "Retry",
   "home.continueLearning": "Continue",
   "home.todaysPlan": "Today's plan",
   "home.viewModule": "View module",
@@ -646,6 +869,9 @@ export const en: Record<TranslationKey, string> = {
   "home.dailyChallenge": "Daily challenge",
   "home.dailyChallengeDone": "Daily challenge done",
   "home.reviews": "Reviews",
+  "home.reviewsToday": "Review today",
+  "home.reviewsTodayHint": "{count} concept(s) from your mistakes",
+  "home.reviewsStart": "Review now",
   "home.reviewsEmpty": "Nothing to review yet",
   "home.progress": "Progress",
   "home.notifications": "Recent activity",
@@ -706,7 +932,7 @@ export const en: Record<TranslationKey, string> = {
   "challenges.timer": "{seconds}s",
   "challenges.timeUp": "Time’s up",
   "challenges.timeUpHint": "The timer hit zero — challenge lost.",
-  "lab.subtitle": "Guided labs with suggested replies",
+  "lab.subtitle": "Immersive scenarios, decisions, and feedback",
   "lab.placeholder": "Your answer…",
   "lab.tutor": "Tutor",
   "lab.complete": "Lab complete · +{xp} XP",
@@ -714,12 +940,13 @@ export const en: Record<TranslationKey, string> = {
   "lab.inProgress": "In progress",
   "lab.available": "Available",
   "lab.completed": "Completed",
+  "lab.doneStatus": "Done",
   "lab.start": "Start",
   "lab.continue": "Continue",
   "lab.replay": "Replay",
   "lab.progress": "{current}/{total}",
   "lab.briefStart": "Start",
-  "lab.suggestHint": "Guided prompts are the intended path",
+  "lab.suggestHint": "Pick a prompt or type your own answer",
   "lab.suggested": "Guided prompts",
   "lab.lockedHint": "Finish a lesson in this track to unlock",
   "lab.emptyFilter": "No labs for this track",
@@ -732,6 +959,32 @@ export const en: Record<TranslationKey, string> = {
   "lab.difficulty.easy": "Easy",
   "lab.difficulty.medium": "Medium",
   "lab.difficulty.hard": "Hard",
+  "lab.verdictCorrect": "Correct answer",
+  "lab.verdictPartial": "Partially correct",
+  "lab.verdictIncorrect": "Incorrect answer",
+  "lab.dailyLabel": "Labs today",
+  "lab.dailyProgress": "{used} / {limit}",
+  "lab.dailyLimitTitle": "Daily limit",
+  "lab.dailyLimitMessage": "You’ve already used your 2 labs for today. Come back tomorrow to start new ones. You can still continue or replay a lab you already started.",
+  "lab.dailyLimitShort": "Daily limit reached",
+  "lab.sectionMeta": "{left} left · {total}",
+  "lab.reportPassed": "Lab passed",
+  "lab.reportFailed": "Lab finished",
+  "lab.reportPassedHint": "Every answer was correct. Nice work.",
+  "lab.reportFailedHint": "At least one answer was incorrect or partial. Review the corrections to improve.",
+  "lab.reportCorrect": "Correct",
+  "lab.reportPartial": "Partial",
+  "lab.reportIncorrect": "Incorrect",
+  "lab.reportXp": "XP earned",
+  "lab.reportStatus": "Status",
+  "lab.statusPassed": "Passed",
+  "lab.statusFailed": "Not passed",
+  "lab.reportAnswers": "Answer details",
+  "lab.reportStep": "Step {n}",
+  "lab.reportYourAnswer": "Your answer",
+  "lab.reportExpected": "Expected answer",
+  "lab.reportWhy": "Explanation",
+  "lab.reportTakeaways": "Key takeaways",
   "ai.title": "AI Tutor",
   "ai.subtitle": "Review fundamentals with Nova",
   "ai.online": "Nova online",
@@ -749,18 +1002,17 @@ export const en: Record<TranslationKey, string> = {
   "profile.languageFr": "Français",
   "profile.languageEn": "English",
   "profile.signOut": "Sign out",
-  "profile.version": "Tech · v1.0.0",
+  "profile.version": "Stack · v1.0.0",
   "profile.moduleProgress": "Module progress",
   "profile.achievements": "Achievements",
   "profile.settings": "Settings",
-  "profile.guest": "Guest",
   "profile.darkMode": "Dark mode",
-  "profile.sound": "Sounds",
   "profile.notifications": "Notifications",
   "profile.languageToggle": "English",
   "profile.languageSubtitle": "Interface · {lang}",
   "profile.rank": "Rank",
   "profile.nextRank": "Next · {rank}",
+  "profile.rankMax": "Max",
   "profile.calendar": "Activity calendar",
   "profile.calendarHint": "The fuller the grid, the stronger your streak",
   "profile.stats": "Statistics",
@@ -783,7 +1035,6 @@ export const en: Record<TranslationKey, string> = {
   "profile.certsEmpty": "Add your first certification to build your career path.",
   "profile.certsExplore": "Explore certifications",
   "profile.subtitle": "Account, progress, and preferences",
-  "profile.createAccount": "Create an account",
   "profile.activityLink": "Activity",
   "profile.activitySubtitle": "View your activity feed",
   "profile.certsSummary": "{preparing} in progress · {obtained} earned",
@@ -792,15 +1043,78 @@ export const en: Record<TranslationKey, string> = {
   "profile.shortcuts": "Shortcuts",
   "profile.changePhoto": "Change photo",
   "profile.photoPermission": "Allow photo library access to choose a picture.",
+  "profile.photoAccess": "Photo access",
+  "profile.notificationsAccess": "Notifications",
+  "profile.notificationsEnabledHint": "We’ll only remind you in the evening if your streak is at risk, or occasionally to resume a short session. No spam.",
+  "profile.permissionOpenSettings": "Turn on this permission in your phone settings.",
+  "profile.permissionRevokeHint": "To revoke access, disable it in system settings.",
+  "profile.openSettings": "Open settings",
+  "profile.sectionAccount": "Account",
+  "profile.sectionPrivacy": "Privacy & data",
+  "profile.sectionLegal": "Legal",
+  "profile.sectionSupport": "Support",
+  "profile.sectionApp": "App",
+  "profile.editInfo": "Edit my info",
+  "profile.deleteData": "Delete my data",
+  "profile.deleteAccount": "Delete my account",
+  "profile.privacyPrefs": "Privacy preferences",
+  "profile.dataCollected": "Data we collect",
+  "profile.dataUsage": "How we use data",
+  "profile.gdprRights": "GDPR rights",
+  "profile.privacyPolicy": "Privacy policy",
+  "profile.legalMentions": "Legal notice",
+  "profile.legalTerms": "Terms of use",
+  "profile.supportLink": "Contact / Support",
+  "profile.about": "About",
+  "profile.replayOnboarding": "Replay intro",
+  "profile.appVersion": "Version",
+  "profile.versionLabel": "Stack · v{version}",
+  "profile.signOutConfirmTitle": "Sign out?",
+  "profile.signOutConfirmMessage": "You can sign back in later. Progress stays on this device.",
+  "profile.deleteDataConfirmTitle": "Delete data?",
+  "profile.deleteDataConfirmMessage": "XP, lessons, challenges, labs, and certification path will be erased on this device and on Neon. Your Auth account stays active. This cannot be undone.",
+  "profile.deleteDataDone": "Learning data cleared (local + server).",
+  "profile.deleteAccountConfirmTitle": "Delete account?",
+  "profile.deleteAccountConfirmMessage": "Your Neon data (profile + progress) and Auth account will be permanently deleted. Confirm with your password.",
+  "profile.deleteAccountPassword": "Password",
+  "profile.deleteAccountPasswordHint": "Enter your password (at least 8 characters) to confirm.",
+  "profile.confirm": "Confirm",
+  "profile.cancel": "Cancel",
+  "account.editTitle": "Edit my info",
+  "account.firstName": "First name",
+  "account.email": "Email",
+  "account.save": "Save",
+  "account.editLocalHint": "Your first name appears on Home (“Hey, …”) and stays synced with your account.",
+  "privacy.prefsTitle": "Preferences",
+  "privacy.prefsIntro": "Only preferences actually used by the app are listed here.",
+  "privacy.analytics": "Analytics",
+  "privacy.analyticsSubtitle": "Allow sending usage events to PostHog",
+  "legal.notFound": "Document not found",
+  "about.title": "About",
+  "about.body": "Stack is a Duolingo-inspired computing learning app: short lessons, challenges, labs, and guided practice.",
+  "support.title": "Support",
+  "support.body": "Questions or a bug? Email us — we’ll get back as soon as we can.",
   "certs.title": "Certifications",
-  "certs.subtitle": "Explore the most recognized tech certifications.",
+  "certs.subtitle": "Market references aligned with your Stack modules (networking, web, software) and related domains.",
   "certs.search": "Search a certification…",
   "certs.filterAll": "All",
+  "certs.filterTrack": "Track / modules",
+  "certs.filterDomain": "Domain",
+  "certs.filterLevel": "Level",
+  "certs.filterPrice": "Budget",
+  "certs.filterMyTrack": "Filter by my current track",
+  "certs.resetFilters": "Reset filters",
+  "certs.count": "{count} certifications listed",
+  "certs.myPath": "My path",
+  "certs.pathSummary": "{preparing} preparing · {obtained} obtained",
+  "certs.catalog": "Catalog",
+  "certs.results": "{count} result(s)",
   "certs.finderCard": "Find my certification",
-  "certs.finderSub": "Discover certifications that match your goal.",
+  "certs.finderSub": "Short quiz to match certifications to your goal.",
   "certs.view": "View",
   "certs.official": "View official certification",
   "certs.addPath": "Add to my path",
+  "certs.prepareWith": "Prepare with {track}",
   "certs.statusTodo": "To do",
   "certs.statusPreparing": "Preparing",
   "certs.statusObtained": "Obtained",
@@ -809,6 +1123,7 @@ export const en: Record<TranslationKey, string> = {
   "certs.why": "Why take it?",
   "certs.skills": "Skills covered",
   "certs.empty": "No matching certification",
+  "certs.emptyHint": "Widen filters (track, domain, level, or price) to see the catalog again.",
   "certs.finderTitle": "Find my certification",
   "certs.finderDomain": "Which domain interests you?",
   "certs.finderLevel": "What’s your level?",
@@ -823,7 +1138,7 @@ export const en: Record<TranslationKey, string> = {
   "certs.domain.cloud": "Cloud",
   "certs.domain.networking": "Networking",
   "certs.domain.devops": "DevOps",
-  "certs.domain.programming": "Programming",
+  "certs.domain.programming": "Web & software",
   "certs.domain.data": "Data",
   "certs.domain.ai": "AI",
   "certs.price.free": "Free",

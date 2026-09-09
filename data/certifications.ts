@@ -7,6 +7,8 @@ import type {
   FilterCertificationsParams,
   RecommendCertificationsParams,
 } from "@/types/certification";
+import type { TrackId } from "@/types/learning";
+import { getTrack } from "@/data/tracks";
 
 export const CERTIFICATIONS: Certification[] = [
   // ── Cybersecurity ──────────────────────────────────────────────────────────
@@ -15,6 +17,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "CompTIA Security+",
     provider: "CompTIA",
     domain: "cybersecurity",
+    tracks: ["security", "networking"],
     level: "beginner",
     priceTier: "100to300",
     priceDisplay: { fr: "≈ 400 €", en: "≈ $404" },
@@ -60,6 +63,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "CompTIA CySA+",
     provider: "CompTIA",
     domain: "cybersecurity",
+    tracks: ["security"],
     level: "intermediate",
     priceTier: "100to300",
     priceDisplay: { fr: "≈ 400 €", en: "≈ $404" },
@@ -284,6 +288,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "CompTIA Network+",
     provider: "CompTIA",
     domain: "networking",
+    tracks: ["networking"],
     level: "beginner",
     priceTier: "100to300",
     priceDisplay: { fr: "≈ 380 €", en: "≈ $358" },
@@ -316,6 +321,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "CCNA",
     provider: "Cisco",
     domain: "networking",
+    tracks: ["networking"],
     level: "intermediate",
     priceTier: "100to300",
     priceDisplay: { fr: "≈ 300 €", en: "≈ $300" },
@@ -420,6 +426,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "AWS Cloud Practitioner",
     provider: "Amazon Web Services",
     domain: "cloud",
+    tracks: ["cloud", "software", "web"],
     level: "beginner",
     priceTier: "under100",
     priceDisplay: { fr: "≈ 100 €", en: "≈ $100" },
@@ -452,6 +459,7 @@ export const CERTIFICATIONS: Certification[] = [
     name: "AWS Solutions Architect Associate",
     provider: "Amazon Web Services",
     domain: "cloud",
+    tracks: ["cloud", "software"],
     level: "intermediate",
     priceTier: "100to300",
     priceDisplay: { fr: "≈ 150 €", en: "≈ $150" },
@@ -788,14 +796,15 @@ export const CERTIFICATIONS: Certification[] = [
     officialUrl: "https://www.databricks.com/learn/training/certification/lakehouse-fundamentals",
   },
 
-  // ── Programming ────────────────────────────────────────────────────────────
+  // ── Programming / Web / Software ───────────────────────────────────────────
   {
     id: "python-institute-pcep",
     name: "PCEP",
     provider: "Python Institute",
     domain: "programming",
+    tracks: ["software", "web"],
     level: "beginner",
-    priceTier: "100to300",
+    priceTier: "under100",
     priceDisplay: { fr: "≈ 68 €", en: "≈ $68" },
     examDurationDisplay: { fr: "40 min", en: "40 min" },
     validityDisplay: { fr: "Illimitée", en: "Lifetime" },
@@ -825,7 +834,384 @@ export const CERTIFICATIONS: Certification[] = [
       en: "OpenEDG accredited program, vendor-independent.",
     },
   },
+  {
+    id: "python-institute-pcap",
+    name: "PCAP",
+    provider: "Python Institute",
+    domain: "programming",
+    tracks: ["software", "web"],
+    level: "intermediate",
+    priceTier: "under100",
+    priceDisplay: { fr: "≈ 295 €", en: "≈ $295" },
+    examDurationDisplay: { fr: "65 min", en: "65 min" },
+    validityDisplay: { fr: "Illimitée", en: "Lifetime" },
+    difficultyDisplay: { fr: "Intermédiaire", en: "Intermediate" },
+    preparationTimeDisplay: { fr: "2–4 mois", en: "2–4 months" },
+    description: {
+      fr: "Certification Associate Python : OOP, modules, exceptions, strings et programmation structurée.",
+      en: "Python Associate certification: OOP, modules, exceptions, strings, and structured programming.",
+    },
+    skills: [
+      { fr: "Programmation orientée objet", en: "Object-oriented programming" },
+      { fr: "Modules et packages", en: "Modules and packages" },
+      { fr: "Exceptions avancées", en: "Advanced exceptions" },
+      { fr: "Strings et listes", en: "Strings and lists" },
+    ],
+    whyTakeIt: {
+      fr: "Niveau supérieur à PCEP, utile pour junior développeur Python / automatisation.",
+      en: "Step above PCEP — useful for junior Python / automation roles.",
+    },
+    officialUrl: "https://pythoninstitute.org/pcap",
+    recognitionNote: {
+      fr: "Référence OpenEDG largement citée sur les CV tech.",
+      en: "OpenEDG reference frequently cited on tech CVs.",
+    },
+  },
+  {
+    id: "github-foundations",
+    name: "GitHub Foundations",
+    provider: "GitHub",
+    domain: "programming",
+    tracks: ["software", "web"],
+    level: "beginner",
+    priceTier: "under100",
+    priceDisplay: { fr: "≈ 99 $", en: "≈ $99" },
+    examDurationDisplay: { fr: "≈ 2 h", en: "≈ 2 hours" },
+    validityDisplay: { fr: "2 ans", en: "2 years" },
+    difficultyDisplay: { fr: "Débutant", en: "Beginner" },
+    preparationTimeDisplay: { fr: "2–4 semaines", en: "2–4 weeks" },
+    description: {
+      fr: "Valide Git, GitHub, collaboration, Issues, Pull Requests et bonnes pratiques open source.",
+      en: "Validates Git, GitHub, collaboration, Issues, Pull Requests, and open-source basics.",
+    },
+    skills: [
+      { fr: "Git et branches", en: "Git and branching" },
+      { fr: "Pull Requests", en: "Pull Requests" },
+      { fr: "Actions de base", en: "Basic Actions" },
+      { fr: "Collaboration d’équipe", en: "Team collaboration" },
+    ],
+    whyTakeIt: {
+      fr: "Certif vendor moderne, très alignée avec le quotidien web / logiciel.",
+      en: "Modern vendor cert closely aligned with everyday web / software work.",
+    },
+    officialUrl: "https://examregistration.github.com/certification/FOUNDATIONS",
+    recognitionNote: {
+      fr: "Portée par Microsoft/GitHub — visible et crédible pour les recruteurs produit.",
+      en: "Backed by Microsoft/GitHub — credible signal for product recruiters.",
+    },
+  },
+  {
+    id: "meta-frontend-developer",
+    name: "Meta Front-End Developer",
+    provider: "Meta (Coursera)",
+    domain: "programming",
+    tracks: ["web"],
+    level: "beginner",
+    priceTier: "under100",
+    priceDisplay: { fr: "Abonnement Coursera", en: "Coursera subscription" },
+    preparationTimeDisplay: { fr: "3–6 mois", en: "3–6 months" },
+    difficultyDisplay: { fr: "Débutant à intermédiaire", en: "Beginner to intermediate" },
+    description: {
+      fr: "Parcours professionnel Meta : HTML/CSS, JS, React, UX et portfolio front-end.",
+      en: "Meta Professional Certificate: HTML/CSS, JS, React, UX, and a front-end portfolio.",
+    },
+    skills: [
+      { fr: "HTML / CSS / JS", en: "HTML / CSS / JS" },
+      { fr: "React", en: "React" },
+      { fr: "Versioning Git", en: "Git versioning" },
+      { fr: "UX de base", en: "Basic UX" },
+    ],
+    whyTakeIt: {
+      fr: "Référence marché pour se positionner junior front-end avec projets concrets.",
+      en: "Market reference to position as a junior front-end with concrete projects.",
+    },
+    officialUrl: "https://www.coursera.org/professional-certificates/meta-front-end-developer",
+    recognitionNote: {
+      fr: "Certificat professionnel Meta — très demandé dans les bootcamps / reconversions web.",
+      en: "Meta Professional Certificate — popular in web bootcamps and career switches.",
+    },
+  },
+  {
+    id: "meta-backend-developer",
+    name: "Meta Back-End Developer",
+    provider: "Meta (Coursera)",
+    domain: "programming",
+    tracks: ["web", "software"],
+    level: "beginner",
+    priceTier: "under100",
+    priceDisplay: { fr: "Abonnement Coursera", en: "Coursera subscription" },
+    preparationTimeDisplay: { fr: "4–7 mois", en: "4–7 months" },
+    difficultyDisplay: { fr: "Débutant à intermédiaire", en: "Beginner to intermediate" },
+    description: {
+      fr: "Parcours Meta back-end : Python, Django, APIs, bases de données et sécurité applicative.",
+      en: "Meta back-end path: Python, Django, APIs, databases, and application security.",
+    },
+    skills: [
+      { fr: "Python / Django", en: "Python / Django" },
+      { fr: "APIs REST", en: "REST APIs" },
+      { fr: "Bases de données", en: "Databases" },
+      { fr: "Sécurité web de base", en: "Basic web security" },
+    ],
+    whyTakeIt: {
+      fr: "Complète le parcours web full-stack et cadre les bases serveur.",
+      en: "Completes a full-stack web path and frames server-side basics.",
+    },
+    officialUrl: "https://www.coursera.org/professional-certificates/meta-back-end-developer",
+  },
+  {
+    id: "aws-developer-associate",
+    name: "AWS Developer Associate",
+    provider: "Amazon Web Services",
+    domain: "cloud",
+    tracks: ["software", "web", "cloud"],
+    level: "intermediate",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 150 $", en: "≈ $150" },
+    examDurationDisplay: { fr: "130 min", en: "130 min" },
+    validityDisplay: { fr: "3 ans", en: "3 years" },
+    difficultyDisplay: { fr: "Intermédiaire", en: "Intermediate" },
+    preparationTimeDisplay: { fr: "2–4 mois", en: "2–4 months" },
+    description: {
+      fr: "Développement d’applications sur AWS : Lambda, API Gateway, DynamoDB, CI/CD et sécurité IAM.",
+      en: "Building apps on AWS: Lambda, API Gateway, DynamoDB, CI/CD, and IAM security.",
+    },
+    skills: [
+      { fr: "Services de compute serverless", en: "Serverless compute services" },
+      { fr: "APIs et stockage", en: "APIs and storage" },
+      { fr: "CI/CD AWS", en: "AWS CI/CD" },
+      { fr: "IAM développeur", en: "Developer IAM" },
+    ],
+    whyTakeIt: {
+      fr: "Référence cloud pour développeurs web / logiciel qui déploient en production.",
+      en: "Cloud reference for web / software developers shipping to production.",
+    },
+    officialUrl: "https://aws.amazon.com/certification/certified-developer-associate/",
+    recognitionNote: {
+      fr: "Parmi les certifs AWS les plus citées pour les postes développeur cloud.",
+      en: "Among the most cited AWS certs for cloud developer roles.",
+    },
+  },
+  {
+    id: "microsoft-az-204",
+    name: "AZ-204 Developing Solutions",
+    provider: "Microsoft",
+    domain: "cloud",
+    tracks: ["software", "web", "cloud"],
+    level: "intermediate",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 165 €", en: "≈ $165" },
+    examDurationDisplay: { fr: "≈ 120 min", en: "≈ 120 min" },
+    validityDisplay: { fr: "1 an (renouvelable)", en: "1 year (renewable)" },
+    difficultyDisplay: { fr: "Intermédiaire", en: "Intermediate" },
+    preparationTimeDisplay: { fr: "2–4 mois", en: "2–4 months" },
+    description: {
+      fr: "Développer des solutions Azure : App Service, Functions, stockage, Cosmos DB et monitoring.",
+      en: "Develop Azure solutions: App Service, Functions, storage, Cosmos DB, and monitoring.",
+    },
+    skills: [
+      { fr: "Azure App Service", en: "Azure App Service" },
+      { fr: "Azure Functions", en: "Azure Functions" },
+      { fr: "Stockage et Cosmos DB", en: "Storage and Cosmos DB" },
+      { fr: "Sécurité et monitoring", en: "Security and monitoring" },
+    ],
+    whyTakeIt: {
+      fr: "Équivalent Microsoft du Developer Associate — fort sur les stacks .NET / Node en entreprise.",
+      en: "Microsoft counterpart to Developer Associate — strong for .NET / Node enterprise stacks.",
+    },
+    officialUrl: "https://learn.microsoft.com/credentials/certifications/azure-developer/",
+  },
+  {
+    id: "oracle-java-foundations",
+    name: "Oracle Java Foundations",
+    provider: "Oracle",
+    domain: "programming",
+    tracks: ["software"],
+    level: "beginner",
+    priceTier: "under100",
+    priceDisplay: { fr: "≈ 95 $", en: "≈ $95" },
+    examDurationDisplay: { fr: "60 min", en: "60 min" },
+    difficultyDisplay: { fr: "Débutant", en: "Beginner" },
+    preparationTimeDisplay: { fr: "1–2 mois", en: "1–2 months" },
+    description: {
+      fr: "Fondamentaux Java SE : types, contrôle de flux, classes, encapsulation et API de base.",
+      en: "Java SE foundations: types, control flow, classes, encapsulation, and core APIs.",
+    },
+    skills: [
+      { fr: "Syntaxe Java", en: "Java syntax" },
+      { fr: "OOP de base", en: "Basic OOP" },
+      { fr: "Collections simples", en: "Simple collections" },
+      { fr: "Exceptions", en: "Exceptions" },
+    ],
+    whyTakeIt: {
+      fr: "Porte d’entrée vendor Oracle pour les parcours logiciel Java d’entreprise.",
+      en: "Oracle vendor entry point for enterprise Java software paths.",
+    },
+    officialUrl: "https://education.oracle.com/java-foundations/pexam_1Z0-811",
+  },
+  {
+    id: "istqb-ctfl",
+    name: "ISTQB CTFL",
+    provider: "ISTQB",
+    domain: "programming",
+    tracks: ["software", "web"],
+    level: "beginner",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 200–250 €", en: "≈ $200–250" },
+    examDurationDisplay: { fr: "60 min", en: "60 min" },
+    validityDisplay: { fr: "Illimitée", en: "Lifetime" },
+    difficultyDisplay: { fr: "Débutant", en: "Beginner" },
+    preparationTimeDisplay: { fr: "1–2 mois", en: "1–2 months" },
+    description: {
+      fr: "Fondamentaux du test logiciel : conception de cas, niveaux de test, outils et processus.",
+      en: "Software testing foundations: test design, test levels, tools, and processes.",
+    },
+    skills: [
+      { fr: "Conception de tests", en: "Test design" },
+      { fr: "Niveaux et types de test", en: "Test levels and types" },
+      { fr: "Gestion des défauts", en: "Defect management" },
+      { fr: "Processus de test", en: "Testing process" },
+    ],
+    whyTakeIt: {
+      fr: "Standard mondial QA — très utile en logiciel et qualité produit web.",
+      en: "Global QA standard — highly useful in software and web product quality.",
+    },
+    officialUrl: "https://www.istqb.org/certifications/certified-tester-foundation-level",
+    recognitionNote: {
+      fr: "Référence quasi universelle pour les rôles QA / testeur.",
+      en: "Near-universal reference for QA / tester roles.",
+    },
+  },
+  {
+    id: "scrum-psm-i",
+    name: "PSM I",
+    provider: "Scrum.org",
+    domain: "programming",
+    tracks: ["software", "web"],
+    level: "beginner",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 200 $", en: "≈ $200" },
+    examDurationDisplay: { fr: "60 min", en: "60 min" },
+    validityDisplay: { fr: "Illimitée", en: "Lifetime" },
+    difficultyDisplay: { fr: "Débutant à intermédiaire", en: "Beginner to intermediate" },
+    preparationTimeDisplay: { fr: "2–4 semaines", en: "2–4 weeks" },
+    description: {
+      fr: "Professional Scrum Master I : Scrum Guide, rôles, événements et empirisme agile.",
+      en: "Professional Scrum Master I: Scrum Guide, roles, events, and agile empiricism.",
+    },
+    skills: [
+      { fr: "Cadre Scrum", en: "Scrum framework" },
+      { fr: "Rôles et événements", en: "Roles and events" },
+      { fr: "Backlog et incrément", en: "Backlog and increment" },
+      { fr: "Agilité d’équipe", en: "Team agility" },
+    ],
+    whyTakeIt: {
+      fr: "Certif agile très lisible sur un CV développeur / lead technique.",
+      en: "Highly readable agile cert on a developer / tech lead CV.",
+    },
+    officialUrl: "https://www.scrum.org/assessments/professional-scrum-master-i-certification",
+  },
+  {
+    id: "cisco-devnet-associate",
+    name: "DevNet Associate",
+    provider: "Cisco",
+    domain: "networking",
+    tracks: ["networking", "software"],
+    level: "intermediate",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 300 $", en: "≈ $300" },
+    examDurationDisplay: { fr: "120 min", en: "120 min" },
+    validityDisplay: { fr: "3 ans", en: "3 years" },
+    difficultyDisplay: { fr: "Intermédiaire", en: "Intermediate" },
+    preparationTimeDisplay: { fr: "2–4 mois", en: "2–4 months" },
+    description: {
+      fr: "Automatisation réseau : APIs REST, Python, CI/CD, sécurité et plateformes Cisco.",
+      en: "Network automation: REST APIs, Python, CI/CD, security, and Cisco platforms.",
+    },
+    skills: [
+      { fr: "APIs REST / JSON", en: "REST / JSON APIs" },
+      { fr: "Python pour le réseau", en: "Python for networking" },
+      { fr: "Infrastructure as Code", en: "Infrastructure as Code" },
+      { fr: "Sécurité des APIs", en: "API security" },
+    ],
+    whyTakeIt: {
+      fr: "Pont idéal entre module Réseau et développement logiciel / automatisation.",
+      en: "Ideal bridge between Networking modules and software / automation.",
+    },
+    officialUrl: "https://www.cisco.com/site/us/en/learn/training-certifications/certifications/devnet/devnet-associate/index.html",
+    recognitionNote: {
+      fr: "Référence Cisco pour les profils NetDevOps.",
+      en: "Cisco reference for NetDevOps profiles.",
+    },
+  },
+  {
+    id: "comptia-a-plus",
+    name: "CompTIA A+",
+    provider: "CompTIA",
+    domain: "programming",
+    tracks: ["software", "networking"],
+    level: "beginner",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 2 × 253 $", en: "≈ 2 × $253" },
+    examDurationDisplay: { fr: "90 min / examen", en: "90 min / exam" },
+    validityDisplay: { fr: "3 ans", en: "3 years" },
+    difficultyDisplay: { fr: "Débutant", en: "Beginner" },
+    preparationTimeDisplay: { fr: "2–3 mois", en: "2–3 months" },
+    description: {
+      fr: "Fondamentaux IT : hardware, OS, réseau de base, troubleshooting et support utilisateur.",
+      en: "IT foundations: hardware, OS, basic networking, troubleshooting, and end-user support.",
+    },
+    skills: [
+      { fr: "Hardware et OS", en: "Hardware and OS" },
+      { fr: "Dépannage", en: "Troubleshooting" },
+      { fr: "Réseau de base", en: "Basic networking" },
+      { fr: "Support utilisateur", en: "End-user support" },
+    ],
+    whyTakeIt: {
+      fr: "Socle vendor-neutral avant de spécialiser réseau, logiciel ou support.",
+      en: "Vendor-neutral foundation before specializing in network, software, or support.",
+    },
+    officialUrl: "https://www.comptia.org/certifications/a",
+  },
+  {
+    id: "cncf-kcna",
+    name: "KCNA",
+    provider: "CNCF / Linux Foundation",
+    domain: "devops",
+    tracks: ["software", "cloud", "web"],
+    level: "beginner",
+    priceTier: "100to300",
+    priceDisplay: { fr: "≈ 250 $", en: "≈ $250" },
+    examDurationDisplay: { fr: "90 min", en: "90 min" },
+    validityDisplay: { fr: "3 ans", en: "3 years" },
+    difficultyDisplay: { fr: "Débutant", en: "Beginner" },
+    preparationTimeDisplay: { fr: "1–2 mois", en: "1–2 months" },
+    description: {
+      fr: "Kubernetes and Cloud Native Associate : concepts cloud-native, conteneurs et orchestration.",
+      en: "Kubernetes and Cloud Native Associate: cloud-native concepts, containers, and orchestration.",
+    },
+    skills: [
+      { fr: "Conteneurs", en: "Containers" },
+      { fr: "Kubernetes concepts", en: "Kubernetes concepts" },
+      { fr: "Observabilité de base", en: "Basic observability" },
+      { fr: "Écosystème CNCF", en: "CNCF ecosystem" },
+    ],
+    whyTakeIt: {
+      fr: "Porte d’entrée cloud-native avant CKA/CKAD — utile web & logiciel moderne.",
+      en: "Cloud-native entry before CKA/CKAD — useful for modern web & software.",
+    },
+    officialUrl: "https://training.linuxfoundation.org/certification/kubernetes-cloud-native-associate/",
+  },
 ];
+
+/** Domains typically aligned with each learning track / module family. */
+export const TRACK_CERT_DOMAINS: Record<TrackId, CertDomain[]> = {
+  networking: ["networking", "cybersecurity", "devops"],
+  web: ["programming", "devops", "cloud"],
+  software: ["programming", "devops", "cloud", "data"],
+  cloud: ["cloud", "devops"],
+  security: ["cybersecurity", "networking"],
+  ai: ["ai", "data", "programming"],
+};
 
 const LEVEL_ORDER: CertLevel[] = ["beginner", "intermediate", "advanced", "expert"];
 
@@ -837,6 +1223,10 @@ const RECOGNIZED_CERT_IDS = new Set([
   "offsec-oscp",
   "cncf-cka",
   "isaca-cism",
+  "aws-developer-associate",
+  "istqb-ctfl",
+  "github-foundations",
+  "cisco-devnet-associate",
 ]);
 
 function levelIndex(level: CertLevel): number {
@@ -866,16 +1256,57 @@ export function getCertification(id: string): Certification | undefined {
   return CERTIFICATIONS.find((c) => c.id === id);
 }
 
+const DOMAIN_ORDER: CertDomain[] = [
+  "networking",
+  "programming",
+  "cybersecurity",
+  "cloud",
+  "devops",
+  "data",
+  "ai",
+];
+
+export type CertDomainSection = {
+  domain: CertDomain;
+  data: Certification[];
+};
+
+/** Group filtered certs into domain sections (empty domains omitted). */
+export function groupCertificationsByDomain(
+  certs: Certification[]
+): CertDomainSection[] {
+  const buckets = new Map<CertDomain, Certification[]>();
+  for (const domain of DOMAIN_ORDER) {
+    buckets.set(domain, []);
+  }
+  for (const cert of certs) {
+    const list = buckets.get(cert.domain);
+    if (list) list.push(cert);
+    else buckets.set(cert.domain, [cert]);
+  }
+  return DOMAIN_ORDER.map((domain) => ({
+    domain,
+    data: buckets.get(domain) ?? [],
+  })).filter((section) => section.data.length > 0);
+}
+
 export function filterCertifications({
   q,
   domain,
   level,
   priceTier,
+  trackId,
 }: FilterCertificationsParams = {}): Certification[] {
   return CERTIFICATIONS.filter((cert) => {
     if (domain && cert.domain !== domain) return false;
     if (level && cert.level !== level) return false;
     if (priceTier && cert.priceTier !== priceTier) return false;
+    if (trackId) {
+      const domains = TRACK_CERT_DOMAINS[trackId] ?? [];
+      const tagged = cert.tracks?.includes(trackId) ?? false;
+      const domainMatch = domains.includes(cert.domain);
+      if (!tagged && !domainMatch) return false;
+    }
     if (q && !matchesQuery(cert, q)) return false;
     return true;
   });
@@ -972,6 +1403,19 @@ export function recommendCertifications({
     .sort((a, b) => b.score - a.score || a.cert.name.localeCompare(b.cert.name));
 
   return scored.slice(0, 5).map(({ cert, reason }) => ({ cert, reason }));
+}
+
+/** Best available learning track to prepare for this certification. */
+export function getPrepTrackForCert(cert: Certification): TrackId | null {
+  const tagged = (cert.tracks ?? []).find((id) => getTrack(id)?.available);
+  if (tagged) return tagged;
+
+  for (const trackId of Object.keys(TRACK_CERT_DOMAINS) as TrackId[]) {
+    const track = getTrack(trackId);
+    if (!track?.available) continue;
+    if (TRACK_CERT_DOMAINS[trackId].includes(cert.domain)) return trackId;
+  }
+  return null;
 }
 
 export type {

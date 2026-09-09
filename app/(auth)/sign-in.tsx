@@ -1,14 +1,16 @@
 import SocialButton from "@/components/SocialButton";
 import { images } from "@/constants/images";
-import { posthog } from "@/lib/posthog";
+import { identifyUser, trackEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useT } from "@/lib/i18n";
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  Image,
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,35 +24,41 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const t = useT();
-  const signIn = useSessionStore((s) => s.signIn);
-  const signInAsGuest = useSessionStore((s) => s.signInAsGuest);
+  const signInWithPassword = useSessionStore((s) => s.signInWithPassword);
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
-  const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const completeSignIn = (method: string, nextEmail = email) => {
-    const trimmed = nextEmail.trim();
+  const completeSignIn = async () => {
+    const trimmed = email.trim();
     if (!trimmed.includes("@")) {
-      setAuthError("Enter a valid email address.");
+      setAuthError("Entre une adresse e-mail valide.");
+      return;
+    }
+    if (password.length < 8) {
+      setAuthError("Le mot de passe doit faire au moins 8 caractères.");
       return;
     }
 
     setAuthError("");
-    signIn({ email: trimmed });
-    posthog.capture("sign_in_completed", { method });
-    posthog.identify(useSessionStore.getState().userId!, {
-      $set: { preferred_track: selectedTrack ?? null },
-    });
-    router.replace("/");
-  };
-
-  const handleGuestAccess = () => {
-    signInAsGuest();
-    if (!selectedTrack) {
-      setSelectedTrack("networking");
+    setLoading(true);
+    const result = await signInWithPassword({ email: trimmed, password });
+    setLoading(false);
+    if (result.error) {
+      setAuthError(result.error);
+      return;
     }
-    posthog.capture("guest_access");
+
+    trackEvent("sign_in_completed", { method: "password" });
+    const uid = useSessionStore.getState().userId;
+    if (uid) {
+      identifyUser(uid, {
+        preferredTrack: selectedTrack,
+      });
+    }
     router.replace("/");
   };
 
@@ -82,7 +90,10 @@ export default function SignInScreen() {
               <Image
                 source={images.mascotAuth}
                 style={{ width: 160, height: 160 }}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={0}
               />
             </View>
 
@@ -98,6 +109,38 @@ export default function SignInScreen() {
                 style={styles.input}
               />
             </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.passwordRow}>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor="#9ca3af"
+                  secureTextEntry={!showPassword}
+                  style={[styles.input, styles.passwordInput]}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword((p) => !p)}
+                  style={styles.eyeButton}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    showPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
+                >
+                  <Ionicons
+                    name={showPassword ? "eye" : "eye-outline"}
+                    size={20}
+                    color="#9ca3af"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {authError ? (
               <Text className="body-sm text-error mb-2">{authError}</Text>
             ) : null}
@@ -105,14 +148,18 @@ export default function SignInScreen() {
             <TouchableOpacity
               className="bg-lingua-purple rounded-2xl py-4 items-center mt-2"
               activeOpacity={0.85}
-              onPress={() => completeSignIn("email")}
-              disabled={!email}
-              style={{ opacity: !email ? 0.6 : 1 }}
+              onPress={() => void completeSignIn()}
+              disabled={!email || !password || loading}
+              style={{ opacity: !email || !password || loading ? 0.6 : 1 }}
               testID="sign-in-button"
             >
-              <Text className="font-poppins-semibold text-base text-white">
-                {t("auth.signIn")}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="font-poppins-semibold text-base text-white">
+                  {t("auth.signIn")}
+                </Text>
+              )}
             </TouchableOpacity>
 
             <View className="flex-row items-center my-6 gap-3">
@@ -127,34 +174,22 @@ export default function SignInScreen() {
               icon={<AntDesign name="google" size={20} color="#DB4437" />}
               label="Continue with Google"
               onPress={() =>
-                completeSignIn("oauth_google", "google.user@tech.app")
-              }
-            />
-            <SocialButton
-              icon={<FontAwesome name="facebook" size={20} color="#1877F2" />}
-              label="Continue with Facebook"
-              onPress={() =>
-                completeSignIn("oauth_facebook", "facebook.user@tech.app")
+                Alert.alert(
+                  "Bientôt disponible",
+                  "La connexion Google n’est pas encore branchée. Utilise e-mail et mot de passe."
+                )
               }
             />
             <SocialButton
               icon={<AntDesign name="apple" size={20} color="#000" />}
               label="Continue with Apple"
               onPress={() =>
-                completeSignIn("oauth_apple", "apple.user@tech.app")
+                Alert.alert(
+                  "Bientôt disponible",
+                  "La connexion Apple n’est pas encore branchée. Utilise e-mail et mot de passe."
+                )
               }
             />
-
-            <TouchableOpacity
-              className="rounded-2xl py-4 items-center mt-2 border border-border"
-              activeOpacity={0.85}
-              onPress={handleGuestAccess}
-              testID="guest-access-button"
-            >
-              <Text className="font-poppins-semibold text-base text-text-primary">
-                {t("auth.guest")}
-              </Text>
-            </TouchableOpacity>
 
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">
@@ -196,5 +231,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#001328",
     padding: 0,
+  },
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 24,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: 36,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

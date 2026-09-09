@@ -1,5 +1,5 @@
 import { AnimatedProgressBar } from "@/components/motion/AnimatedProgressBar";
-import { fontFamily, radius } from "@/constants/theme";
+import { fontFamily, radius, spacing } from "@/constants/theme";
 import { TRACKS } from "@/data/tracks";
 import { UNITS } from "@/data/units";
 import { useLocalize, useT } from "@/lib/i18n";
@@ -83,7 +83,7 @@ export function ModuleProgressList({ completedLessonIds }: Props) {
                     ]}
                     numberOfLines={1}
                   >
-                    {L(row.title)}
+                    {L(row.title ?? "")}
                   </Text>
                   <Text
                     style={[
@@ -123,8 +123,8 @@ export function ModuleProgressList({ completedLessonIds }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginTop: 4,
-    marginBottom: 16,
+    marginTop: spacing.xs,
+    marginBottom: spacing.section,
   },
   headerBlock: {
     flexDirection: "row",
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: 14,
   },
-  list: { gap: 12 },
+  list: { gap: spacing.cardGap },
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,

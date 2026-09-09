@@ -17,6 +17,8 @@ export interface Track {
   color: string;
   learners: string;
   available: boolean;
+  /** Short topic teasers (especially for coming-soon tracks). */
+  teaserTopics?: LocalizedString[];
 }
 
 export type ActivityType =
@@ -51,7 +53,23 @@ export type DiagramId =
   | "dom-tree"
   | "docker-layers"
   | "mvc-architecture"
-  | "test-pyramid";
+  | "test-pyramid"
+  | "encapsulation"
+  | "ports-map"
+  | "dns-hierarchy"
+  | "sdlc-cycle"
+  | "algo-search"
+  | "stack-queue"
+  | "control-flow"
+  | "oop-inheritance"
+  | "monolith-micro"
+  | "debug-loop"
+  | "git-stage"
+  | "agile-board"
+  | "code-review-flow"
+  | "html-skeleton"
+  | "css-box-model"
+  | "cache-cdn";
 
 export type CalloutKind = "key" | "tip" | "warning" | "mistake";
 

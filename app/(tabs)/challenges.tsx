@@ -26,6 +26,7 @@ import {
 } from "@/data/challenges";
 import { TRACKS } from "@/data/tracks";
 import { getTrackLessonIds } from "@/lib/learnProgress";
+import { trackEvent } from "@/lib/analytics";
 import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
 import { useLearningStore } from "@/store/learningStore";
@@ -93,14 +94,36 @@ export default function ChallengesScreen() {
 
   function openChallenge(c: Challenge) {
     if (isLocked(c) && c.id !== daily.id) return;
-    setActive(resolveChallenge(c));
+    const challenge = resolveChallenge(c);
+    setActive(challenge);
+    trackEvent("challenge_started", {
+      challenge_id: challenge.id,
+      skill_id: challenge.skillId,
+      is_daily: challenge.id === daily.id,
+      xp_bonus: challenge.xpBonus,
+    });
   }
 
   function handleQuizComplete(challenge: Challenge, score: number, xp: number) {
     const already = completed.includes(challenge.id);
     if (already) return;
-    if (score < 1) return;
+    if (score < 1) {
+      trackEvent("challenge_failed", {
+        challenge_id: challenge.id,
+        skill_id: challenge.skillId,
+        score,
+        is_daily: challenge.id === daily.id,
+      });
+      return;
+    }
     completeChallenge(challenge.id, xp, challenge.skillId);
+    trackEvent("challenge_completed", {
+      challenge_id: challenge.id,
+      skill_id: challenge.skillId,
+      score,
+      xp_earned: xp,
+      is_daily: challenge.id === daily.id,
+    });
   }
 
   return (
@@ -279,20 +302,20 @@ export default function ChallengesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  pad: { padding: spacing.screen, paddingBottom: 40 },
+  pad: { padding: spacing.screen, paddingBottom: spacing.tabScrollBottom },
   headerProgress: {
     fontFamily: fontFamily.semiBold,
     fontSize: 16,
   },
   filters: {
-    gap: 8,
-    paddingVertical: 12,
+    gap: spacing.chipGap,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   chip: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     backgroundColor: "transparent",
   },

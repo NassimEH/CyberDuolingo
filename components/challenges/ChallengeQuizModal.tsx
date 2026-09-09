@@ -53,8 +53,7 @@ export function ChallengeQuizModal({
   const [checked, setChecked] = useState(false);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [showResult, setShowResult] = useState(false);
-  const [timedOut, setTimedOut] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(questionSeconds);
+  const [secondsLeft, setSecondsLeft] = useState(questionSeconds as number);
 
   const checkedRef = useRef(checked);
   const showResultRef = useRef(showResult);
@@ -71,9 +70,9 @@ export function ChallengeQuizModal({
   const score = useMemo(() => answers.filter(Boolean).length, [answers]);
 
   const xpEarned = useMemo(() => {
-    if (timedOut || isReplay || score === 0) return 0;
-    return Math.round((challenge.xpBonus * score) / total);
-  }, [timedOut, isReplay, score, challenge.xpBonus, total]);
+    if (isReplay || score === 0 || total === 0) return 0;
+    return Math.round((challenge.xpBonus * score) / Math.max(total, 1));
+  }, [isReplay, score, challenge.xpBonus, total]);
 
   const displayPct = showResult
     ? 100
@@ -103,10 +102,9 @@ export function ChallengeQuizModal({
     if (secondsLeft > 0) return;
     if (checkedRef.current || showResultRef.current) return;
 
+    // Timeout = wrong answer on this question only; quiz continues.
     setAnswers((prev) => [...prev, false]);
-    setTimedOut(true);
     setChecked(true);
-    setShowResult(true);
     void feedbackError();
   }, [secondsLeft]);
 
@@ -137,13 +135,13 @@ export function ChallengeQuizModal({
   }
 
   function handleFinishResult() {
-    onComplete(timedOut ? 0 : score, xpEarned);
+    onComplete(score, xpEarned);
     onClose();
   }
 
   function handleChromeClose() {
     if (showResult) {
-      if ((score > 0 && !timedOut) || isReplay) {
+      if (score > 0 || isReplay) {
         handleFinishResult();
       } else {
         onClose();
@@ -159,14 +157,11 @@ export function ChallengeQuizModal({
     setChecked(false);
     setAnswers([]);
     setShowResult(false);
-    setTimedOut(false);
     setSecondsLeft(questionSeconds);
   }
 
   const stepLabel = showResult
-    ? timedOut
-      ? t("challenges.timeUp")
-      : t("challenges.resultTitle")
+    ? t("challenges.resultTitle")
     : t("challenges.progress", { current: qIndex + 1, total });
 
   const primaryLabel = checked
@@ -176,7 +171,7 @@ export function ChallengeQuizModal({
     : t("lesson.check");
 
   const timerUrgent = secondsLeft <= 3;
-  const lost = timedOut || score === 0;
+  const lost = score === 0;
 
   return (
     <Modal visible animationType="slide" onRequestClose={handleChromeClose}>
@@ -204,31 +199,17 @@ export function ChallengeQuizModal({
                 style={[
                   styles.resultTitle,
                   {
-                    color: timedOut
-                      ? colors.semantic.error
-                      : colors.neutral.textPrimary,
+                    color: colors.neutral.textPrimary,
                   },
                 ]}
               >
-                {timedOut
-                  ? t("challenges.timeUp")
-                  : t("challenges.resultTitle")}
+                {t("challenges.resultTitle")}
               </Text>
-              {timedOut ? (
-                <Text
-                  style={[
-                    styles.resultHint,
-                    { color: colors.neutral.textSecondary },
-                  ]}
-                >
-                  {t("challenges.timeUpHint")}
-                </Text>
-              ) : null}
               <Text
                 style={[styles.resultScore, { color: colors.neutral.textPrimary }]}
               >
                 {t("challenges.resultScore", {
-                  score: timedOut ? 0 : score,
+                  score,
                   total,
                 })}
               </Text>

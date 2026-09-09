@@ -49,13 +49,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.sm,
-    marginTop: spacing.sm,
+    marginBottom: 14,
+    marginTop: spacing.xs,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
     flex: 1,
   },
   title: {

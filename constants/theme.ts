@@ -1,4 +1,4 @@
-// Design tokens — light/dark palettes for Tech learning app.
+// Design tokens — light/dark palettes for Stack learning app.
 
 export const lightColors = {
   primary: {
@@ -110,10 +110,23 @@ export const shadows = {
 } as const;
 
 export const spacing = {
+  /** Horizontal page inset */
   screen: 24,
+  /** Space between major page blocks */
   section: 20,
   md: 16,
   sm: 12,
+  xs: 8,
+  /** Gap between stacked cards / list rows */
+  cardGap: 12,
+  /** Filter chip row gap */
+  chipGap: 8,
+  /** Below ScreenHeader before first block */
+  afterHeader: 16,
+  /** Scroll bottom inset (stack screens) */
+  scrollBottom: 40,
+  /** Scroll bottom inset for tab screens (clears custom tab bar) */
+  tabScrollBottom: 100,
 } as const;
 
 export const fontFamily = {

@@ -1,14 +1,16 @@
 import SocialButton from "@/components/SocialButton";
 import { images } from "@/constants/images";
-import { posthog } from "@/lib/posthog";
+import { identifyUser, trackEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useT } from "@/lib/i18n";
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  Image,
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,42 +24,53 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
   const t = useT();
-  const signIn = useSessionStore((s) => s.signIn);
-  const signInAsGuest = useSessionStore((s) => s.signInAsGuest);
+  const signUpWithPassword = useSessionStore((s) => s.signUpWithPassword);
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
-  const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const completeSignUp = (method: string, nextEmail = email) => {
-    const trimmed = nextEmail.trim();
-    if (!trimmed.includes("@")) {
-      setAuthError("Enter a valid email address.");
+  const completeSignUp = async () => {
+    const trimmedName = firstName.trim();
+    const trimmed = email.trim();
+    if (trimmedName.length < 2) {
+      setAuthError("Entre ton prénom (au moins 2 caractères).");
       return;
     }
-    if (method === "password" && password.length < 4) {
-      setAuthError("Password must be at least 4 characters.");
+    if (!trimmed.includes("@")) {
+      setAuthError("Entre une adresse e-mail valide.");
+      return;
+    }
+    if (password.length < 8) {
+      setAuthError("Le mot de passe doit faire au moins 8 caractères.");
       return;
     }
 
     setAuthError("");
-    signIn({ email: trimmed });
-    posthog.capture("sign_up_completed", { method });
-    posthog.identify(useSessionStore.getState().userId!, {
-      $set_once: { signup_date: new Date().toISOString() },
-      $set: { preferred_track: selectedTrack ?? null },
+    setLoading(true);
+    const result = await signUpWithPassword({
+      email: trimmed,
+      password,
+      firstName: trimmedName,
     });
-    router.replace("/");
-  };
-
-  const handleGuestAccess = () => {
-    signInAsGuest();
-    if (!selectedTrack) {
-      setSelectedTrack("networking");
+    setLoading(false);
+    if (result.error) {
+      setAuthError(result.error);
+      return;
     }
-    posthog.capture("guest_access", { source: "sign_up" });
+
+    trackEvent("sign_up_completed", { method: "password" });
+    const uid = useSessionStore.getState().userId;
+    if (uid) {
+      identifyUser(uid, {
+        name: trimmedName,
+        preferredTrack: selectedTrack,
+        signupDate: new Date().toISOString(),
+      });
+    }
     router.replace("/");
   };
 
@@ -89,7 +102,23 @@ export default function SignUpScreen() {
               <Image
                 source={images.mascotAuth}
                 style={{ width: 160, height: 160 }}
-                resizeMode="contain"
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={0}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>{t("account.firstName")}</Text>
+              <TextInput
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Alex"
+                placeholderTextColor="#9ca3af"
+                autoCapitalize="words"
+                autoComplete="given-name"
+                style={styles.input}
               />
             </View>
 
@@ -106,20 +135,27 @@ export default function SignUpScreen() {
               />
             </View>
 
-            <View style={[styles.inputContainer, { flexDirection: "column" }]}>
+            <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Password</Text>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={styles.passwordRow}>
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#9ca3af"
                   secureTextEntry={!showPassword}
-                  style={[styles.input, { flex: 1 }]}
+                  style={[styles.input, styles.passwordInput]}
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword((p) => !p)}
+                  style={styles.eyeButton}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    showPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
                 >
                   <Ionicons
                     name={showPassword ? "eye" : "eye-outline"}
@@ -136,14 +172,21 @@ export default function SignUpScreen() {
             <TouchableOpacity
               className="bg-lingua-purple rounded-2xl py-4 items-center mt-2"
               activeOpacity={0.85}
-              onPress={() => completeSignUp("password")}
-              disabled={!email || !password}
-              style={{ opacity: !email || !password ? 0.6 : 1 }}
+              onPress={() => void completeSignUp()}
+              disabled={!firstName.trim() || !email || !password || loading}
+              style={{
+                opacity:
+                  !firstName.trim() || !email || !password || loading ? 0.6 : 1,
+              }}
               testID="sign-up-button"
             >
-              <Text className="font-poppins-semibold text-base text-white">
-                Sign Up
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="font-poppins-semibold text-base text-white">
+                  Sign Up
+                </Text>
+              )}
             </TouchableOpacity>
 
             <View className="flex-row items-center my-6 gap-3">
@@ -158,34 +201,22 @@ export default function SignUpScreen() {
               icon={<AntDesign name="google" size={20} color="#DB4437" />}
               label="Continue with Google"
               onPress={() =>
-                completeSignUp("oauth_google", "google.user@tech.app")
-              }
-            />
-            <SocialButton
-              icon={<FontAwesome name="facebook" size={20} color="#1877F2" />}
-              label="Continue with Facebook"
-              onPress={() =>
-                completeSignUp("oauth_facebook", "facebook.user@tech.app")
+                Alert.alert(
+                  "Bientôt disponible",
+                  "La connexion Google n’est pas encore branchée. Utilise e-mail et mot de passe."
+                )
               }
             />
             <SocialButton
               icon={<AntDesign name="apple" size={20} color="#000" />}
               label="Continue with Apple"
               onPress={() =>
-                completeSignUp("oauth_apple", "apple.user@tech.app")
+                Alert.alert(
+                  "Bientôt disponible",
+                  "La connexion Apple n’est pas encore branchée. Utilise e-mail et mot de passe."
+                )
               }
             />
-
-            <TouchableOpacity
-              className="rounded-2xl py-4 items-center mt-2 border border-border"
-              activeOpacity={0.85}
-              onPress={handleGuestAccess}
-              testID="guest-access-button"
-            >
-              <Text className="font-poppins-semibold text-base text-text-primary">
-                {t("auth.guest")}
-              </Text>
-            </TouchableOpacity>
 
             <View className="flex-row justify-center mt-4 mb-8">
               <Text className="body-md text-text-secondary">
@@ -195,7 +226,7 @@ export default function SignUpScreen() {
                 onPress={() => router.replace("/(auth)/sign-in")}
               >
                 <Text className="body-md text-lingua-purple font-poppins-semibold">
-                  Log in
+                  {t("auth.signIn")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -227,5 +258,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#001328",
     padding: 0,
+  },
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 24,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingRight: 36,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

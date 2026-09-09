@@ -8,19 +8,20 @@ You should think like a senior mobile developer, but explain and implement like 
 
 ## Project Overview
 
-We are building a Duolingo-inspired AI language learning mobile app using Expo.
+We are building **Stack** — a Duolingo-inspired tech learning mobile app using Expo.
 
-The app teaches users languages through interactive lessons that may include:
+The app teaches networking, web, and software fundamentals through:
 
-- video-based AI teacher lessons
-- audio lessons
-- chat-based AI tutor lessons
-- vocabulary review
-- local XP and lesson completion
-- language selection
-- beautiful mobile-first UI inspired by playful learning apps
+- interactive lessons (sections, diagrams, quizzes)
+- challenges and scenario labs
+- certification prep paths
+- local XP, streaks, and spaced reviews
+- track selection (with coming-soon interest list)
+- Neon Auth + Postgres sync for progress
+- PostHog analytics (opt-in)
+- Stream for real-time / AI video when configured
 
-This is primarily a learning project. The goal is to teach developers how to build a modern AI-powered Expo app feature by feature.
+This is primarily a learning project: teach developers how to build a modern Expo app feature by feature.
 
 ---
 
@@ -28,17 +29,16 @@ This is primarily a learning project. The goal is to teach developers how to bui
 
 Use the following stack:
 
-- Expo
-- React Native
-- TypeScript
-- Expo Router
+- Expo (Router, Notifications, Image, Asset, Splash, Secure Store)
+- React Native + TypeScript
 - NativeWind / Tailwind CSS
-- Zustand
-- AsyncStorage
-- Clerk for authentication
-- Stream / GetStream for video and real-time communication
+- Zustand + AsyncStorage
+- **Neon Auth (Better Auth)** for authentication — not Clerk
+- **Neon Postgres / Data API** for profile + learning + cert sync
+- Stream / GetStream for video and real-time communication (optional features)
 - Stream Vision Agents for AI video teacher capability
-- Server-side API routes or backend functions for secrets, tokens, and AI calls
+- Expo API routes (`app/api/*`) for secrets, Stream tokens, and secure ops
+- EAS Build / EAS Update channels for shipping content & JS updates
 
 Do not introduce new major libraries unless there is a strong reason.
 
@@ -354,10 +354,12 @@ Examples:
 
 ```txt
 lib/
-  clerk.ts
+  neon.ts
+  remoteSync.ts
+  apiAuth.ts
   stream.ts
-  api.ts
-  cn.ts
+  notifications.ts
+  analytics.ts
 ```
 
 Never expose secret keys in the mobile app.
@@ -412,17 +414,15 @@ Never expose secrets in the frontend.
 
 ## Clerk Rules
 
-Use Clerk for authentication.
-
-Do not build custom auth.
+~~Use Clerk for authentication.~~ **Superseded:** use Neon Auth via `lib/neon.ts` / session store. Do not rebuild custom auth UI flows beyond the existing sign-in/sign-up screens.
 
 ---
 
 ## Lesson Content Rules
 
-Use hardcoded JSON/TS for lessons.
+Use hardcoded JSON/TS for lesson, challenge, and lab content under `data/`.
 
-Do not introduce a database unless explicitly requested.
+Remote Postgres stores **user progress**, not the curriculum itself.
 
 ---
 
@@ -465,14 +465,15 @@ Explain what changed and how to test.
 
 ## Important Constraints
 
-No database for this version.
+Curriculum content stays in TypeScript/JSON under `data/`.
 
-Use:
+User state:
 
-- JSON for content
-- Zustand for state
-- AsyncStorage for persistence
-- backend only for secure operations
+- Zustand + AsyncStorage for local/offline-first UX
+- Neon Postgres sync for signed-in progress (profiles, learning_progress, certification_entries)
+- Backend / API routes only for secrets and privileged operations
+
+EAS Update: use `eas.json` channels (`development` / `preview` / `production`). Replace `updates.url` + `extra.eas.projectId` after linking an Expo project (`eas init`).
 
 ---
 

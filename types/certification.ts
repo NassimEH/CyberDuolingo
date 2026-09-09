@@ -1,4 +1,5 @@
 import type { LocalizedString } from "@/lib/i18n/translations";
+import type { TrackId } from "@/types/learning";
 
 export type CertDomain =
   | "cybersecurity"
@@ -18,6 +19,8 @@ export interface Certification {
   name: string;
   provider: string;
   domain: CertDomain;
+  /** Tracks / modules this cert supports in the app catalog. */
+  tracks?: TrackId[];
   level: CertLevel;
   priceTier: CertPriceTier;
   priceDisplay: LocalizedString;
@@ -53,6 +56,7 @@ export interface FilterCertificationsParams {
   domain?: CertDomain;
   level?: CertLevel;
   priceTier?: CertPriceTier;
+  trackId?: TrackId;
 }
 
 export interface RecommendCertificationsParams {

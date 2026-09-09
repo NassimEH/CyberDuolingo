@@ -143,7 +143,7 @@ export default function LearnScreen() {
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: spacing.tabScrollBottom }}
         showsVerticalScrollIndicator={false}
       >
         <MotionView index={0} variant="fade">
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.screen,
   },
   emptyText: {
     fontFamily: fontFamily.regular,
@@ -342,8 +342,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.screen,
-    paddingTop: 16,
-    marginBottom: 20,
+    paddingTop: spacing.md,
+    marginBottom: spacing.section,
   },
   headerTop: {
     flexDirection: "row",
@@ -389,14 +389,14 @@ const styles = StyleSheet.create({
   filters: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.chipGap,
     paddingHorizontal: spacing.screen,
     marginBottom: 14,
   },
   filterChip: {
     borderWidth: 1,
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     backgroundColor: "transparent",
   },

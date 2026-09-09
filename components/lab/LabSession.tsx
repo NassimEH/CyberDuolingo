@@ -1,13 +1,28 @@
 import { ChevronLeft, Send } from "@/constants/icons";
 import { fontFamily, radius } from "@/constants/theme";
 import type { LabScenario } from "@/data/labScenarios";
-import type { LocalizedString } from "@/lib/i18n/translations";
 import { ChatBubble } from "@/components/ChatBubble";
 import { ChatSuggestion } from "@/components/chat/ChatSuggestion";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { LabReport } from "@/components/lab/LabReport";
+import { LabVerdictCard } from "@/components/lab/LabVerdictCard";
+import {
+  getLabStep,
+  isPerfectRun,
+  resolveChoiceAnswer,
+  resolveFreeTextAnswer,
+} from "@/lib/labEngine";
+import {
+  feedbackComplete,
+  feedbackError,
+  feedbackSuccess,
+} from "@/lib/feedback";
+import { trackEvent } from "@/lib/analytics";
 import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
-import { useLearningStore } from "@/store/learningStore";
+import {
+  type LabAnswerRecord,
+  useLearningStore,
+} from "@/store/learningStore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
@@ -20,158 +35,264 @@ import {
   View,
 } from "react-native";
 
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-}
+type ChatItem =
+  | { id: string; kind: "message"; role: "user" | "assistant"; text: string }
+  | {
+      id: string;
+      kind: "verdict";
+      verdict: LabAnswerRecord["verdict"];
+      explanation: string;
+    };
 
 type Props = {
   lab: LabScenario;
-  /** When true, skip XP on finish (already completed). */
   isReplay: boolean;
-  /** Resume from this beat when continuing an in-progress lab. */
-  initialBeatIndex?: number;
   onClose: () => void;
 };
 
-function pickUserReply(
+function buildInitialItems(
   lab: LabScenario,
-  beat: number,
-  L: (s: LocalizedString) => string
-): string {
-  const fromBeat = lab.beatSuggestions?.[beat]?.[0];
-  if (fromBeat) return L(fromBeat);
-  return L(lab.suggestedReplies[0] ?? { fr: "…", en: "…" });
-}
-
-export function buildLabHistory(
-  lab: LabScenario,
-  beatIndex: number,
-  L: (s: LocalizedString) => string
-): ChatMessage[] {
-  const messages: ChatMessage[] = [
-    { id: "intro", role: "assistant", text: L(lab.introMessage) },
-  ];
-  for (let i = 0; i < beatIndex; i++) {
-    const tutor = lab.tutorBeats[i];
-    if (!tutor) break;
-    messages.push({
-      id: `u-resume-${i}`,
-      role: "user",
-      text: pickUserReply(lab, i, L),
-    });
-    messages.push({
-      id: `a-resume-${i}`,
+  answers: LabAnswerRecord[],
+  L: (s: { fr: string; en: string }) => string
+): { items: ChatItem[]; stepId: string } {
+  const items: ChatItem[] = [
+    {
+      id: "intro",
+      kind: "message",
       role: "assistant",
-      text: L(tutor),
+      text: L(lab.introMessage),
+    },
+  ];
+
+  let stepId = lab.startStepId;
+  for (let i = 0; i < answers.length; i++) {
+    const a = answers[i]!;
+    const step = getLabStep(lab, a.stepId);
+    if (step) {
+      items.push({
+        id: `prompt-${a.stepId}-${i}`,
+        kind: "message",
+        role: "assistant",
+        text: L(step.prompt),
+      });
+    }
+    items.push({
+      id: `u-${a.stepId}-${i}`,
+      kind: "message",
+      role: "user",
+      text: a.userText,
     });
+    items.push({
+      id: `v-${a.stepId}-${i}`,
+      kind: "verdict",
+      verdict: a.verdict,
+      explanation: L(a.explanation),
+    });
+    items.push({
+      id: `a-${a.stepId}-${i}`,
+      kind: "message",
+      role: "assistant",
+      text: L(a.tutorReply),
+    });
+    stepId = a.stepId;
+    // Advance to next from stored tutor path: re-resolve next from last answer
   }
-  return messages;
+
+  // After answers, current step is next after last answer
+  if (answers.length > 0) {
+    const last = answers[answers.length - 1]!;
+    const resolved =
+      last.choiceId != null
+        ? resolveChoiceAnswer(lab, last.stepId, last.choiceId, last.userText)
+        : resolveFreeTextAnswer(lab, last.stepId, last.userText);
+    const nextId = resolved?.nextStepId ?? null;
+    if (nextId) {
+      stepId = nextId;
+      const nextStep = getLabStep(lab, nextId);
+      if (nextStep) {
+        items.push({
+          id: `prompt-${nextId}`,
+          kind: "message",
+          role: "assistant",
+          text: L(nextStep.prompt),
+        });
+      }
+    } else {
+      return { items, stepId: last.stepId };
+    }
+  } else {
+    const first = getLabStep(lab, lab.startStepId);
+    if (first) {
+      items.push({
+        id: `prompt-${lab.startStepId}`,
+        kind: "message",
+        role: "assistant",
+        text: L(first.prompt),
+      });
+    }
+    stepId = lab.startStepId;
+  }
+
+  return { items, stepId };
 }
 
-export function LabSession({
-  lab,
-  isReplay,
-  initialBeatIndex = 0,
-  onClose,
-}: Props) {
+export function LabSession({ lab, isReplay, onClose }: Props) {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
-  const completeLab = useLearningStore((s) => s.completeLab);
-  const setLabBeatIndex = useLearningStore((s) => s.setLabBeatIndex);
+  const finishLab = useLearningStore((s) => s.finishLab);
+  const setLabSession = useLearningStore((s) => s.setLabSession);
+  const clearLabSession = useLearningStore((s) => s.clearLabSession);
+  const saved = useLearningStore((s) => s.labSessions[lab.id]);
 
-  const totalBeats = lab.tutorBeats.length;
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    buildLabHistory(lab, initialBeatIndex, L)
+  const initialAnswers = !isReplay && saved?.answers ? saved.answers : [];
+  const bootstrap = useMemo(
+    () => buildInitialItems(lab, initialAnswers, L),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap once per mount
+    [lab.id, isReplay]
   );
-  const [beatIndex, setBeatIndex] = useState(initialBeatIndex);
+
+  const [items, setItems] = useState<ChatItem[]>(bootstrap.items);
+  const [stepId, setStepId] = useState(bootstrap.stepId);
+  const [answers, setAnswers] = useState<LabAnswerRecord[]>(initialAnswers);
   const [input, setInput] = useState("");
-  const [finished, setFinished] = useState(
-    initialBeatIndex >= totalBeats && totalBeats > 0
-  );
+  const [finished, setFinished] = useState(false);
+  const [perfect, setPerfect] = useState(false);
+  const [awardedXp, setAwardedXp] = useState(0);
   const [replayMode, setReplayMode] = useState(isReplay);
-  const [earnedXp, setEarnedXp] = useState(0);
-  const listRef = useRef<FlatList<ChatMessage>>(null);
+  const listRef = useRef<FlatList<ChatItem>>(null);
+  const idSeq = useRef(0);
+
+  function nextId(prefix: string) {
+    idSeq.current += 1;
+    return `${prefix}-${idSeq.current}`;
+  }
+
+  const step = getLabStep(lab, stepId);
+  const progressCurrent = Math.min(answers.length, lab.stepCount);
 
   useEffect(() => {
-    if (!finished) {
-      setLabBeatIndex(lab.id, beatIndex);
-    }
-  }, [beatIndex, finished, lab.id, setLabBeatIndex]);
+    if (finished || replayMode) return;
+    setLabSession(lab.id, { stepId, answers });
+  }, [answers, stepId, finished, replayMode, lab.id, setLabSession]);
 
-  const currentSuggestions = useMemo(() => {
-    const fromBeats = lab.beatSuggestions?.[beatIndex];
-    if (fromBeats?.length) return fromBeats;
-    return lab.suggestedReplies;
-  }, [lab, beatIndex]);
-
-  const progressCurrent = Math.min(beatIndex + 1, totalBeats);
-  const progressRatio = totalBeats > 0 ? progressCurrent / totalBeats : 0;
-
-  function advance(userText: string, suggestedIndex?: number) {
+  function applyResolved(
+    userText: string,
+    resolved: NonNullable<ReturnType<typeof resolveChoiceAnswer>>
+  ) {
     if (finished) return;
-    const beat =
-      lab.tutorBeats[
-        Math.min(suggestedIndex ?? beatIndex, lab.tutorBeats.length - 1)
-      ] ?? lab.tutorBeats[lab.tutorBeats.length - 1];
 
-    const nextBeat = beatIndex + 1;
-    const isLast = nextBeat >= lab.tutorBeats.length;
+    const record: LabAnswerRecord = {
+      stepId: resolved.stepId,
+      userText,
+      choiceId: resolved.choiceId,
+      verdict: resolved.verdict,
+      explanation: resolved.explanation,
+      expectedAnswer: resolved.expectedAnswer,
+      tutorReply: resolved.tutorReply,
+    };
 
-    setMessages((prev) => [
-      ...prev,
-      { id: `u-${Date.now()}`, role: "user", text: userText },
+    if (resolved.verdict === "correct") void feedbackSuccess();
+    else if (resolved.verdict === "partial") void feedbackSuccess();
+    else void feedbackError();
+
+    const nextAnswers = [...answers, record];
+    setAnswers(nextAnswers);
+
+    const nextItems: ChatItem[] = [
       {
-        id: `a-${Date.now()}`,
-        role: "assistant",
-        text: L(beat),
+        id: nextId("u"),
+        kind: "message",
+        role: "user",
+        text: userText,
       },
-    ]);
-    setBeatIndex(nextBeat);
-    setInput("");
+      {
+        id: nextId("v"),
+        kind: "verdict",
+        verdict: resolved.verdict,
+        explanation: L(resolved.explanation),
+      },
+      {
+        id: nextId("a"),
+        kind: "message",
+        role: "assistant",
+        text: L(resolved.tutorReply),
+      },
+    ];
 
-    if (isLast) {
-      setFinished(true);
-      if (replayMode) {
-        setEarnedXp(0);
-      } else {
-        completeLab(lab.id, lab.xpReward);
-        setEarnedXp(lab.xpReward);
-        setReplayMode(true);
+    const nextStepId = resolved.nextStepId;
+    if (nextStepId) {
+      const nextStep = getLabStep(lab, nextStepId);
+      if (nextStep) {
+        nextItems.push({
+          id: nextId(`prompt-${nextStepId}`),
+          kind: "message",
+          role: "assistant",
+          text: L(nextStep.prompt),
+        });
       }
+      setStepId(nextStepId);
+      setItems((prev) => [...prev, ...nextItems]);
+      setInput("");
+      return;
     }
+
+    setItems((prev) => [...prev, ...nextItems]);
+    setInput("");
+    setFinished(true);
+    const ok = isPerfectRun(nextAnswers);
+    setPerfect(ok);
+    if (ok) void feedbackComplete();
+    const { awardedXp: xp } = finishLab(lab.id, {
+      perfect: ok,
+      xpBonus: lab.xpReward,
+    });
+    setAwardedXp(xp);
+    setReplayMode(true);
+    trackEvent("lab_completed", {
+      lab_id: lab.id,
+      perfect: ok,
+      xp_awarded: xp,
+      answer_count: nextAnswers.length,
+      is_replay: isReplay,
+    });
+  }
+
+  function advanceChoice(choiceId: string, label: string) {
+    const resolved = resolveChoiceAnswer(lab, stepId, choiceId, label);
+    if (!resolved) return;
+    applyResolved(label, resolved);
+  }
+
+  function advanceFreeText(text: string) {
+    const resolved = resolveFreeTextAnswer(lab, stepId, text);
+    if (!resolved) return;
+    applyResolved(text, resolved);
   }
 
   function handleReplay() {
-    setMessages([{ id: "intro", role: "assistant", text: L(lab.introMessage) }]);
-    setBeatIndex(0);
-    setLabBeatIndex(lab.id, 0);
+    clearLabSession(lab.id);
+    const fresh = buildInitialItems(lab, [], L);
+    setItems(fresh.items);
+    setStepId(fresh.stepId);
+    setAnswers([]);
     setInput("");
     setFinished(false);
-    setEarnedXp(0);
+    setAwardedXp(0);
+    setPerfect(false);
     setReplayMode(true);
   }
 
   if (finished) {
     return (
-      <View style={[styles.result, { backgroundColor: colors.neutral.background }]}>
-        <Text style={[styles.resultTitle, { color: colors.neutral.textPrimary }]}>
-          {t("lab.resultTitle")}
-        </Text>
-        <Text style={[styles.resultXp, { color: colors.semantic.success }]}>
-          {t("lab.xpEarned", { xp: earnedXp })}
-        </Text>
-        <View style={styles.resultActions}>
-          <PrimaryButton label={t("lab.replay")} onPress={handleReplay} />
-          <PrimaryButton
-            label={t("lab.backToList")}
-            variant="secondary"
-            onPress={onClose}
-          />
-        </View>
-      </View>
+      <LabReport
+        perfect={perfect}
+        awardedXp={awardedXp}
+        answers={answers}
+        takeaways={lab.takeaways}
+        onReplay={handleReplay}
+        onClose={onClose}
+      />
     );
   }
 
@@ -190,7 +311,10 @@ export function LabSession({
           {L(lab.title)}
         </Text>
         <Text style={[styles.progressLabel, { color: colors.neutral.textSecondary }]}>
-          {t("lab.progress", { current: progressCurrent, total: totalBeats })}
+          {t("lab.progress", {
+            current: Math.min(progressCurrent + 1, lab.stepCount),
+            total: lab.stepCount,
+          })}
         </Text>
       </View>
 
@@ -199,7 +323,7 @@ export function LabSession({
           style={[
             styles.progressFill,
             {
-              width: `${Math.round(progressRatio * 100)}%`,
+              width: `${Math.round(Math.min(1, (answers.length + 0.2) / lab.stepCount) * 100)}%`,
               backgroundColor: colors.primary.blue,
             },
           ]}
@@ -212,47 +336,57 @@ export function LabSession({
       >
         <FlatList
           ref={listRef}
-          data={messages}
+          data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16, gap: 10 }}
           onContentSizeChange={() =>
             listRef.current?.scrollToEnd({ animated: true })
           }
-          renderItem={({ item, index }) => (
-            <ChatBubble
-              isUser={item.role === "user"}
-              message={item.text}
-              senderName={
-                item.role === "assistant" ? t("lab.tutor") : undefined
-              }
-              index={index}
-            />
-          )}
+          renderItem={({ item, index }) => {
+            if (item.kind === "verdict") {
+              return (
+                <LabVerdictCard
+                  verdict={item.verdict}
+                  explanation={item.explanation}
+                />
+              );
+            }
+            return (
+              <ChatBubble
+                isUser={item.role === "user"}
+                message={item.text}
+                senderName={
+                  item.role === "assistant" ? t("lab.tutor") : undefined
+                }
+                index={index}
+              />
+            );
+          }}
         />
 
-        <View style={styles.suggestionsWrap}>
-          <Text
-            style={[styles.suggestLabel, { color: colors.neutral.textSecondary }]}
-          >
-            {t("lab.suggested")}
-          </Text>
-          <View style={styles.suggestionsRow}>
-            {currentSuggestions.map((reply, i) => (
-              <ChatSuggestion
-                key={`${beatIndex}-${i}`}
-                label={L(reply)}
-                primary={i === 0}
-                index={i}
-                onPress={() => advance(L(reply), i)}
-              />
-            ))}
+        {step ? (
+          <View style={styles.suggestionsWrap}>
+            <Text
+              style={[styles.suggestLabel, { color: colors.neutral.textSecondary }]}
+            >
+              {t("lab.suggested")}
+            </Text>
+            <View style={styles.suggestionsRow}>
+              {step.choices.map((choice, i) => (
+                <ChatSuggestion
+                  key={choice.id}
+                  label={L(choice.label)}
+                  primary={choice.verdict === "correct"}
+                  index={i}
+                  onPress={() => advanceChoice(choice.id, L(choice.label))}
+                />
+              ))}
+            </View>
+            <Text style={[styles.hint, { color: colors.neutral.textSecondary }]}>
+              {t("lab.suggestHint")}
+            </Text>
           </View>
-          <Text
-            style={[styles.hint, { color: colors.neutral.textSecondary }]}
-          >
-            {t("lab.suggestHint")}
-          </Text>
-        </View>
+        ) : null}
 
         <View style={styles.composer}>
           <TextInput
@@ -269,13 +403,13 @@ export function LabSession({
               },
             ]}
             onSubmitEditing={() => {
-              if (input.trim()) advance(input.trim());
+              if (input.trim()) advanceFreeText(input.trim());
             }}
           />
           <TouchableOpacity
             style={[styles.send, { backgroundColor: colors.primary.blue }]}
             onPress={() => {
-              if (input.trim()) advance(input.trim());
+              if (input.trim()) advanceFreeText(input.trim());
             }}
           >
             <Send size={18} color="#fff" />
@@ -355,25 +489,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
-  },
-  result: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    gap: 12,
-  },
-  resultTitle: {
-    fontFamily: fontFamily.bold,
-    fontSize: 22,
-  },
-  resultXp: {
-    fontFamily: fontFamily.semiBold,
-    fontSize: 18,
-    marginBottom: 16,
-  },
-  resultActions: {
-    width: "100%",
-    gap: 10,
   },
 });

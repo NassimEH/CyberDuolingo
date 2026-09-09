@@ -919,6 +919,123 @@ export const CHALLENGES: Challenge[] = [
         },
       ],
     },
+  {
+    id: "ch-net-exam-drill",
+    skillId: "networking-basics",
+    unitId: "net-fundamentals",
+    title: { fr: "Drill examen réseau", en: "Network exam drill" },
+    description: {
+      fr: "5 questions serrées pour ancrer OSI, DNS, ports et subnet.",
+      en: "5 tight questions to lock OSI, DNS, ports, and subnetting.",
+    },
+    difficulty: "medium",
+    xpBonus: 25,
+    questions: [
+      {
+        id: "q1",
+        question: {
+          fr: "La couche OSI qui gère les adresses IP est…",
+          en: "The OSI layer that handles IP addresses is…",
+        },
+        options: [
+          { fr: "Réseau (3)", en: "Network (3)" },
+          { fr: "Transport (4)", en: "Transport (4)" },
+          { fr: "Application (7)", en: "Application (7)" },
+        ],
+        correctIndex: 0,
+        explanation: {
+          fr: "Le routage et les IP vivent à la couche 3 (réseau).",
+          en: "Routing and IPs live at layer 3 (network).",
+        },
+      },
+      {
+        id: "q2",
+        question: {
+          fr: "Le port HTTPS par défaut est…",
+          en: "The default HTTPS port is…",
+        },
+        options: [
+          { fr: "443", en: "443" },
+          { fr: "80", en: "80" },
+          { fr: "22", en: "22" },
+        ],
+        correctIndex: 0,
+        explanation: {
+          fr: "HTTP = 80, HTTPS = 443, SSH = 22.",
+          en: "HTTP = 80, HTTPS = 443, SSH = 22.",
+        },
+      },
+      {
+        id: "q3",
+        question: {
+          fr: "DNS sert principalement à…",
+          en: "DNS mainly…",
+        },
+        options: [
+          {
+            fr: "Traduire un nom en adresse IP",
+            en: "Translates a name to an IP address",
+          },
+          {
+            fr: "Chiffrer les paquets IP",
+            en: "Encrypts IP packets",
+          },
+          {
+            fr: "Attribuer des adresses MAC",
+            en: "Assigns MAC addresses",
+          },
+        ],
+        correctIndex: 0,
+        explanation: {
+          fr: "DNS résout les noms (ex. example.com) vers des IP.",
+          en: "DNS resolves names (e.g. example.com) to IPs.",
+        },
+      },
+      {
+        id: "q4",
+        question: {
+          fr: "Dans 192.168.1.0/24, combien d’hôtes utilisables environ ?",
+          en: "In 192.168.1.0/24, roughly how many usable hosts?",
+        },
+        options: [
+          { fr: "254", en: "254" },
+          { fr: "24", en: "24" },
+          { fr: "65534", en: "65534" },
+        ],
+        correctIndex: 0,
+        explanation: {
+          fr: "/24 → 256 adresses, moins réseau et broadcast → 254 hôtes.",
+          en: "/24 → 256 addresses minus network & broadcast → 254 hosts.",
+        },
+      },
+      {
+        id: "q5",
+        question: {
+          fr: "TCP vs UDP : TCP apporte surtout…",
+          en: "TCP vs UDP: TCP mainly provides…",
+        },
+        options: [
+          {
+            fr: "Fiabilité et ordre des segments",
+            en: "Reliability and ordered delivery",
+          },
+          {
+            fr: "Moins de latence sans contrôle",
+            en: "Lower latency with no control",
+          },
+          {
+            fr: "Uniquement le chiffrement TLS",
+            en: "Only TLS encryption",
+          },
+        ],
+        correctIndex: 0,
+        explanation: {
+          fr: "TCP assure livraison et ordre ; UDP est plus léger et non fiable.",
+          en: "TCP ensures delivery and order; UDP is lighter and unreliable.",
+        },
+      },
+    ],
+  },
   ];
 
 export function getChallenge(id: string) {

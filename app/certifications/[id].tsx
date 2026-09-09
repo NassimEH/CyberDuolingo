@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -13,11 +12,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AnimatedProgressBar } from "@/components/motion/AnimatedProgressBar";
+import { BackHeader } from "@/components/ui/BackHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { fontFamily, radius, spacing } from "@/constants/theme";
-import { getCertification } from "@/data/certifications";
+import { getCertification, getPrepTrackForCert } from "@/data/certifications";
+import { getTrack } from "@/data/tracks";
+import { trackEvent } from "@/lib/analytics";
 import { useLocalize, useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
 import { useCertificationStore } from "@/store/certificationStore";
+import { useTrackStore } from "@/store/trackStore";
 import type { CertPathStatus, CertProgress } from "@/types/certification";
 
 const PROGRESS_STEPS: CertProgress[] = [0, 25, 50, 75, 100];
@@ -35,52 +39,63 @@ export default function CertificationDetail() {
   const setStatus = useCertificationStore((s) => s.setStatus);
   const setProgress = useCertificationStore((s) => s.setProgress);
   const markObtained = useCertificationStore((s) => s.markObtained);
+  const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
   const [askObtain, setAskObtain] = useState(false);
 
   if (!cert) {
     return (
-      <SafeAreaView style={{ flex: 1, padding: 24 }}>
-        <Text>{t("certs.empty")}</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={{ color: colors.primary.blue }}>{t("common.back")}</Text>
-        </TouchableOpacity>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: colors.neutral.background }]}
+        edges={["top", "bottom"]}
+      >
+        <BackHeader title={t("certs.title")} />
+        <View style={styles.pad}>
+          <EmptyState
+            title={t("certs.empty")}
+            description={t("certs.emptyHint")}
+          />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ marginTop: 16 }}
+          >
+            <Text style={{ color: colors.primary.blue }}>{t("common.back")}</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
 
   const status: CertPathStatus | null = entry?.status ?? null;
+  const prepTrackId = getPrepTrackForCert(cert);
+  const prepTrack = prepTrackId ? getTrack(prepTrackId) : null;
 
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.neutral.background }]}
+      edges={["top", "bottom"]}
     >
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons
-            name="chevron-back"
-            size={24}
-            color={colors.neutral.textPrimary}
-          />
-        </TouchableOpacity>
-        <Text
-          style={[styles.topTitle, { color: colors.neutral.textPrimary }]}
-          numberOfLines={1}
-        >
-          {cert.name}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <BackHeader title={cert.name} />
 
       <ScrollView contentContainerStyle={styles.pad}>
+        <Text style={[styles.provider, { color: colors.primary.blue }]}>
+          {cert.provider}
+        </Text>
         <Text style={[styles.h1, { color: colors.neutral.textPrimary }]}>
           {cert.name}
         </Text>
-        <Text style={[styles.provider, { color: colors.neutral.textSecondary }]}>
-          {cert.provider} · {t(`certs.domain.${cert.domain}`)} ·{" "}
-          {t(`certs.level.${cert.level}`)}
+        <Text style={[styles.meta, { color: colors.neutral.textSecondary }]}>
+          {t(`certs.domain.${cert.domain}`)} · {t(`certs.level.${cert.level}`)}
         </Text>
 
-        <View style={styles.infoBlock}>
+        <View
+          style={[
+            styles.infoBlock,
+            {
+              backgroundColor: colors.neutral.card,
+              borderColor: colors.neutral.border,
+            },
+          ]}
+        >
           <InfoRow
             label={t("certs.label.price")}
             value={L(cert.priceDisplay)}
@@ -184,10 +199,47 @@ export default function CertificationDetail() {
           </TouchableOpacity>
         ) : null}
 
+        {prepTrack ? (
+          <TouchableOpacity
+            style={[
+              styles.secondary,
+              {
+                borderColor: colors.primary.blue,
+                backgroundColor: colors.soft.blueBg,
+              },
+            ]}
+            onPress={() => {
+              setSelectedTrack(prepTrack.id);
+              trackEvent("certification_prepare_with_track", {
+                certification_id: cert.id,
+                track_id: prepTrack.id,
+              });
+              router.push("/(tabs)/learn");
+            }}
+          >
+            <Text
+              style={{
+                color: colors.primary.blue,
+                fontFamily: fontFamily.semiBold,
+              }}
+            >
+              {t("certs.prepareWith", { track: L(prepTrack.name) })}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         {!entry ? (
           <TouchableOpacity
             style={[styles.secondary, { borderColor: colors.neutral.border }]}
-            onPress={() => addToPath(cert.id)}
+            onPress={() => {
+              addToPath(cert.id);
+              trackEvent("certification_added_to_path", {
+                certification_id: cert.id,
+                provider: cert.provider,
+                domain: cert.domain,
+                level: cert.level,
+              });
+            }}
           >
             <Text style={{ color: colors.primary.blue, fontFamily: fontFamily.semiBold }}>
               {t("certs.addPath")}
@@ -287,6 +339,12 @@ export default function CertificationDetail() {
                 onPress={() => {
                   markObtained(cert.id);
                   setAskObtain(false);
+                  trackEvent("certification_obtained", {
+                    certification_id: cert.id,
+                    provider: cert.provider,
+                    domain: cert.domain,
+                    level: cert.level,
+                  });
                   Alert.alert(cert.name, t("certs.statusObtained"));
                 }}
               >
@@ -339,22 +397,21 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.screen,
-    paddingVertical: 10,
-  },
-  topTitle: {
-    flex: 1,
-    textAlign: "center",
+  pad: { padding: spacing.screen, paddingBottom: spacing.scrollBottom },
+  h1: { fontFamily: fontFamily.semiBold, fontSize: 24, marginTop: 4 },
+  provider: {
     fontFamily: fontFamily.semiBold,
-    fontSize: 15,
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
-  pad: { padding: spacing.screen, paddingBottom: 48 },
-  h1: { fontFamily: fontFamily.bold, fontSize: 24 },
-  provider: { fontFamily: fontFamily.regular, fontSize: 13, marginTop: 4 },
-  infoBlock: { marginTop: 16 },
+  meta: { fontFamily: fontFamily.regular, fontSize: 13, marginTop: 6 },
+  infoBlock: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingHorizontal: 14,
+  },
   section: {
     fontFamily: fontFamily.semiBold,
     fontSize: 16,

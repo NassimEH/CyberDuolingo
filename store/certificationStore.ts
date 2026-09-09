@@ -15,6 +15,7 @@ interface CertificationState {
   setProgress: (id: string, progress: CertProgress) => void;
   markObtained: (id: string) => void;
   removeFromPath: (id: string) => void;
+  clearAll: () => void;
 }
 
 export const useCertificationStore = create<CertificationState>()(
@@ -69,6 +70,7 @@ export const useCertificationStore = create<CertificationState>()(
           const { [id]: _, ...rest } = state.entries;
           return { entries: rest };
         }),
+      clearAll: () => set({ entries: {} }),
     }),
     {
       name: "certification-storage",

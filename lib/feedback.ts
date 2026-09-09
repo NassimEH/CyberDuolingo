@@ -1,35 +1,29 @@
 import * as Haptics from "expo-haptics";
 
-import { playComplete, playError, playSuccess } from "@/lib/sounds";
-import { useLearningStore } from "@/store/learningStore";
-
-async function withHaptics(
-  type: Haptics.NotificationFeedbackType,
-  sound: () => Promise<void>
-) {
-  const soundEnabled = useLearningStore.getState().soundEnabled;
-  if (soundEnabled) {
-    try {
-      await sound();
-    } catch {
-      // audio optional — never block quiz UX
-    }
-  }
+async function haptic(type: Haptics.NotificationFeedbackType) {
   try {
     await Haptics.notificationAsync(type);
   } catch {
-    // ignore
+    // Haptics optional (web / unsupported devices).
+  }
+}
+
+export async function feedbackLight() {
+  try {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  } catch {
+    // optional
   }
 }
 
 export async function feedbackSuccess() {
-  await withHaptics(Haptics.NotificationFeedbackType.Success, playSuccess);
+  await haptic(Haptics.NotificationFeedbackType.Success);
 }
 
 export async function feedbackError() {
-  await withHaptics(Haptics.NotificationFeedbackType.Error, playError);
+  await haptic(Haptics.NotificationFeedbackType.Error);
 }
 
 export async function feedbackComplete() {
-  await withHaptics(Haptics.NotificationFeedbackType.Success, playComplete);
+  await haptic(Haptics.NotificationFeedbackType.Success);
 }
