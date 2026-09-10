@@ -19,6 +19,7 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fontFamily } from "@/constants/theme";
@@ -163,11 +164,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     borderTopWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: "0px -3px 8px rgba(0, 0, 0, 0.06)",
+      },
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 8,
+      },
+    }),
   },
   indicator: {
     position: "absolute",

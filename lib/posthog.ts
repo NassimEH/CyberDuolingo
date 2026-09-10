@@ -19,15 +19,6 @@ const isPostHogConfigured =
  */
 const isPostHogEnabled = isPostHogConfigured;
 
-if (__DEV__) {
-  console.log("PostHog config:", {
-    apiKey: apiKey ? "SET" : "NOT SET",
-    host,
-    isConfigured: isPostHogConfigured,
-    enabled: isPostHogEnabled,
-  });
-}
-
 if (!isPostHogConfigured) {
   console.warn(
     "PostHog project token not configured. Analytics will be disabled. " +

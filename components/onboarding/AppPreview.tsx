@@ -13,7 +13,7 @@ import type { OnboardingPreviewId } from "@/data/onboarding";
 import { useLocalize } from "@/lib/i18n";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Platform } from "react-native";
 
 type Props = {
   preview: OnboardingPreviewId;
@@ -485,11 +485,18 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 2px 10px rgba(0, 0, 0, 0.08)",
+      },
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 3,
+      },
+    }),
   },
   floatLeft: {
     left: 0,

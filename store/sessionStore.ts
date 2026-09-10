@@ -24,10 +24,14 @@ import {
   pushRemoteState,
   wipeRemoteLearningData,
 } from "@/lib/remoteSync";
+import {
+  bindSessionBridge,
+  type AuthProvider,
+} from "@/lib/sessionBridge";
 import { useCertificationStore } from "@/store/certificationStore";
 import { useLearningStore } from "@/store/learningStore";
 
-export type AuthProvider = "neon" | "apple" | null;
+export type { AuthProvider };
 
 interface SessionState {
   userId: string | null;
@@ -610,3 +614,18 @@ export const useSessionStore = create<SessionState>()(
     }
   )
 );
+
+bindSessionBridge({
+  getState: () => {
+    const s = useSessionStore.getState();
+    return {
+      authProvider: s.authProvider,
+      email: s.email,
+      firstName: s.firstName,
+      avatarUri: s.avatarUri,
+    };
+  },
+  patch: (partial) => {
+    useSessionStore.setState(partial);
+  },
+});

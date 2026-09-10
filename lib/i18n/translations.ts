@@ -33,6 +33,7 @@ export type TranslationKey =
   | "auth.hasAccount"
   | "auth.or"
   | "auth.continueWithGoogle"
+  | "auth.appleIosOnly"
   | "auth.continueWithApple"
   | "trackSelect.title"
   | "trackSelect.subtitle"
@@ -437,6 +438,7 @@ export const fr: Record<TranslationKey, string> = {
   "auth.hasAccount": "Déjà un compte ? ",
   "auth.or": "ou",
   "auth.continueWithGoogle": "Continuer avec Google",
+  "auth.appleIosOnly": "Sign in with Apple est disponible sur iPhone (build natif), pas sur le web.",
   "auth.continueWithApple": "Continuer avec Apple",
   "trackSelect.title": "Choisis ton parcours",
   "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
@@ -842,6 +844,7 @@ export const en: Record<TranslationKey, string> = {
   "auth.hasAccount": "Already have an account? ",
   "auth.or": "or",
   "auth.continueWithGoogle": "Continue with Google",
+  "auth.appleIosOnly": "Sign in with Apple is available on iPhone (native build), not on web.",
   "auth.continueWithApple": "Continue with Apple",
   "trackSelect.title": "Choose your track",
   "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",

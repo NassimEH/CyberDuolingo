@@ -19,7 +19,11 @@ type Props = {
   onSuccess: (method: "google" | "apple") => void;
 };
 
-/** Google + Apple (iOS) social buttons for sign-in / sign-up. */
+/**
+ * Google + Apple social buttons.
+ * Apple UI is always shown (local/web preview). Real SIWA only works on iOS
+ * native builds (`appleAvailable`).
+ */
 export function AuthSocialButtons({ disabled, onError, onSuccess }: Props) {
   const t = useT();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
@@ -37,13 +41,16 @@ export function AuthSocialButtons({ disabled, onError, onSuccess }: Props) {
       onError(result.error);
       return;
     }
-    // Web OAuth may redirect away before session is local.
     if (useSessionStore.getState().isSignedIn) {
       onSuccess("google");
     }
   };
 
   const completeApple = async () => {
+    if (!appleAvailable) {
+      onError(t("auth.appleIosOnly"));
+      return;
+    }
     const result = await signInWithApple();
     if (result.error) {
       onError(result.error);
@@ -56,29 +63,42 @@ export function AuthSocialButtons({ disabled, onError, onSuccess }: Props) {
 
   return (
     <View>
-      {appleAvailable ? (
-        <View style={styles.appleWrap}>
-          {appleLoading ? (
-            <View style={styles.appleLoading}>
-              <ActivityIndicator color="#fff" />
+      <View style={styles.appleWrap}>
+        {appleLoading ? (
+          <View style={styles.appleLoading}>
+            <ActivityIndicator color="#fff" />
+          </View>
+        ) : appleAvailable ? (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={
+              AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
+            }
+            buttonStyle={
+              AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
+            cornerRadius={16}
+            style={styles.appleButton}
+            onPress={() => {
+              if (!busy) void completeApple();
+            }}
+          />
+        ) : (
+          <TouchableOpacity
+            style={[styles.appleFallback, busy ? styles.buttonDisabled : null]}
+            activeOpacity={0.85}
+            onPress={() => void completeApple()}
+            disabled={busy}
+            testID="auth-apple-button"
+          >
+            <View style={styles.appleRow}>
+              <Ionicons name="logo-apple" size={20} color="#fff" />
+              <Text style={styles.appleLabel}>
+                {t("auth.continueWithApple")}
+              </Text>
             </View>
-          ) : (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.CONTINUE
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-              }
-              cornerRadius={16}
-              style={styles.appleButton}
-              onPress={() => {
-                if (!busy) void completeApple();
-              }}
-            />
-          )}
-        </View>
-      ) : null}
+          </TouchableOpacity>
+        )}
+      </View>
 
       <TouchableOpacity
         style={[styles.googleButton, busy ? styles.buttonDisabled : null]}
@@ -122,6 +142,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
+  },
+  appleFallback: {
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  appleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  appleLabel: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 15,
+    color: "#fff",
   },
   googleButton: {
     borderWidth: 1,

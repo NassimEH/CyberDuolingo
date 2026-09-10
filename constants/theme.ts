@@ -1,5 +1,7 @@
 // Design tokens — light/dark palettes for Stack learning app.
 
+import { Platform, type ViewStyle } from "react-native";
+
 export const lightColors = {
   primary: {
     purple: "#2563EB",
@@ -100,13 +102,18 @@ export const radius = {
 } as const;
 
 export const shadows = {
-  card: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
+  card: Platform.select<ViewStyle>({
+    web: {
+      boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.04)",
+    },
+    default: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+  })!,
 } as const;
 
 export const spacing = {

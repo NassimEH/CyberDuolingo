@@ -11,7 +11,7 @@ import { useLearningStore } from "@/store/learningStore";
 import { useLocaleStore } from "@/store/localeStore";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { usePrivacyStore } from "@/store/privacyStore";
-import { useSessionStore } from "@/store/sessionStore";
+import { getSessionBridge } from "@/lib/sessionBridge";
 import { useSyncStore } from "@/store/syncStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useTrackStore } from "@/store/trackStore";
@@ -22,7 +22,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { Platform } from "react-native";
 
 function isAppleSession(): boolean {
-  return useSessionStore.getState().authProvider === "apple";
+  return getSessionBridge().getState().authProvider === "apple";
 }
 
 function canSyncRemote(): boolean {
@@ -110,7 +110,7 @@ function buildLearningPayload() {
 
 function applyProfileSnapshot(userId: string, p: ProfileRow) {
   if (p.avatar_url) {
-    useSessionStore.setState({ avatarUri: p.avatar_url });
+    getSessionBridge().patch({ avatarUri: p.avatar_url });
     void cacheAvatarLocally(userId, p.avatar_url);
   }
   if (p.selected_track) {
@@ -194,7 +194,7 @@ async function pullViaAppleApi(userId: string) {
   } else {
     const cached = await readCachedAvatar(userId);
     if (cached) {
-      useSessionStore.setState({ avatarUri: cached });
+      getSessionBridge().patch({ avatarUri: cached });
     }
   }
 
@@ -219,7 +219,7 @@ async function pushViaAppleApi(userId: string) {
   const token = await getAppleAccessToken();
   if (!token) throw new Error("Apple session missing");
 
-  const session = useSessionStore.getState();
+  const session = getSessionBridge().getState();
   const track = useTrackStore.getState().selectedTrack;
   const locale = useLocaleStore.getState().locale;
   const darkMode = useThemeStore.getState().darkMode;
@@ -267,10 +267,10 @@ export async function ensureUserProfile(input: {
 
   if (isAppleSession()) {
     if (input.avatarUrl !== undefined) {
-      useSessionStore.setState({ avatarUri: input.avatarUrl });
+      getSessionBridge().patch({ avatarUri: input.avatarUrl });
     }
     if (input.email !== undefined || input.firstName !== undefined) {
-      useSessionStore.setState({
+      getSessionBridge().patch({
         ...(input.email !== undefined ? { email: input.email } : {}),
         ...(input.firstName !== undefined
           ? { firstName: input.firstName }
@@ -291,7 +291,7 @@ export async function ensureUserProfile(input: {
   let avatarUrl = input.avatarUrl;
   if (avatarUrl === undefined) {
     avatarUrl =
-      useSessionStore.getState().avatarUri ??
+      getSessionBridge().getState().avatarUri ??
       (
         await db
           .from("profiles")
@@ -350,19 +350,19 @@ export async function pullRemoteState(userId: string) {
   if (profile) {
     const p = profile as ProfileRow;
     if (p.avatar_url) {
-      useSessionStore.setState({ avatarUri: p.avatar_url });
+      getSessionBridge().patch({ avatarUri: p.avatar_url });
       void cacheAvatarLocally(userId, p.avatar_url);
     } else {
       const cached = await readCachedAvatar(userId);
       if (cached) {
-        useSessionStore.setState({ avatarUri: cached });
+        getSessionBridge().patch({ avatarUri: cached });
       }
     }
     applyProfileSnapshot(userId, p);
   } else {
     const cached = await readCachedAvatar(userId);
     if (cached) {
-      useSessionStore.setState({ avatarUri: cached });
+      getSessionBridge().patch({ avatarUri: cached });
     }
   }
 
@@ -417,7 +417,7 @@ export async function pushRemoteState(userId: string) {
   const unitId = useUnitStore.getState().selectedUnitId;
   const session = await authClient.getSession();
   const user = session.data?.user;
-  let avatarUrl = useSessionStore.getState().avatarUri;
+  let avatarUrl = getSessionBridge().getState().avatarUri;
   if (!avatarUrl) {
     const { data: existing } = await db
       .from("profiles")
