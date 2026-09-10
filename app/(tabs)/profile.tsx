@@ -405,7 +405,7 @@ export default function ProfileScreen() {
           </Text>
           <View style={styles.levelBarBlock}>
             <AnimatedProgressBar
-              progress={levelInfo.percent}
+              progress={rankInfo.percent}
               color={colors.primary.blue}
               trackColor={colors.neutral.border}
               height={4}
