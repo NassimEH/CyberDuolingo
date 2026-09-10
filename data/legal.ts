@@ -19,8 +19,8 @@ export const SUPPORT_EMAIL = "nassim.elhaddad2004@gmail.com";
 
 /**
  * Public site base for App Store privacy/support URLs.
- * Set EXPO_PUBLIC_SITE_URL to your hosted origin (no trailing slash), e.g. https://stack.app
- * Static pages live in /public/legal/*.html
+ * Set EXPO_PUBLIC_SITE_URL to your hosted origin (no trailing slash),
+ * e.g. https://stack.nassimelh.me — pages at /legal/privacy.html etc.
  */
 export function getSiteUrl(): string {
   const fromEnv = process.env.EXPO_PUBLIC_SITE_URL?.trim();
