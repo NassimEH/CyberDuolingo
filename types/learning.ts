@@ -1,13 +1,7 @@
 import type { LocalizedString } from "@/lib/i18n/translations";
 import type { AppIcon } from "@/constants/icons";
 
-export type TrackId =
-  | "networking"
-  | "cloud"
-  | "security"
-  | "ai"
-  | "web"
-  | "software";
+export type TrackId = "networking" | "web" | "software";
 
 export interface Track {
   id: TrackId;
@@ -17,8 +11,6 @@ export interface Track {
   color: string;
   learners: string;
   available: boolean;
-  /** Short topic teasers (especially for coming-soon tracks). */
-  teaserTopics?: LocalizedString[];
 }
 
 export type ActivityType =

@@ -1,5 +1,7 @@
 import type { AchievementId } from "@/data/achievements";
 import type { SkillId } from "@/data/skills";
+import { getTrack } from "@/data/tracks";
+import { cacheAvatarLocally, readCachedAvatar } from "@/lib/avatar";
 import { authClient, db, isNeonConfigured } from "@/lib/neon";
 import type { ActivityLog, LabSessionProgress } from "@/store/learningStore";
 import { useCertificationStore } from "@/store/certificationStore";
@@ -7,6 +9,7 @@ import { useLearningStore } from "@/store/learningStore";
 import { useLocaleStore } from "@/store/localeStore";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { usePrivacyStore } from "@/store/privacyStore";
+import { useSessionStore } from "@/store/sessionStore";
 import { useSyncStore } from "@/store/syncStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useTrackStore } from "@/store/trackStore";
@@ -70,6 +73,7 @@ export async function ensureUserProfile(input: {
   userId: string;
   email?: string | null;
   firstName?: string | null;
+  /** Pass explicitly to set/clear; omit to keep the existing remote avatar. */
   avatarUrl?: string | null;
 }) {
   if (!isNeonConfigured()) return;
@@ -81,11 +85,25 @@ export async function ensureUserProfile(input: {
   const notifications = usePrivacyStore.getState().notificationsEnabled;
   const hasSeenTour = useOnboardingStore.getState().hasSeenProductTour;
 
+  let avatarUrl = input.avatarUrl;
+  if (avatarUrl === undefined) {
+    avatarUrl =
+      useSessionStore.getState().avatarUri ??
+      (
+        await db
+          .from("profiles")
+          .select("avatar_url")
+          .eq("user_id", input.userId)
+          .maybeSingle()
+      ).data?.avatar_url ??
+      null;
+  }
+
   const row: ProfileRow = {
     user_id: input.userId,
     email: input.email ?? null,
     first_name: input.firstName ?? null,
-    avatar_url: input.avatarUrl ?? null,
+    avatar_url: avatarUrl ?? null,
     selected_track: track,
     locale,
     dark_mode: darkMode,
@@ -146,10 +164,21 @@ export async function pullRemoteState(userId: string) {
 
   if (profile) {
     const p = profile as ProfileRow;
+    // Restore avatar first so a debounced push cannot overwrite it with null.
+    if (p.avatar_url) {
+      useSessionStore.setState({ avatarUri: p.avatar_url });
+      void cacheAvatarLocally(userId, p.avatar_url);
+    } else {
+      const cached = await readCachedAvatar(userId);
+      if (cached) {
+        useSessionStore.setState({ avatarUri: cached });
+      }
+    }
     if (p.selected_track) {
-      useTrackStore
-        .getState()
-        .setSelectedTrack(p.selected_track as TrackId);
+      const trackId = p.selected_track as TrackId;
+      if (getTrack(trackId)) {
+        useTrackStore.getState().setSelectedTrack(trackId);
+      }
     }
     if (p.locale === "fr" || p.locale === "en") {
       useLocaleStore.getState().setLocale(p.locale);
@@ -163,6 +192,11 @@ export async function pullRemoteState(userId: string) {
       useOnboardingStore.getState().completeProductTour();
     } else {
       useOnboardingStore.getState().resetProductTour();
+    }
+  } else {
+    const cached = await readCachedAvatar(userId);
+    if (cached) {
+      useSessionStore.setState({ avatarUri: cached });
     }
   }
 
@@ -239,13 +273,23 @@ export async function pushRemoteState(userId: string) {
   const unitId = useUnitStore.getState().selectedUnitId;
   const session = await authClient.getSession();
   const user = session.data?.user;
+  let avatarUrl = useSessionStore.getState().avatarUri;
+  // Never blank a stored avatar if the session has not restored it yet.
+  if (!avatarUrl) {
+    const { data: existing } = await db
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", userId)
+      .maybeSingle();
+    avatarUrl = existing?.avatar_url ?? null;
+  }
 
   const { error: profileError } = await db.from("profiles").upsert(
     {
       user_id: userId,
       email: user?.email ?? null,
       first_name: user?.name ?? null,
-      avatar_url: user?.image ?? null,
+      avatar_url: avatarUrl,
       selected_track: track,
       locale,
       dark_mode: darkMode,

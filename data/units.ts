@@ -26,51 +26,6 @@ export const UNITS: Unit[] = [
     ],
   },
   {
-    id: "net-advanced",
-    trackId: "networking",
-    title: {
-      fr: "Réseaux avancés",
-      en: "Advanced Networking",
-    },
-    description: {
-      fr: "Routage, VLAN, QoS et architectures d’entreprise.",
-      en: "Routing, VLANs, QoS, and enterprise architectures.",
-    },
-    order: 2,
-    progressColor: "#0EA5E9",
-    lessonIds: [],
-  },
-  {
-    id: "sec-basics",
-    trackId: "security",
-    title: {
-      fr: "Cybersécurité",
-      en: "Cybersecurity",
-    },
-    description: {
-      fr: "Menaces, chiffrement et bonnes pratiques de sécurité.",
-      en: "Threats, encryption, and security best practices.",
-    },
-    order: 3,
-    progressColor: "#10B981",
-    lessonIds: [],
-  },
-  {
-    id: "ai-basics",
-    trackId: "ai",
-    title: {
-      fr: "Intelligence artificielle",
-      en: "Artificial Intelligence",
-    },
-    description: {
-      fr: "Concepts IA, ML et cas d’usage tech.",
-      en: "AI concepts, ML, and tech use cases.",
-    },
-    order: 4,
-    progressColor: "#7C3AED",
-    lessonIds: [],
-  },
-  {
     id: "web-fundamentals",
     trackId: "web",
     title: {

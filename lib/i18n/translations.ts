@@ -35,10 +35,6 @@ export type TranslationKey =
   | "trackSelect.subtitle"
   | "trackSelect.popular"
   | "trackSelect.continue"
-  | "trackSelect.comingSoon"
-  | "trackSelect.notifyMe"
-  | "trackSelect.notified"
-  | "trackSelect.comingTopics"
   | "home.greeting"
   | "home.dailyGoal"
   | "home.continueLearning"
@@ -287,6 +283,7 @@ export type TranslationKey =
   | "about.body"
   | "support.title"
   | "support.body"
+  | "support.webPage"
   | "certs.title"
   | "certs.subtitle"
   | "certs.search"
@@ -438,10 +435,6 @@ export const fr: Record<TranslationKey, string> = {
   "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
   "trackSelect.popular": "Nos modules",
   "trackSelect.continue": "Continuer",
-  "trackSelect.comingSoon": "Bientôt disponibles",
-  "trackSelect.notifyMe": "Me prévenir",
-  "trackSelect.notified": "Tu seras prévenu",
-  "trackSelect.comingTopics": "Aperçu : {topics}",
   "home.greeting": "Salut",
   "home.dailyGoal": "Objectif du jour",
   "home.dailyGoalEdit": "Choisir l’objectif du jour",
@@ -690,6 +683,7 @@ export const fr: Record<TranslationKey, string> = {
   "about.body": "Stack est une app d’apprentissage informatique inspirée de Duolingo : leçons courtes, défis, labs et pratique guidée.",
   "support.title": "Support",
   "support.body": "Une question ou un bug ? Écris-nous. Nous répondrons dès que possible.",
+  "support.webPage": "Page support (web)",
   "certs.title": "Certifications",
   "certs.subtitle": "Références marché alignées sur tes modules Stack (réseau, web, logiciel) et les domaines voisins.",
   "certs.search": "Rechercher une certification…",
@@ -842,10 +836,6 @@ export const en: Record<TranslationKey, string> = {
   "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",
   "trackSelect.popular": "Our modules",
   "trackSelect.continue": "Continue",
-  "trackSelect.comingSoon": "Coming soon",
-  "trackSelect.notifyMe": "Notify me",
-  "trackSelect.notified": "You're on the list",
-  "trackSelect.comingTopics": "Preview: {topics}",
   "home.greeting": "Hey",
   "home.dailyGoal": "Daily goal",
   "home.dailyGoalEdit": "Choose today's goal",
@@ -1094,6 +1084,7 @@ export const en: Record<TranslationKey, string> = {
   "about.body": "Stack is a Duolingo-inspired computing learning app: short lessons, challenges, labs, and guided practice.",
   "support.title": "Support",
   "support.body": "Questions or a bug? Email us — we’ll get back as soon as we can.",
+  "support.webPage": "Support page (web)",
   "certs.title": "Certifications",
   "certs.subtitle": "Market references aligned with your Stack modules (networking, web, software) and related domains.",
   "certs.search": "Search a certification…",

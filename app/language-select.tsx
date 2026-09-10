@@ -7,7 +7,6 @@ import { TRACKS } from "@/data/tracks";
 import { useLocalize, useT } from "@/lib/i18n";
 import { posthog } from "@/lib/posthog";
 import { useTheme } from "@/lib/useTheme";
-import { useTrackInterestStore } from "@/store/trackInterestStore";
 import { useTrackStore } from "@/store/trackStore";
 import type { Track, TrackId } from "@/types/learning";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,24 +22,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const AVAILABLE_TRACKS = TRACKS.filter((track) => track.available);
-const COMING_SOON_TRACKS = TRACKS.filter((track) => !track.available);
-
 export default function TrackSelectScreen() {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
   const setSelectedTrack = useTrackStore((s) => s.setSelectedTrack);
   const currentTrack = useTrackStore((s) => s.selectedTrack);
-  const interestedTrackIds = useTrackInterestStore((s) => s.interestedTrackIds);
-  const toggleInterest = useTrackInterestStore((s) => s.toggleInterest);
   const [selectedId, setSelectedId] = useState<TrackId>(
-    currentTrack && AVAILABLE_TRACKS.some((tr) => tr.id === currentTrack)
+    currentTrack && TRACKS.some((tr) => tr.id === currentTrack)
       ? currentTrack
       : "networking"
   );
 
-  const modules = useMemo(() => AVAILABLE_TRACKS, []);
+  const modules = useMemo(() => TRACKS, []);
 
   const renderCard = (item: Track, index: number) => {
     const isSelected = item.id === selectedId;
@@ -91,85 +85,6 @@ export default function TrackSelectScreen() {
     );
   };
 
-  const renderComingSoon = (item: Track, index: number) => {
-    const interested = interestedTrackIds.includes(item.id);
-    const topics = (item.teaserTopics ?? [])
-      .slice(0, 3)
-      .map((topic) => L(topic))
-      .join(" · ");
-
-    return (
-      <MotionView key={item.id} index={modules.length + index}>
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.neutral.surface,
-              borderColor: colors.neutral.border,
-            },
-          ]}
-        >
-          <IconBadge
-            name={item.icon}
-            size="md"
-            color={colors.neutral.textSecondary}
-          />
-          <View style={styles.cardCopy}>
-            <Text
-              style={[styles.cardTitle, { color: colors.neutral.textPrimary }]}
-            >
-              {L(item.name)}
-            </Text>
-            {topics ? (
-              <Text
-                style={[
-                  styles.teaser,
-                  { color: colors.neutral.textSecondary },
-                ]}
-                numberOfLines={2}
-              >
-                {t("trackSelect.comingTopics", { topics })}
-              </Text>
-            ) : null}
-          </View>
-          <TouchableOpacity
-            onPress={() => {
-              toggleInterest(item.id);
-              posthog.capture("track_interest_toggled", {
-                track_id: item.id,
-                interested: !interested,
-              });
-            }}
-            style={[
-              styles.notifyBtn,
-              {
-                backgroundColor: interested
-                  ? colors.soft.blueBg
-                  : colors.neutral.card,
-                borderColor: interested
-                  ? colors.primary.blue
-                  : colors.neutral.border,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.notifyText,
-                {
-                  color: interested
-                    ? colors.primary.blue
-                    : colors.neutral.textPrimary,
-                },
-              ]}
-            >
-              {interested ? t("trackSelect.notified") : t("trackSelect.notifyMe")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </MotionView>
-    );
-  };
-
   return (
     <SafeAreaView
       style={[styles.safe, { backgroundColor: colors.neutral.background }]}
@@ -194,23 +109,6 @@ export default function TrackSelectScreen() {
         </Text>
 
         <View style={styles.list}>{modules.map(renderCard)}</View>
-
-        {COMING_SOON_TRACKS.length > 0 ? (
-          <>
-            <Text
-              style={[
-                styles.sectionTitle,
-                styles.soonTitle,
-                { color: colors.neutral.textPrimary },
-              ]}
-            >
-              {t("trackSelect.comingSoon")}
-            </Text>
-            <View style={styles.list}>
-              {COMING_SOON_TRACKS.map(renderComingSoon)}
-            </View>
-          </>
-        ) : null}
       </ScrollView>
 
       <View
@@ -267,9 +165,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     marginBottom: spacing.md,
   },
-  soonTitle: {
-    marginTop: spacing.section,
-  },
   list: {
     gap: spacing.md,
   },
@@ -288,24 +183,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: fontFamily.semiBold,
     fontSize: 16,
-  },
-  teaser: {
-    fontFamily: fontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 4,
-  },
-  notifyBtn: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    maxWidth: 110,
-  },
-  notifyText: {
-    fontFamily: fontFamily.semiBold,
-    fontSize: 11,
-    textAlign: "center",
   },
   check: {
     width: 26,

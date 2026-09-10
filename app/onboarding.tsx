@@ -121,7 +121,7 @@ export default function OnboardingScreen() {
       <Animated.View entering={enterUp(0)} style={styles.header}>
         <View style={styles.brandRow}>
           <Image
-            source={images.mascotLogo}
+            source={images.brandLogo}
             style={styles.logo}
             contentFit="contain"
             cachePolicy="memory-disk"

@@ -2,6 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import {
+  cacheAvatarLocally,
+  clearCachedAvatar,
+} from "@/lib/avatar";
 import { authClient, isNeonConfigured } from "@/lib/neon";
 import {
   deleteRemoteUserData,
@@ -35,7 +39,7 @@ interface SessionState {
     password: string;
     firstName: string;
   }) => Promise<{ error?: string }>;
-  setAvatarUri: (uri: string | null) => void;
+  setAvatarUri: (uri: string | null) => Promise<void>;
   updateProfile: (input: {
     firstName: string;
     email: string;
@@ -64,7 +68,8 @@ export const useSessionStore = create<SessionState>()(
           userId,
           email: email ?? null,
           firstName: firstName ?? email?.split("@")[0] ?? "Learner",
-          avatarUri: avatarUri ?? get().avatarUri,
+          // Keep local/remote avatar unless auth provides a real image URL.
+          ...(avatarUri ? { avatarUri } : {}),
           isSignedIn: true,
         }),
       signInWithPassword: async ({ email, password }) => {
@@ -89,15 +94,15 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name,
-          avatarUri: user.image,
+          ...(user.image ? { avatarUri: user.image } : {}),
         });
+        // Restore avatar (and other prefs) before any profile upsert.
+        await pullRemoteState(user.id);
         await ensureUserProfile({
           userId: user.id,
           email: user.email,
           firstName: user.name,
-          avatarUrl: user.image,
         });
-        await pullRemoteState(user.id);
         return {};
       },
       signUpWithPassword: async ({ email, password, firstName }) => {
@@ -127,18 +132,43 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name ?? name,
-          avatarUri: user.image,
+          ...(user.image ? { avatarUri: user.image } : {}),
         });
         await ensureUserProfile({
           userId: user.id,
           email: user.email,
           firstName: user.name ?? name,
-          avatarUrl: user.image,
         });
         await pushRemoteState(user.id);
         return {};
       },
-      setAvatarUri: (avatarUri) => set({ avatarUri }),
+      setAvatarUri: async (avatarUri) => {
+        set({ avatarUri });
+        const userId = get().userId;
+        if (!userId || userId === "user_guest") return;
+
+        try {
+          if (avatarUri) {
+            await cacheAvatarLocally(userId, avatarUri);
+          } else {
+            await clearCachedAvatar(userId);
+          }
+        } catch (err) {
+          console.warn("[avatar] local cache failed", err);
+        }
+
+        if (!isNeonConfigured()) return;
+        try {
+          await ensureUserProfile({
+            userId,
+            email: get().email,
+            firstName: get().firstName,
+            avatarUrl: avatarUri,
+          });
+        } catch (err) {
+          console.warn("[avatar] remote save failed", err);
+        }
+      },
       updateProfile: async ({ firstName, email }) => {
         const state = get();
         if (!state.isSignedIn || !state.userId) {
@@ -197,7 +227,7 @@ export const useSessionStore = create<SessionState>()(
               userId: user.id,
               email: user.email,
               firstName: user.name,
-              avatarUri: user.image,
+              ...(user.image ? { avatarUri: user.image } : {}),
             });
             // Do not block startup on remote progress sync.
             void pullRemoteState(user.id).catch((err) => {

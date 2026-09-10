@@ -1,6 +1,6 @@
-const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativewind } = require("nativewind/metro");
+const path = require("path");
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
@@ -11,7 +11,6 @@ if (!config.resolver.sourceExts.includes("mjs")) {
   config.resolver.sourceExts.push("mjs");
 }
 
-const streamStub = path.resolve(__dirname, "shims/stream-web-stub.js");
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -23,16 +22,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
       ),
       type: "sourceFile",
     };
-  }
-
-  if (
-    platform === "web" &&
-    (moduleName === "@stream-io/video-react-native-sdk" ||
-      moduleName === "@stream-io/react-native-webrtc" ||
-      moduleName.startsWith("@stream-io/video-react-native-sdk/") ||
-      moduleName.startsWith("@stream-io/react-native-webrtc/"))
-  ) {
-    return { filePath: streamStub, type: "sourceFile" };
   }
 
   if (defaultResolveRequest) {

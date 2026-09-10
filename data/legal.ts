@@ -1,4 +1,5 @@
 import type { LocalizedString } from "@/lib/i18n/translations";
+import Constants from "expo-constants";
 
 export type LegalSlug =
   | "privacy"
@@ -15,6 +16,40 @@ export type LegalDoc = {
 };
 
 export const SUPPORT_EMAIL = "nassim.elhaddad2004@gmail.com";
+
+/**
+ * Public site base for App Store privacy/support URLs.
+ * Set EXPO_PUBLIC_SITE_URL to your hosted origin (no trailing slash), e.g. https://stack.app
+ * Static pages live in /public/legal/*.html
+ */
+export function getSiteUrl(): string {
+  const fromEnv = process.env.EXPO_PUBLIC_SITE_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  const fromExtra = (
+    Constants.expoConfig?.extra as { siteUrl?: string } | undefined
+  )?.siteUrl?.trim();
+  if (fromExtra) return fromExtra.replace(/\/$/, "");
+  return "";
+}
+
+export type LegalPublicPage = "privacy" | "terms" | "support";
+
+export function getLegalPublicUrl(page: LegalPublicPage): string | null {
+  const base = getSiteUrl();
+  if (!base) return null;
+  switch (page) {
+    case "privacy":
+      return `${base}/legal/privacy.html`;
+    case "terms":
+      return `${base}/legal/terms.html`;
+    case "support":
+      return `${base}/legal/support.html`;
+    default: {
+      const _exhaustive: never = page;
+      return _exhaustive;
+    }
+  }
+}
 
 export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
   privacy: {

@@ -3,16 +3,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackHeader } from "@/components/ui/BackHeader";
 import { fontFamily, radius, spacing } from "@/constants/theme";
-import { SUPPORT_EMAIL } from "@/data/legal";
+import {
+  SUPPORT_EMAIL,
+  getLegalPublicUrl,
+} from "@/data/legal";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
 
 export default function SupportScreen() {
   const t = useT();
   const { colors } = useTheme();
+  const webSupport = getLegalPublicUrl("support");
 
   function openMail() {
     void Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+  }
+
+  function openWeb() {
+    if (webSupport) void Linking.openURL(webSupport);
   }
 
   return (
@@ -34,6 +42,17 @@ export default function SupportScreen() {
             {SUPPORT_EMAIL}
           </Text>
         </TouchableOpacity>
+        {webSupport ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={openWeb}
+            style={[styles.btn, { borderColor: colors.neutral.border, marginTop: 10 }]}
+          >
+            <Text style={[styles.btnText, { color: colors.primary.blue }]}>
+              {t("support.webPage")}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </SafeAreaView>
   );

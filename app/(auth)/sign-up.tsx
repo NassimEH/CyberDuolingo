@@ -1,16 +1,14 @@
-import SocialButton from "@/components/SocialButton";
 import { images } from "@/constants/images";
 import { identifyUser, trackEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useT } from "@/lib/i18n";
-import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -184,41 +182,12 @@ export default function SignUpScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text className="font-poppins-semibold text-base text-white">
-                  Sign Up
+                  {t("auth.signUp")}
                 </Text>
               )}
             </TouchableOpacity>
 
-            <View className="flex-row items-center my-6 gap-3">
-              <View className="flex-1 h-px bg-border" />
-              <Text className="body-sm text-text-secondary">
-                or continue with
-              </Text>
-              <View className="flex-1 h-px bg-border" />
-            </View>
-
-            <SocialButton
-              icon={<AntDesign name="google" size={20} color="#DB4437" />}
-              label="Continue with Google"
-              onPress={() =>
-                Alert.alert(
-                  "Bientôt disponible",
-                  "La connexion Google n’est pas encore branchée. Utilise e-mail et mot de passe."
-                )
-              }
-            />
-            <SocialButton
-              icon={<AntDesign name="apple" size={20} color="#000" />}
-              label="Continue with Apple"
-              onPress={() =>
-                Alert.alert(
-                  "Bientôt disponible",
-                  "La connexion Apple n’est pas encore branchée. Utilise e-mail et mot de passe."
-                )
-              }
-            />
-
-            <View className="flex-row justify-center mt-4 mb-8">
+            <View className="flex-row justify-center mt-6 mb-8">
               <Text className="body-md text-text-secondary">
                 {t("auth.hasAccount")}
               </Text>

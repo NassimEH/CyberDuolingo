@@ -1,3 +1,5 @@
+const easProjectId = process.env.EAS_PROJECT_ID?.trim();
+
 export default {
   expo: {
     name: "Stack",
@@ -9,13 +11,16 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: false,
     ios: {
-      supportsTablet: true,
+      supportsTablet: false,
       bundleIdentifier: "com.stack.app",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       package: "com.stack.app",
       adaptiveIcon: {
-        backgroundColor: "#DBEAFE",
+        backgroundColor: "#FFFFFF",
         foregroundImage: "./assets/images/android-icon-foreground.png",
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
@@ -29,7 +34,6 @@ export default {
     },
     plugins: [
       "expo-router",
-      "expo-updates",
       [
         "expo-notifications",
         {
@@ -46,7 +50,7 @@ export default {
           resizeMode: "contain",
           backgroundColor: "#ffffff",
           dark: {
-            backgroundColor: "#000000",
+            backgroundColor: "#0B1220",
           },
         },
       ],
@@ -59,20 +63,13 @@ export default {
         {
           photosPermission:
             "Allow $(PRODUCT_NAME) to access your photos to set a profile picture.",
+          // Gallery-only avatar picker — do not declare unused camera/mic (Apple 5.1.1).
+          cameraPermission: false,
+          microphonePermission: false,
         },
       ],
       "expo-status-bar",
       "expo-web-browser",
-      "@stream-io/video-react-native-sdk",
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          cameraPermission:
-            "Allow $(PRODUCT_NAME) to access your camera for Stack lessons.",
-          microphonePermission:
-            "Allow $(PRODUCT_NAME) to access your microphone for Stack lessons.",
-        },
-      ],
       [
         "expo-build-properties",
         {
@@ -81,29 +78,37 @@ export default {
           },
         },
       ],
+      // Only wire EAS Update when a real project id is configured.
+      ...(easProjectId ? ["expo-updates"] : []),
     ],
     experiments: {
       typedRoutes: true,
       reactCompiler: true,
     },
-    runtimeVersion: {
-      policy: "appVersion",
-    },
-    updates: {
-      url: "https://u.expo.dev/placeholder-project-id",
-      fallbackToCacheTimeout: 0,
-    },
+    ...(easProjectId
+      ? {
+          runtimeVersion: { policy: "appVersion" },
+          updates: {
+            url: `https://u.expo.dev/${easProjectId}`,
+            fallbackToCacheTimeout: 0,
+          },
+        }
+      : {}),
     extra: {
       posthogProjectToken:
         process.env.POSTHOG_PROJECT_TOKEN || "phc_your_project_token_here",
       posthogHost: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
-      streamApiKey: process.env.STREAM_API_KEY,
       neonAuthUrl: process.env.EXPO_PUBLIC_NEON_AUTH_URL,
       neonDataApiUrl: process.env.EXPO_PUBLIC_NEON_DATA_API_URL,
       authOrigin: process.env.EXPO_PUBLIC_AUTH_ORIGIN,
-      eas: {
-        projectId: process.env.EAS_PROJECT_ID || "placeholder-project-id",
-      },
+      siteUrl: process.env.EXPO_PUBLIC_SITE_URL,
+      ...(easProjectId
+        ? {
+            eas: {
+              projectId: easProjectId,
+            },
+          }
+        : {}),
     },
   },
 };

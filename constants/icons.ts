@@ -123,9 +123,6 @@ export const lucideIcons: Record<AppIcon, LucideIcon> = {
 
 export const trackIcons: Record<TrackId, AppIcon> = {
   networking: "globe",
-  cloud: "cloud",
-  security: "shield",
-  ai: "sparkles",
   web: "layers",
   software: "book",
 };

@@ -16,6 +16,7 @@ import {
   Trash2,
   User,
 } from "@/constants/icons";
+import { toAvatarDataUrl } from "@/lib/avatar";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -45,6 +46,10 @@ import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { images } from "@/constants/images";
 import { fontFamily, radius, spacing } from "@/constants/theme";
 import { getLevelProgress } from "@/data/achievements";
+import {
+  getLegalPublicUrl,
+  type LegalPublicPage,
+} from "@/data/legal";
 import { getTrack } from "@/data/tracks";
 import { useLocalize, useT } from "@/lib/i18n";
 import {
@@ -68,6 +73,21 @@ import { useTrackStore } from "@/store/trackStore";
 
 function SettingsDivider({ color }: { color: string }) {
   return <View style={[styles.divider, { backgroundColor: color }]} />;
+}
+
+function openLegalPage(
+  page: LegalPublicPage,
+  fallbackSlug: "privacy" | "terms"
+) {
+  const url = getLegalPublicUrl(page);
+  if (url) {
+    void Linking.openURL(url);
+    return;
+  }
+  router.push({
+    pathname: "/legal/[slug]",
+    params: { slug: fallbackSlug },
+  });
 }
 
 export default function ProfileScreen() {
@@ -149,10 +169,20 @@ export default function ProfileScreen() {
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.85,
+      quality: 0.55,
+      base64: true,
     });
-    if (!result.canceled && result.assets[0]?.uri) {
-      setAvatarUri(result.assets[0].uri);
+    const asset = result.assets?.[0];
+    if (result.canceled || !asset) return;
+
+    // Persist a durable data URL (file:// URIs do not survive logout/relogin).
+    if (asset.base64) {
+      const mime = asset.mimeType ?? "image/jpeg";
+      await setAvatarUri(toAvatarDataUrl(asset.base64, mime));
+      return;
+    }
+    if (asset.uri) {
+      await setAvatarUri(asset.uri);
     }
   }
 
@@ -772,12 +802,7 @@ export default function ProfileScreen() {
         >
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() =>
-              router.push({
-                pathname: "/legal/[slug]",
-                params: { slug: "privacy" },
-              })
-            }
+            onPress={() => openLegalPage("privacy", "privacy")}
           >
             <SettingsRow
               icon={Lock}
@@ -806,12 +831,7 @@ export default function ProfileScreen() {
           <SettingsDivider color={dividerColor} />
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() =>
-              router.push({
-                pathname: "/legal/[slug]",
-                params: { slug: "terms" },
-              })
-            }
+            onPress={() => openLegalPage("terms", "terms")}
           >
             <SettingsRow
               icon={BookOpen}
@@ -893,7 +913,7 @@ export default function ProfileScreen() {
 
         <View style={styles.footer}>
           <Image
-            source={images.mascotLogo}
+            source={images.brandLogo}
             contentFit="contain"
             cachePolicy="memory-disk"
             priority="low"
