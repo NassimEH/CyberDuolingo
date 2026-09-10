@@ -38,20 +38,10 @@ export function getTrustedAuthOrigin(): string {
 }
 
 /**
- * Post-OAuth return URL.
- * - Web: same origin
- * - Native: HTTPS site (Neon only allows http(s) trusted domains). Deep links
- *   like `stack://` are rejected by Neon Managed Auth as callback URLs.
+ * Post-OAuth return URL for Neon browser social (web only).
+ * Native Google uses idToken — Neon has no expo-authorization-proxy.
  */
 export function getAuthCallbackURL(): string {
-  if (Platform.OS !== "web") {
-    const site =
-      process.env.EXPO_PUBLIC_SITE_URL?.trim() ||
-      (Constants.expoConfig?.extra as { siteUrl?: string } | undefined)?.siteUrl;
-    if (site && /^https?:\/\//.test(site)) {
-      return `${site.replace(/\/$/, "")}/`;
-    }
-  }
   return `${getTrustedAuthOrigin()}/`;
 }
 
