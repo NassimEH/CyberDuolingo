@@ -83,3 +83,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.learning_progress TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.certification_entries TO authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- See db/migrations/001_apple_auth.sql for Apple identities + app_sessions.
+-- Apple users sync via Expo API routes + DATABASE_URL (not Neon Auth JWT / Data API).

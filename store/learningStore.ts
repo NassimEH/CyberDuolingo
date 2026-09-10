@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { persistStorage } from "@/lib/persistStorage";
 
 import type { AchievementId } from "@/data/achievements";
 import type { AnswerVerdict } from "@/data/labScenarios";
@@ -512,7 +512,7 @@ export const useLearningStore = create<LearningState>()(
     }),
     {
       name: "learning-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<LearningState>;
         const completedLabIds =

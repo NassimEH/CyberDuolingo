@@ -1,11 +1,17 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { persistStorage } from "@/lib/persistStorage";
 
+import { apiFetch } from "@/lib/api";
 import {
   cacheAvatarLocally,
   clearCachedAvatar,
 } from "@/lib/avatar";
+import {
+  clearAppleAccessToken,
+  getAppleAccessToken,
+  saveAppleAccessToken,
+} from "@/lib/appleSession";
 import {
   authClient,
   getAuthCallbackURL,
@@ -21,6 +27,8 @@ import {
 import { useCertificationStore } from "@/store/certificationStore";
 import { useLearningStore } from "@/store/learningStore";
 
+export type AuthProvider = "neon" | "apple" | null;
+
 interface SessionState {
   userId: string | null;
   email: string | null;
@@ -28,11 +36,14 @@ interface SessionState {
   avatarUri: string | null;
   isSignedIn: boolean;
   authReady: boolean;
+  /** neon = email/Google via Neon Auth; apple = Stack backend session */
+  authProvider: AuthProvider;
   setFromRemoteUser: (input: {
     userId: string;
     email?: string | null;
     firstName?: string | null;
     avatarUri?: string | null;
+    authProvider?: AuthProvider;
   }) => void;
   signInWithPassword: (input: {
     email: string;
@@ -49,6 +60,12 @@ interface SessionState {
   signInWithGoogleIdToken: (
     idToken: string
   ) => Promise<{ error?: string }>;
+  /** Native Apple identity token → Stack backend (not Neon Auth). */
+  signInWithAppleIdToken: (input: {
+    idToken: string;
+    nonce?: string | null;
+    fullName?: string | null;
+  }) => Promise<{ error?: string }>;
   setAvatarUri: (uri: string | null) => Promise<void>;
   updateProfile: (input: {
     firstName: string;
@@ -66,6 +83,7 @@ const signedOutState = {
   firstName: null as string | null,
   avatarUri: null as string | null,
   isSignedIn: false,
+  authProvider: null as AuthProvider,
 };
 
 export const useSessionStore = create<SessionState>()(
@@ -73,19 +91,26 @@ export const useSessionStore = create<SessionState>()(
     (set, get) => ({
       ...signedOutState,
       authReady: false,
-      setFromRemoteUser: ({ userId, email, firstName, avatarUri }) =>
+      setFromRemoteUser: ({
+        userId,
+        email,
+        firstName,
+        avatarUri,
+        authProvider,
+      }) =>
         set({
           userId,
           email: email ?? null,
           firstName: firstName ?? email?.split("@")[0] ?? "Learner",
-          // Keep local/remote avatar unless auth provides a real image URL.
           ...(avatarUri ? { avatarUri } : {}),
           isSignedIn: true,
+          ...(authProvider ? { authProvider } : {}),
         }),
       signInWithPassword: async ({ email, password }) => {
         if (!isNeonConfigured()) {
           return { error: "Neon Auth n'est pas configuré." };
         }
+        await clearAppleAccessToken();
         const result = await authClient.signIn.email({
           email,
           password,
@@ -104,9 +129,9 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name,
+          authProvider: "neon",
           ...(user.image ? { avatarUri: user.image } : {}),
         });
-        // Restore avatar (and other prefs) before any profile upsert.
         await pullRemoteState(user.id);
         await ensureUserProfile({
           userId: user.id,
@@ -123,6 +148,7 @@ export const useSessionStore = create<SessionState>()(
         if (name.length < 2) {
           return { error: "Entre ton prénom (au moins 2 caractères)." };
         }
+        await clearAppleAccessToken();
         const result = await authClient.signUp.email({
           email,
           password,
@@ -142,6 +168,7 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name ?? name,
+          authProvider: "neon",
           ...(user.image ? { avatarUri: user.image } : {}),
         });
         await ensureUserProfile({
@@ -156,6 +183,7 @@ export const useSessionStore = create<SessionState>()(
         if (!isNeonConfigured()) {
           return { error: "Neon Auth n'est pas configuré." };
         }
+        await clearAppleAccessToken();
         const callbackURL = getAuthCallbackURL();
         const result = await authClient.signIn.social({
           provider: "google",
@@ -168,7 +196,6 @@ export const useSessionStore = create<SessionState>()(
             error: result.error.message ?? "Connexion Google impossible.",
           };
         }
-        // Browser redirect usually leaves this page; if not, hydrate session.
         const user = (await authClient.getSession()).data?.user ?? null;
         if (!user?.id) {
           return {};
@@ -177,6 +204,7 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name,
+          authProvider: "neon",
           ...(user.image ? { avatarUri: user.image } : {}),
         });
         await pullRemoteState(user.id);
@@ -194,6 +222,7 @@ export const useSessionStore = create<SessionState>()(
         if (!idToken.trim()) {
           return { error: "Jeton Google manquant." };
         }
+        await clearAppleAccessToken();
         const result = await authClient.signIn.social({
           provider: "google",
           idToken: { token: idToken },
@@ -211,6 +240,7 @@ export const useSessionStore = create<SessionState>()(
           userId: user.id,
           email: user.email,
           firstName: user.name,
+          authProvider: "neon",
           ...(user.image ? { avatarUri: user.image } : {}),
         });
         await pullRemoteState(user.id);
@@ -220,6 +250,76 @@ export const useSessionStore = create<SessionState>()(
           firstName: user.name,
         });
         return {};
+      },
+      signInWithAppleIdToken: async ({ idToken, nonce, fullName }) => {
+        if (!idToken.trim()) {
+          return { error: "Jeton Apple manquant." };
+        }
+
+        try {
+          const response = await apiFetch("/api/auth/apple", {
+            method: "POST",
+            body: JSON.stringify({
+              identityToken: idToken,
+              nonce: nonce ?? null,
+              fullName: fullName ?? null,
+            }),
+          });
+          const payload = (await response.json().catch(() => ({}))) as {
+            error?: string;
+            accessToken?: string;
+            user?: {
+              id: string;
+              email: string | null;
+              firstName: string | null;
+            };
+          };
+
+          if (!response.ok || !payload.accessToken || !payload.user?.id) {
+            return {
+              error:
+                payload.error ??
+                "Connexion Apple impossible. Vérifie que l’API Stack est joignable.",
+            };
+          }
+
+          // Drop any Neon Auth cookie session so we don't mix providers.
+          if (isNeonConfigured()) {
+            try {
+              await authClient.signOut();
+            } catch {
+              /* ignore */
+            }
+          }
+
+          await saveAppleAccessToken(payload.accessToken);
+
+          const displayName =
+            fullName?.trim() ||
+            payload.user.firstName ||
+            payload.user.email?.split("@")[0] ||
+            "Learner";
+
+          get().setFromRemoteUser({
+            userId: payload.user.id,
+            email: payload.user.email,
+            firstName: displayName,
+            authProvider: "apple",
+          });
+          await pullRemoteState(payload.user.id);
+          await ensureUserProfile({
+            userId: payload.user.id,
+            email: payload.user.email,
+            firstName: displayName,
+          });
+          return {};
+        } catch (err) {
+          console.warn("[apple] sign-in failed", err);
+          return {
+            error:
+              "Impossible de joindre le serveur Stack pour Apple. Vérifie EXPO_PUBLIC_API_BASE_URL.",
+          };
+        }
       },
       setAvatarUri: async (avatarUri) => {
         set({ avatarUri });
@@ -236,7 +336,6 @@ export const useSessionStore = create<SessionState>()(
           console.warn("[avatar] local cache failed", err);
         }
 
-        if (!isNeonConfigured()) return;
         try {
           await ensureUserProfile({
             userId,
@@ -262,7 +361,7 @@ export const useSessionStore = create<SessionState>()(
           return { error: "Entre une adresse e-mail valide." };
         }
 
-        if (isNeonConfigured()) {
+        if (state.authProvider === "neon" && isNeonConfigured()) {
           const result = await authClient.updateUser({
             name: trimmedName,
           });
@@ -290,13 +389,54 @@ export const useSessionStore = create<SessionState>()(
           set({ ...signedOutState, authReady: true });
         }
 
-        if (!isNeonConfigured()) {
-          set({ authReady: true });
-          return;
+        set({ authReady: true });
+
+        // Prefer Stack Apple session if present.
+        try {
+          const appleToken = await getAppleAccessToken();
+          if (appleToken) {
+            const response = await apiFetch("/api/auth/me", {
+              method: "GET",
+              accessToken: appleToken,
+            });
+            if (response.ok) {
+              const data = (await response.json()) as {
+                user?: {
+                  id: string;
+                  email: string | null;
+                  firstName: string | null;
+                  avatarUrl: string | null;
+                };
+              };
+              if (data.user?.id) {
+                get().setFromRemoteUser({
+                  userId: data.user.id,
+                  email: data.user.email,
+                  firstName: data.user.firstName,
+                  authProvider: "apple",
+                  ...(data.user.avatarUrl
+                    ? { avatarUri: data.user.avatarUrl }
+                    : {}),
+                });
+                void pullRemoteState(data.user.id).catch((err) => {
+                  console.warn("[apple] pullRemoteState failed", err);
+                });
+                return;
+              }
+            } else if (response.status === 401) {
+              await clearAppleAccessToken();
+              if (get().authProvider === "apple") {
+                set({ ...signedOutState, authReady: true });
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("[apple] hydrate failed", err);
         }
 
-        // UI can already render from persisted session; verify in background.
-        set({ authReady: true });
+        if (!isNeonConfigured()) {
+          return;
+        }
 
         try {
           const session = await authClient.getSession();
@@ -306,18 +446,16 @@ export const useSessionStore = create<SessionState>()(
               userId: user.id,
               email: user.email,
               firstName: user.name,
+              authProvider: "neon",
               ...(user.image ? { avatarUri: user.image } : {}),
             });
-            // Do not block startup on remote progress sync.
             void pullRemoteState(user.id).catch((err) => {
               console.warn("[neon] pullRemoteState failed", err);
             });
-          } else if (get().isSignedIn) {
-            // Cookie/session expired — clear optimistic local auth.
+          } else if (get().isSignedIn && get().authProvider !== "apple") {
             set({ ...signedOutState, authReady: true });
           }
         } catch (err) {
-          // Offline / transient: keep optimistic session so cold start stays fast.
           console.warn("[neon] hydrate failed", err);
         }
       },
@@ -327,20 +465,17 @@ export const useSessionStore = create<SessionState>()(
           return { error: "Connecte-toi pour supprimer tes données." };
         }
 
-        // Local wipe first so pushRemoteState writes empty progress.
         useLearningStore.getState().clearAllLocalData();
         useCertificationStore.getState().clearAll();
 
-        if (isNeonConfigured()) {
-          try {
-            await wipeRemoteLearningData(state.userId);
-          } catch (err) {
-            console.warn("[neon] wipeRemoteLearningData failed", err);
-            return {
-              error:
-                "Impossible d’effacer les données serveur. Réessaie ou contacte le support.",
-            };
-          }
+        try {
+          await wipeRemoteLearningData(state.userId);
+        } catch (err) {
+          console.warn("[sync] wipeRemoteLearningData failed", err);
+          return {
+            error:
+              "Impossible d’effacer les données serveur. Réessaie ou contacte le support.",
+          };
         }
         return {};
       },
@@ -350,14 +485,27 @@ export const useSessionStore = create<SessionState>()(
           return { error: "Aucun compte à supprimer." };
         }
 
+        if (state.authProvider === "apple") {
+          try {
+            await deleteRemoteUserData(state.userId);
+          } catch (err) {
+            console.warn("[apple] delete account failed", err);
+            return {
+              error:
+                "Impossible de supprimer le compte Apple. Réessaie ou contacte le support.",
+            };
+          }
+          await clearAppleAccessToken();
+          set({ ...signedOutState, authReady: true });
+          return {};
+        }
+
         const password = input?.password?.trim() ?? "";
         if (!password) {
           return { error: "Mot de passe requis pour supprimer le compte." };
         }
 
         if (isNeonConfigured()) {
-          // Auth delete first when possible would invalidate JWT before Data API wipe.
-          // So: wipe app rows with current JWT, then hard-delete Auth user.
           try {
             await deleteRemoteUserData(state.userId);
           } catch (err) {
@@ -396,7 +544,21 @@ export const useSessionStore = create<SessionState>()(
         return {};
       },
       signOut: async () => {
-        if (isNeonConfigured()) {
+        const provider = get().authProvider;
+        if (provider === "apple") {
+          const token = await getAppleAccessToken();
+          if (token) {
+            try {
+              await apiFetch("/api/auth/me", {
+                method: "DELETE",
+                accessToken: token,
+              });
+            } catch (err) {
+              console.warn("[apple] revoke session failed", err);
+            }
+          }
+          await clearAppleAccessToken();
+        } else if (isNeonConfigured()) {
           try {
             await authClient.signOut();
           } catch (err) {
@@ -408,13 +570,13 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: "session-storage",
-      storage: createJSONStorage(() => AsyncStorage),
-      // Optimistic boot: persist session flags (never email).
+      storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         userId: state.userId,
         isSignedIn: state.isSignedIn,
         firstName: state.firstName,
         avatarUri: state.avatarUri,
+        authProvider: state.authProvider,
       }),
       merge: (persisted, current) => {
         const raw = (persisted ?? {}) as Partial<SessionState> & {
@@ -436,12 +598,11 @@ export const useSessionStore = create<SessionState>()(
           isSignedIn: raw.isSignedIn ?? current.isSignedIn,
           firstName: raw.firstName ?? current.firstName,
           avatarUri: raw.avatarUri ?? current.avatarUri,
-          // Unlock UI as soon as AsyncStorage rehydrates.
+          authProvider: raw.authProvider ?? current.authProvider,
           authReady: true,
         };
       },
       onRehydrateStorage: () => () => {
-        // Ensure boot unlock even when there was no persisted payload.
         queueMicrotask(() => {
           useSessionStore.setState({ authReady: true });
         });

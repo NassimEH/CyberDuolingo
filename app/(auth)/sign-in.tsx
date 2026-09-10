@@ -1,5 +1,5 @@
 import { images } from "@/constants/images";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { AuthSocialButtons } from "@/components/AuthSocialButtons";
 import { identifyUser, trackEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
@@ -24,16 +24,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SignInScreen() {
   const t = useT();
   const signInWithPassword = useSessionStore((s) => s.signInWithPassword);
-  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
-  const busy = loading || googleLoading;
 
-  const afterAuthSuccess = (method: "password" | "google") => {
+  const afterAuthSuccess = (method: "password" | "google" | "apple") => {
     trackEvent("sign_in_completed", { method });
     const uid = useSessionStore.getState().userId;
     if (uid) {
@@ -65,19 +63,6 @@ export default function SignInScreen() {
     }
 
     afterAuthSuccess("password");
-  };
-
-  const completeGoogle = async () => {
-    setAuthError("");
-    const result = await signInWithGoogle();
-    if (result.error) {
-      setAuthError(result.error);
-      return;
-    }
-    // Web redirect may leave before this; native continues here.
-    if (useSessionStore.getState().isSignedIn) {
-      afterAuthSuccess("google");
-    }
   };
 
   return (
@@ -115,30 +100,11 @@ export default function SignInScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.googleButton, busy ? styles.buttonDisabled : null]}
-              activeOpacity={0.85}
-              onPress={() => void completeGoogle()}
-              disabled={busy}
-              testID="sign-in-google-button"
-            >
-              {googleLoading ? (
-                <ActivityIndicator color="#001328" />
-              ) : (
-                <View style={styles.googleRow}>
-                  <Ionicons name="logo-google" size={20} color="#001328" />
-                  <Text style={styles.googleLabel}>
-                    {t("auth.continueWithGoogle")}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.orRow}>
-              <View style={styles.orLine} />
-              <Text style={styles.orText}>{t("auth.or")}</Text>
-              <View style={styles.orLine} />
-            </View>
+            <AuthSocialButtons
+              disabled={loading}
+              onError={setAuthError}
+              onSuccess={(method) => afterAuthSuccess(method)}
+            />
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email</Text>
@@ -192,8 +158,8 @@ export default function SignInScreen() {
               className="bg-lingua-purple rounded-2xl py-4 items-center mt-2"
               activeOpacity={0.85}
               onPress={() => void completeSignIn()}
-              disabled={!email || !password || busy}
-              style={{ opacity: !email || !password || busy ? 0.6 : 1 }}
+              disabled={!email || !password || loading}
+              style={{ opacity: !email || !password || loading ? 0.6 : 1 }}
               testID="sign-in-button"
             >
               {loading ? (
@@ -225,47 +191,6 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  googleButton: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    marginBottom: 4,
-    minHeight: 52,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  googleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  googleLabel: {
-    fontFamily: "Poppins-SemiBold",
-    fontSize: 15,
-    color: "#001328",
-  },
-  orRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 16,
-    gap: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e5e7eb",
-  },
-  orText: {
-    fontFamily: "Poppins-Regular",
-    fontSize: 12,
-    color: "#9ca3af",
-    textTransform: "lowercase",
-  },
   inputContainer: {
     borderWidth: 1,
     borderColor: "#e5e7eb",

@@ -94,8 +94,16 @@ export default function ProfileScreen() {
   const t = useT();
   const L = useLocalize();
   const { colors } = useTheme();
-  const { firstName, email, avatarUri, setAvatarUri, signOut, deleteAccount, deleteLearningData } =
-    useSessionStore();
+  const {
+    firstName,
+    email,
+    avatarUri,
+    setAvatarUri,
+    signOut,
+    deleteAccount,
+    deleteLearningData,
+    authProvider,
+  } = useSessionStore();
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
@@ -299,7 +307,7 @@ export default function ProfileScreen() {
   }
 
   async function confirmDeleteAccount() {
-    if (deletePassword.trim().length < 8) {
+    if (authProvider !== "apple" && deletePassword.trim().length < 8) {
       Alert.alert(
         t("profile.deleteAccount"),
         t("profile.deleteAccountPasswordHint")
@@ -307,7 +315,11 @@ export default function ProfileScreen() {
       return;
     }
     setBusyDelete(true);
-    const result = await deleteAccount({ password: deletePassword.trim() });
+    const result = await deleteAccount(
+      authProvider === "apple"
+        ? undefined
+        : { password: deletePassword.trim() }
+    );
     setBusyDelete(false);
     if (result.error) {
       Alert.alert(t("profile.deleteAccount"), result.error);
@@ -950,33 +962,39 @@ export default function ProfileScreen() {
                 { color: colors.neutral.textSecondary },
               ]}
             >
-              {t("profile.deleteAccountConfirmMessage")}
+              {authProvider === "apple"
+                ? t("profile.deleteAccountConfirmMessageApple")
+                : t("profile.deleteAccountConfirmMessage")}
             </Text>
-            <Text
-              style={[
-                styles.modalLabel,
-                { color: colors.neutral.textSecondary },
-              ]}
-            >
-              {t("profile.deleteAccountPassword")}
-            </Text>
-            <TextInput
-              value={deletePassword}
-              onChangeText={setDeletePassword}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!busyDelete}
-              placeholder={t("profile.deleteAccountPassword")}
-              placeholderTextColor={colors.neutral.textSecondary}
-              style={[
-                styles.modalInput,
-                {
-                  color: colors.neutral.textPrimary,
-                  borderColor: colors.neutral.border,
-                  backgroundColor: colors.neutral.surface,
-                },
-              ]}
-            />
+            {authProvider === "apple" ? null : (
+              <>
+                <Text
+                  style={[
+                    styles.modalLabel,
+                    { color: colors.neutral.textSecondary },
+                  ]}
+                >
+                  {t("profile.deleteAccountPassword")}
+                </Text>
+                <TextInput
+                  value={deletePassword}
+                  onChangeText={setDeletePassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  editable={!busyDelete}
+                  placeholder={t("profile.deleteAccountPassword")}
+                  placeholderTextColor={colors.neutral.textSecondary}
+                  style={[
+                    styles.modalInput,
+                    {
+                      color: colors.neutral.textPrimary,
+                      borderColor: colors.neutral.border,
+                      backgroundColor: colors.neutral.surface,
+                    },
+                  ]}
+                />
+              </>
+            )}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 disabled={busyDelete}

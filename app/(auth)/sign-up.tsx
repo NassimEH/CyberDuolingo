@@ -1,5 +1,5 @@
 import { images } from "@/constants/images";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { AuthSocialButtons } from "@/components/AuthSocialButtons";
 import { identifyUser, trackEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
@@ -24,7 +24,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function SignUpScreen() {
   const t = useT();
   const signUpWithPassword = useSessionStore((s) => s.signUpWithPassword);
-  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,9 +31,8 @@ export default function SignUpScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
-  const busy = loading || googleLoading;
 
-  const afterAuthSuccess = (method: "password" | "google") => {
+  const afterAuthSuccess = (method: "password" | "google" | "apple") => {
     trackEvent("sign_up_completed", { method });
     const state = useSessionStore.getState();
     if (state.userId) {
@@ -79,18 +77,6 @@ export default function SignUpScreen() {
     afterAuthSuccess("password");
   };
 
-  const completeGoogle = async () => {
-    setAuthError("");
-    const result = await signInWithGoogle();
-    if (result.error) {
-      setAuthError(result.error);
-      return;
-    }
-    if (useSessionStore.getState().isSignedIn) {
-      afterAuthSuccess("google");
-    }
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <KeyboardAvoidingView
@@ -126,30 +112,11 @@ export default function SignUpScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.googleButton, busy ? styles.buttonDisabled : null]}
-              activeOpacity={0.85}
-              onPress={() => void completeGoogle()}
-              disabled={busy}
-              testID="sign-up-google-button"
-            >
-              {googleLoading ? (
-                <ActivityIndicator color="#001328" />
-              ) : (
-                <View style={styles.googleRow}>
-                  <Ionicons name="logo-google" size={20} color="#001328" />
-                  <Text style={styles.googleLabel}>
-                    {t("auth.continueWithGoogle")}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.orRow}>
-              <View style={styles.orLine} />
-              <Text style={styles.orText}>{t("auth.or")}</Text>
-              <View style={styles.orLine} />
-            </View>
+            <AuthSocialButtons
+              disabled={loading}
+              onError={setAuthError}
+              onSuccess={(method) => afterAuthSuccess(method)}
+            />
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>{t("account.firstName")}</Text>
@@ -215,10 +182,10 @@ export default function SignUpScreen() {
               className="bg-lingua-purple rounded-2xl py-4 items-center mt-2"
               activeOpacity={0.85}
               onPress={() => void completeSignUp()}
-              disabled={!firstName.trim() || !email || !password || busy}
+              disabled={!firstName.trim() || !email || !password || loading}
               style={{
                 opacity:
-                  !firstName.trim() || !email || !password || busy ? 0.6 : 1,
+                  !firstName.trim() || !email || !password || loading ? 0.6 : 1,
               }}
               testID="sign-up-button"
             >
@@ -251,47 +218,6 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  googleButton: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    marginBottom: 4,
-    minHeight: 52,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  googleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  googleLabel: {
-    fontFamily: "Poppins-SemiBold",
-    fontSize: 15,
-    color: "#001328",
-  },
-  orRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 16,
-    gap: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e5e7eb",
-  },
-  orText: {
-    fontFamily: "Poppins-Regular",
-    fontSize: 12,
-    color: "#9ca3af",
-    textTransform: "lowercase",
-  },
   inputContainer: {
     borderWidth: 1,
     borderColor: "#e5e7eb",

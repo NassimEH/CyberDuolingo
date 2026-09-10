@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { persistStorage } from "@/lib/persistStorage";
 
 import type {
   CertPathStatus,
@@ -74,7 +74,7 @@ export const useCertificationStore = create<CertificationState>()(
     }),
     {
       name: "certification-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
     }
   )
 );

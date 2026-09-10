@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { persistStorage } from "@/lib/persistStorage";
 
 interface PrivacyState {
   analyticsEnabled: boolean;
@@ -21,7 +21,7 @@ export const usePrivacyStore = create<PrivacyState>()(
     }),
     {
       name: "privacy-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
     }
   )
 );

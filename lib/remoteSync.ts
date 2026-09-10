@@ -1,6 +1,8 @@
 import type { AchievementId } from "@/data/achievements";
 import type { SkillId } from "@/data/skills";
 import { getTrack } from "@/data/tracks";
+import { apiFetch } from "@/lib/api";
+import { getAppleAccessToken } from "@/lib/appleSession";
 import { cacheAvatarLocally, readCachedAvatar } from "@/lib/avatar";
 import { authClient, db, isNeonConfigured } from "@/lib/neon";
 import type { ActivityLog, LabSessionProgress } from "@/store/learningStore";
@@ -18,6 +20,14 @@ import type { UserCertEntry } from "@/types/certification";
 import type { TrackId } from "@/types/learning";
 import NetInfo from "@react-native-community/netinfo";
 import { Platform } from "react-native";
+
+function isAppleSession(): boolean {
+  return useSessionStore.getState().authProvider === "apple";
+}
+
+function canSyncRemote(): boolean {
+  return isAppleSession() || isNeonConfigured();
+}
 
 type ProfileRow = {
   user_id: string;
@@ -69,6 +79,183 @@ function asObject<T extends object>(value: unknown, fallback: T): T {
     : fallback;
 }
 
+function buildLearningPayload() {
+  const learning = useLearningStore.getState();
+  const unitId = useUnitStore.getState().selectedUnitId;
+  return {
+    total_xp: learning.totalXP,
+    xp_today: learning.xpToday,
+    daily_goal: learning.dailyGoal,
+    streak: learning.streak,
+    streak_freezes: learning.streakFreezes,
+    last_active_date: learning.lastActiveDate,
+    completed_lesson_ids: learning.completedLessonIds,
+    unlocked_achievement_ids: learning.unlockedAchievementIds,
+    review_question_ids: learning.reviewQuestionIds,
+    completed_challenge_ids: learning.completedChallengeIds,
+    completed_lab_ids: learning.completedLabIds,
+    perfect_lab_ids: learning.perfectLabIds,
+    rewarded_lab_ids: learning.rewardedLabIds,
+    started_lab_ids: learning.startedLabIds,
+    lab_sessions: learning.labSessions,
+    labs_day_key: learning.labsDayKey,
+    labs_started_today: learning.labsStartedToday,
+    active_days: learning.activeDays,
+    skill_xp: learning.skillXP,
+    activity_logs: learning.activityLogs,
+    activity_seen_at: learning.activitySeenAt,
+    selected_unit_ids: { default: unitId },
+  };
+}
+
+function applyProfileSnapshot(userId: string, p: ProfileRow) {
+  if (p.avatar_url) {
+    useSessionStore.setState({ avatarUri: p.avatar_url });
+    void cacheAvatarLocally(userId, p.avatar_url);
+  }
+  if (p.selected_track) {
+    const trackId = p.selected_track as TrackId;
+    if (getTrack(trackId)) {
+      useTrackStore.getState().setSelectedTrack(trackId);
+    }
+  }
+  if (p.locale === "fr" || p.locale === "en") {
+    useLocaleStore.getState().setLocale(p.locale);
+  }
+  useThemeStore.getState().setDarkMode(Boolean(p.dark_mode));
+  usePrivacyStore.getState().setAnalyticsEnabled(Boolean(p.analytics_enabled));
+  usePrivacyStore
+    .getState()
+    .setNotificationsEnabled(Boolean(p.notifications_enabled));
+  if (p.has_seen_product_tour) {
+    useOnboardingStore.getState().completeProductTour();
+  } else {
+    useOnboardingStore.getState().resetProductTour();
+  }
+}
+
+function applyLearningSnapshot(row: LearningRow) {
+  useLearningStore.setState({
+    totalXP: row.total_xp ?? 0,
+    xpToday: row.xp_today ?? 0,
+    dailyGoal: row.daily_goal ?? 20,
+    streak: row.streak ?? 0,
+    streakFreezes: row.streak_freezes ?? 0,
+    lastActiveDate: row.last_active_date,
+    completedLessonIds: asArray(row.completed_lesson_ids),
+    unlockedAchievementIds: asArray(row.unlocked_achievement_ids),
+    reviewQuestionIds: asArray(row.review_question_ids),
+    completedChallengeIds: asArray(row.completed_challenge_ids),
+    completedLabIds: asArray(row.completed_lab_ids),
+    perfectLabIds: asArray(row.perfect_lab_ids),
+    rewardedLabIds: asArray(row.rewarded_lab_ids),
+    startedLabIds: asArray(row.started_lab_ids),
+    labSessions: asObject(row.lab_sessions, {}),
+    labsDayKey: row.labs_day_key,
+    labsStartedToday: asArray(row.labs_started_today),
+    activeDays: asArray(row.active_days),
+    skillXP: asObject(row.skill_xp, {}),
+    activityLogs: asArray(row.activity_logs),
+    activitySeenAt: row.activity_seen_at,
+  });
+  const unitMap = asObject<Record<string, string>>(row.selected_unit_ids, {});
+  if (unitMap.default) {
+    useUnitStore.getState().setSelectedUnitId(unitMap.default);
+  }
+}
+
+async function pullViaAppleApi(userId: string) {
+  const token = await getAppleAccessToken();
+  if (!token) throw new Error("Apple session missing");
+
+  const response = await apiFetch("/api/sync", {
+    method: "GET",
+    accessToken: token,
+  });
+  if (!response.ok) {
+    throw new Error(`Apple sync pull failed (${response.status})`);
+  }
+
+  const data = (await response.json()) as {
+    profile: Omit<ProfileRow, "user_id"> | null;
+    learning: Omit<LearningRow, "user_id"> | null;
+    certifications: Array<{
+      certification_id: string;
+      status: string;
+      payload: UserCertEntry;
+    }>;
+  };
+
+  if (data.profile) {
+    applyProfileSnapshot(userId, {
+      user_id: userId,
+      ...data.profile,
+    });
+  } else {
+    const cached = await readCachedAvatar(userId);
+    if (cached) {
+      useSessionStore.setState({ avatarUri: cached });
+    }
+  }
+
+  if (data.learning) {
+    applyLearningSnapshot({ user_id: userId, ...data.learning } as LearningRow);
+  }
+
+  if (data.certifications?.length) {
+    const entries: Record<string, UserCertEntry> = {};
+    for (const row of data.certifications) {
+      entries[row.certification_id] = {
+        ...(row.payload ?? {}),
+        status: (row.payload?.status ?? row.status) as UserCertEntry["status"],
+        progress: row.payload?.progress ?? 0,
+      };
+    }
+    useCertificationStore.setState({ entries });
+  }
+}
+
+async function pushViaAppleApi(userId: string) {
+  const token = await getAppleAccessToken();
+  if (!token) throw new Error("Apple session missing");
+
+  const session = useSessionStore.getState();
+  const track = useTrackStore.getState().selectedTrack;
+  const locale = useLocaleStore.getState().locale;
+  const darkMode = useThemeStore.getState().darkMode;
+  const privacy = usePrivacyStore.getState();
+  const hasSeenTour = useOnboardingStore.getState().hasSeenProductTour;
+  const entries = useCertificationStore.getState().entries;
+
+  const response = await apiFetch("/api/sync", {
+    method: "PUT",
+    accessToken: token,
+    body: JSON.stringify({
+      profile: {
+        email: session.email,
+        first_name: session.firstName,
+        avatar_url: session.avatarUri,
+        selected_track: track,
+        locale,
+        dark_mode: darkMode,
+        sound_enabled: false,
+        analytics_enabled: privacy.analyticsEnabled,
+        notifications_enabled: privacy.notificationsEnabled,
+        has_seen_product_tour: hasSeenTour,
+      },
+      learning: buildLearningPayload(),
+      certifications: Object.entries(entries).map(([certificationId, entry]) => ({
+        certification_id: certificationId,
+        status: entry.status,
+        payload: entry,
+      })),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Apple sync push failed (${response.status})`);
+  }
+}
+
 export async function ensureUserProfile(input: {
   userId: string;
   email?: string | null;
@@ -76,7 +263,23 @@ export async function ensureUserProfile(input: {
   /** Pass explicitly to set/clear; omit to keep the existing remote avatar. */
   avatarUrl?: string | null;
 }) {
-  if (!isNeonConfigured()) return;
+  if (!canSyncRemote()) return;
+
+  if (isAppleSession()) {
+    if (input.avatarUrl !== undefined) {
+      useSessionStore.setState({ avatarUri: input.avatarUrl });
+    }
+    if (input.email !== undefined || input.firstName !== undefined) {
+      useSessionStore.setState({
+        ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.firstName !== undefined
+          ? { firstName: input.firstName }
+          : {}),
+      });
+    }
+    await pushViaAppleApi(input.userId);
+    return;
+  }
 
   const track = useTrackStore.getState().selectedTrack;
   const locale = useLocaleStore.getState().locale;
@@ -118,32 +321,9 @@ export async function ensureUserProfile(input: {
   });
   if (error) throw error;
 
-  const learning = useLearningStore.getState();
-  const unitId = useUnitStore.getState().selectedUnitId;
   const progress: LearningRow = {
     user_id: input.userId,
-    total_xp: learning.totalXP,
-    xp_today: learning.xpToday,
-    daily_goal: learning.dailyGoal,
-    streak: learning.streak,
-    streak_freezes: learning.streakFreezes,
-    last_active_date: learning.lastActiveDate,
-    completed_lesson_ids: learning.completedLessonIds,
-    unlocked_achievement_ids: learning.unlockedAchievementIds,
-    review_question_ids: learning.reviewQuestionIds,
-    completed_challenge_ids: learning.completedChallengeIds,
-    completed_lab_ids: learning.completedLabIds,
-    perfect_lab_ids: learning.perfectLabIds,
-    rewarded_lab_ids: learning.rewardedLabIds,
-    started_lab_ids: learning.startedLabIds,
-    lab_sessions: learning.labSessions,
-    labs_day_key: learning.labsDayKey,
-    labs_started_today: learning.labsStartedToday,
-    active_days: learning.activeDays,
-    skill_xp: learning.skillXP,
-    activity_logs: learning.activityLogs,
-    activity_seen_at: learning.activitySeenAt,
-    selected_unit_ids: { default: unitId },
+    ...buildLearningPayload(),
   };
 
   const { error: progressError } = await db
@@ -153,7 +333,12 @@ export async function ensureUserProfile(input: {
 }
 
 export async function pullRemoteState(userId: string) {
-  if (!isNeonConfigured()) return;
+  if (!canSyncRemote()) return;
+
+  if (isAppleSession()) {
+    await pullViaAppleApi(userId);
+    return;
+  }
 
   const { data: profile, error: profileError } = await db
     .from("profiles")
@@ -164,7 +349,6 @@ export async function pullRemoteState(userId: string) {
 
   if (profile) {
     const p = profile as ProfileRow;
-    // Restore avatar first so a debounced push cannot overwrite it with null.
     if (p.avatar_url) {
       useSessionStore.setState({ avatarUri: p.avatar_url });
       void cacheAvatarLocally(userId, p.avatar_url);
@@ -174,25 +358,7 @@ export async function pullRemoteState(userId: string) {
         useSessionStore.setState({ avatarUri: cached });
       }
     }
-    if (p.selected_track) {
-      const trackId = p.selected_track as TrackId;
-      if (getTrack(trackId)) {
-        useTrackStore.getState().setSelectedTrack(trackId);
-      }
-    }
-    if (p.locale === "fr" || p.locale === "en") {
-      useLocaleStore.getState().setLocale(p.locale);
-    }
-    useThemeStore.getState().setDarkMode(Boolean(p.dark_mode));
-    usePrivacyStore.getState().setAnalyticsEnabled(Boolean(p.analytics_enabled));
-    usePrivacyStore
-      .getState()
-      .setNotificationsEnabled(Boolean(p.notifications_enabled));
-    if (p.has_seen_product_tour) {
-      useOnboardingStore.getState().completeProductTour();
-    } else {
-      useOnboardingStore.getState().resetProductTour();
-    }
+    applyProfileSnapshot(userId, p);
   } else {
     const cached = await readCachedAvatar(userId);
     if (cached) {
@@ -208,34 +374,7 @@ export async function pullRemoteState(userId: string) {
   if (progressError) throw progressError;
 
   if (progress) {
-    const row = progress as LearningRow;
-    useLearningStore.setState({
-      totalXP: row.total_xp ?? 0,
-      xpToday: row.xp_today ?? 0,
-      dailyGoal: row.daily_goal ?? 20,
-      streak: row.streak ?? 0,
-      streakFreezes: row.streak_freezes ?? 0,
-      lastActiveDate: row.last_active_date,
-      completedLessonIds: asArray(row.completed_lesson_ids),
-      unlockedAchievementIds: asArray(row.unlocked_achievement_ids),
-      reviewQuestionIds: asArray(row.review_question_ids),
-      completedChallengeIds: asArray(row.completed_challenge_ids),
-      completedLabIds: asArray(row.completed_lab_ids),
-      perfectLabIds: asArray(row.perfect_lab_ids),
-      rewardedLabIds: asArray(row.rewarded_lab_ids),
-      startedLabIds: asArray(row.started_lab_ids),
-      labSessions: asObject(row.lab_sessions, {}),
-      labsDayKey: row.labs_day_key,
-      labsStartedToday: asArray(row.labs_started_today),
-      activeDays: asArray(row.active_days),
-      skillXP: asObject(row.skill_xp, {}),
-      activityLogs: asArray(row.activity_logs),
-      activitySeenAt: row.activity_seen_at,
-    });
-    const unitMap = asObject<Record<string, string>>(row.selected_unit_ids, {});
-    if (unitMap.default) {
-      useUnitStore.getState().setSelectedUnitId(unitMap.default);
-    }
+    applyLearningSnapshot(progress as LearningRow);
   }
 
   const { data: certs, error: certError } = await db
@@ -262,7 +401,12 @@ export async function pullRemoteState(userId: string) {
 }
 
 export async function pushRemoteState(userId: string) {
-  if (!isNeonConfigured() || !userId) return;
+  if (!canSyncRemote() || !userId) return;
+
+  if (isAppleSession()) {
+    await pushViaAppleApi(userId);
+    return;
+  }
 
   const learning = useLearningStore.getState();
   const track = useTrackStore.getState().selectedTrack;
@@ -274,7 +418,6 @@ export async function pushRemoteState(userId: string) {
   const session = await authClient.getSession();
   const user = session.data?.user;
   let avatarUrl = useSessionStore.getState().avatarUri;
-  // Never blank a stored avatar if the session has not restored it yet.
   if (!avatarUrl) {
     const { data: existing } = await db
       .from("profiles")
@@ -343,7 +486,6 @@ export async function pushRemoteState(userId: string) {
     updated_at: new Date().toISOString(),
   }));
 
-  // Always reconcile certs: empty path must delete remote leftovers.
   const { error: wipeCertError } = await db
     .from("certification_entries")
     .delete()
@@ -379,7 +521,7 @@ export function cancelScheduledRemoteSync() {
 }
 
 export async function flushPendingRemoteSync(userId: string | null | undefined) {
-  if (!userId || !isNeonConfigured()) return;
+  if (!userId || !canSyncRemote()) return;
   if (!(await isDeviceOnline())) {
     useSyncStore.getState().setOnline(false);
     useSyncStore.getState().markPending();
@@ -396,7 +538,7 @@ export async function flushPendingRemoteSync(userId: string | null | undefined) 
     .catch((err) => {
       const message =
         err instanceof Error ? err.message : "Sync failed";
-      console.warn("[neon] sync failed", err);
+      console.warn("[sync] sync failed", err);
       useSyncStore.getState().markError(message);
     })
     .finally(() => {
@@ -407,7 +549,7 @@ export async function flushPendingRemoteSync(userId: string | null | undefined) 
 }
 
 export function scheduleRemoteSync(userId: string | null | undefined) {
-  if (!userId || !isNeonConfigured()) return;
+  if (!userId || !canSyncRemote()) return;
   useSyncStore.getState().markPending();
   cancelScheduledRemoteSync();
   syncTimer = setTimeout(() => {
@@ -417,11 +559,24 @@ export function scheduleRemoteSync(userId: string | null | undefined) {
 
 /**
  * Wipe remote learning progress + certifications for the signed-in user.
- * Keeps Neon Auth account and `profiles` row (account still exists).
+ * Keeps auth account and `profiles` row (account still exists).
  */
 export async function wipeRemoteLearningData(userId: string) {
-  if (!isNeonConfigured() || !userId) return;
+  if (!canSyncRemote() || !userId) return;
   cancelScheduledRemoteSync();
+
+  if (isAppleSession()) {
+    const token = await getAppleAccessToken();
+    if (!token) throw new Error("Apple session missing");
+    const response = await apiFetch("/api/sync?scope=learning", {
+      method: "DELETE",
+      accessToken: token,
+    });
+    if (!response.ok) {
+      throw new Error(`Apple wipe learning failed (${response.status})`);
+    }
+    return;
+  }
 
   const { error: certError } = await db
     .from("certification_entries")
@@ -429,17 +584,29 @@ export async function wipeRemoteLearningData(userId: string) {
     .eq("user_id", userId);
   if (certError) throw certError;
 
-  // Push the (already cleared) local learning snapshot so XP / lessons stay wiped.
   await pushRemoteState(userId);
 }
 
 /**
  * Wipe app tables for this user (profile CASCADE → learning + certs).
- * Call while the session JWT is still valid, before auth deleteUser.
+ * Call while the session is still valid.
  */
 export async function deleteRemoteUserData(userId: string) {
-  if (!isNeonConfigured() || !userId) return;
+  if (!canSyncRemote() || !userId) return;
   cancelScheduledRemoteSync();
+
+  if (isAppleSession()) {
+    const token = await getAppleAccessToken();
+    if (!token) throw new Error("Apple session missing");
+    const response = await apiFetch("/api/sync?scope=account", {
+      method: "DELETE",
+      accessToken: token,
+    });
+    if (!response.ok) {
+      throw new Error(`Apple delete account failed (${response.status})`);
+    }
+    return;
+  }
 
   const { error: profileError } = await db
     .from("profiles")

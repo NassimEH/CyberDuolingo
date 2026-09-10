@@ -1,4 +1,6 @@
-const easProjectId = process.env.EAS_PROJECT_ID?.trim();
+const easProjectId =
+  process.env.EAS_PROJECT_ID?.trim() ||
+  "9db897d7-c686-46d6-bd77-7cf6ddf69654";
 
 export default {
   expo: {
@@ -12,13 +14,17 @@ export default {
     newArchEnabled: false,
     ios: {
       supportsTablet: false,
-      bundleIdentifier: "com.stack.app",
+      bundleIdentifier: "me.nassimelh.stack",
+      usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
+      entitlements: {
+        "com.apple.developer.applesignin": ["Default"],
+      },
     },
     android: {
-      package: "com.stack.app",
+      package: "me.nassimelh.stack",
       adaptiveIcon: {
         backgroundColor: "#FFFFFF",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -29,7 +35,8 @@ export default {
       predictiveBackGestureEnabled: false,
     },
     web: {
-      output: "single",
+      // Required for Expo Router API routes (`app/api/*+api.ts`).
+      output: "server",
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
@@ -70,6 +77,7 @@ export default {
       ],
       "expo-status-bar",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {
@@ -78,22 +86,17 @@ export default {
           },
         },
       ],
-      // Only wire EAS Update when a real project id is configured.
-      ...(easProjectId ? ["expo-updates"] : []),
+      "expo-updates",
     ],
     experiments: {
       typedRoutes: true,
       reactCompiler: true,
     },
-    ...(easProjectId
-      ? {
-          runtimeVersion: { policy: "appVersion" },
-          updates: {
-            url: `https://u.expo.dev/${easProjectId}`,
-            fallbackToCacheTimeout: 0,
-          },
-        }
-      : {}),
+    runtimeVersion: { policy: "appVersion" },
+    updates: {
+      url: `https://u.expo.dev/${easProjectId}`,
+      fallbackToCacheTimeout: 0,
+    },
     extra: {
       posthogProjectToken:
         process.env.POSTHOG_PROJECT_TOKEN || "phc_your_project_token_here",
@@ -105,13 +108,10 @@ export default {
       googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
       googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-      ...(easProjectId
-        ? {
-            eas: {
-              projectId: easProjectId,
-            },
-          }
-        : {}),
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+      eas: {
+        projectId: easProjectId,
+      },
     },
   },
 };

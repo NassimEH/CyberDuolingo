@@ -33,6 +33,7 @@ export type TranslationKey =
   | "auth.hasAccount"
   | "auth.or"
   | "auth.continueWithGoogle"
+  | "auth.continueWithApple"
   | "trackSelect.title"
   | "trackSelect.subtitle"
   | "trackSelect.popular"
@@ -267,6 +268,7 @@ export type TranslationKey =
   | "profile.deleteDataDone"
   | "profile.deleteAccountConfirmTitle"
   | "profile.deleteAccountConfirmMessage"
+  | "profile.deleteAccountConfirmMessageApple"
   | "profile.deleteAccountPassword"
   | "profile.deleteAccountPasswordHint"
   | "profile.confirm"
@@ -435,6 +437,7 @@ export const fr: Record<TranslationKey, string> = {
   "auth.hasAccount": "Déjà un compte ? ",
   "auth.or": "ou",
   "auth.continueWithGoogle": "Continuer avec Google",
+  "auth.continueWithApple": "Continuer avec Apple",
   "trackSelect.title": "Choisis ton parcours",
   "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
   "trackSelect.popular": "Nos modules",
@@ -669,6 +672,7 @@ export const fr: Record<TranslationKey, string> = {
   "profile.deleteDataDone": "Données d’apprentissage effacées (local + serveur).",
   "profile.deleteAccountConfirmTitle": "Supprimer le compte ?",
   "profile.deleteAccountConfirmMessage": "Tes données Neon (profil + progression) et ton compte Auth seront définitivement effacés. Confirme avec ton mot de passe.",
+  "profile.deleteAccountConfirmMessageApple": "Ton compte Sign in with Apple, ton profil et ta progression seront définitivement effacés.",
   "profile.deleteAccountPassword": "Mot de passe",
   "profile.deleteAccountPasswordHint": "Entre ton mot de passe (8 caractères minimum) pour confirmer.",
   "profile.confirm": "Confirmer",
@@ -838,6 +842,7 @@ export const en: Record<TranslationKey, string> = {
   "auth.hasAccount": "Already have an account? ",
   "auth.or": "or",
   "auth.continueWithGoogle": "Continue with Google",
+  "auth.continueWithApple": "Continue with Apple",
   "trackSelect.title": "Choose your track",
   "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",
   "trackSelect.popular": "Our modules",
@@ -1072,6 +1077,7 @@ export const en: Record<TranslationKey, string> = {
   "profile.deleteDataDone": "Learning data cleared (local + server).",
   "profile.deleteAccountConfirmTitle": "Delete account?",
   "profile.deleteAccountConfirmMessage": "Your Neon data (profile + progress) and Auth account will be permanently deleted. Confirm with your password.",
+  "profile.deleteAccountConfirmMessageApple": "Your Sign in with Apple account, profile, and progress will be permanently deleted.",
   "profile.deleteAccountPassword": "Password",
   "profile.deleteAccountPasswordHint": "Enter your password (at least 8 characters) to confirm.",
   "profile.confirm": "Confirm",
