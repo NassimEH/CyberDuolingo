@@ -40,7 +40,7 @@ interface SessionState {
   avatarUri: string | null;
   isSignedIn: boolean;
   authReady: boolean;
-  /** neon = email/Google via Neon Auth; apple = Stack backend session */
+  /** neon = email/password (+ Google web) via Neon Auth; apple/google = Stack session */
   authProvider: AuthProvider;
   setFromRemoteUser: (input: {
     userId: string;
@@ -58,12 +58,20 @@ interface SessionState {
     password: string;
     firstName: string;
   }) => Promise<{ error?: string }>;
-  /** Browser OAuth redirect — web / Expo web. */
+  /** Browser OAuth redirect — web / Expo web (Neon Auth). */
   signInWithGoogleWeb: () => Promise<{ error?: string }>;
-  /** Native Google ID token → Neon Auth. */
-  signInWithGoogleIdToken: (
-    idToken: string
-  ) => Promise<{ error?: string }>;
+  /**
+   * Native Google → Stack session (Neon Managed Auth does not support idToken).
+   */
+  signInWithGoogleStackSession: (input: {
+    accessToken: string;
+    user: {
+      id: string;
+      email: string | null;
+      firstName: string | null;
+      avatarUri?: string | null;
+    };
+  }) => Promise<{ error?: string }>;
   /** Native Apple identity token → Stack backend (not Neon Auth). */
   signInWithAppleIdToken: (input: {
     idToken: string;
@@ -219,41 +227,47 @@ export const useSessionStore = create<SessionState>()(
         });
         return {};
       },
-      signInWithGoogleIdToken: async (idToken) => {
-        if (!isNeonConfigured()) {
-          return { error: "Neon Auth n'est pas configuré." };
+      signInWithGoogleStackSession: async ({ accessToken, user }) => {
+        if (!accessToken.trim() || !user.id) {
+          return { error: "Session Google invalide." };
         }
-        if (!idToken.trim()) {
-          return { error: "Jeton Google manquant." };
-        }
-        await clearAppleAccessToken();
-        const result = await authClient.signIn.social({
-          provider: "google",
-          idToken: { token: idToken },
-        });
-        if (result.error) {
+        try {
+          if (isNeonConfigured()) {
+            try {
+              await authClient.signOut();
+            } catch {
+              /* ignore */
+            }
+          }
+
+          await saveAppleAccessToken(accessToken);
+
+          const displayName =
+            user.firstName?.trim() ||
+            user.email?.split("@")[0] ||
+            "Learner";
+
+          get().setFromRemoteUser({
+            userId: user.id,
+            email: user.email,
+            firstName: displayName,
+            authProvider: "google",
+            ...(user.avatarUri ? { avatarUri: user.avatarUri } : {}),
+          });
+          await pullRemoteState(user.id);
+          await ensureUserProfile({
+            userId: user.id,
+            email: user.email,
+            firstName: displayName,
+          });
+          return {};
+        } catch (err) {
+          console.warn("[google] sign-in failed", err);
           return {
-            error: result.error.message ?? "Connexion Google impossible.",
+            error:
+              "Impossible de finaliser la session Google. Vérifie EXPO_PUBLIC_API_BASE_URL.",
           };
         }
-        const user = (await authClient.getSession()).data?.user ?? null;
-        if (!user?.id) {
-          return { error: "Session introuvable après connexion Google." };
-        }
-        get().setFromRemoteUser({
-          userId: user.id,
-          email: user.email,
-          firstName: user.name,
-          authProvider: "neon",
-          ...(user.image ? { avatarUri: user.image } : {}),
-        });
-        await pullRemoteState(user.id);
-        await ensureUserProfile({
-          userId: user.id,
-          email: user.email,
-          firstName: user.name,
-        });
-        return {};
       },
       signInWithAppleIdToken: async ({ idToken, nonce, fullName }) => {
         if (!idToken.trim()) {
@@ -410,26 +424,32 @@ export const useSessionStore = create<SessionState>()(
                   email: string | null;
                   firstName: string | null;
                   avatarUrl: string | null;
+                  authProvider?: "apple" | "google";
                 };
               };
               if (data.user?.id) {
+                const provider =
+                  data.user.authProvider === "google" ? "google" : "apple";
                 get().setFromRemoteUser({
                   userId: data.user.id,
                   email: data.user.email,
                   firstName: data.user.firstName,
-                  authProvider: "apple",
+                  authProvider: provider,
                   ...(data.user.avatarUrl
                     ? { avatarUri: data.user.avatarUrl }
                     : {}),
                 });
                 void pullRemoteState(data.user.id).catch((err) => {
-                  console.warn("[apple] pullRemoteState failed", err);
+                  console.warn("[stack] pullRemoteState failed", err);
                 });
                 return;
               }
             } else if (response.status === 401) {
               await clearAppleAccessToken();
-              if (get().authProvider === "apple") {
+              if (
+                get().authProvider === "apple" ||
+                get().authProvider === "google"
+              ) {
                 set({ ...signedOutState, authReady: true });
               }
             }
@@ -456,7 +476,11 @@ export const useSessionStore = create<SessionState>()(
             void pullRemoteState(user.id).catch((err) => {
               console.warn("[neon] pullRemoteState failed", err);
             });
-          } else if (get().isSignedIn && get().authProvider !== "apple") {
+          } else if (
+            get().isSignedIn &&
+            get().authProvider !== "apple" &&
+            get().authProvider !== "google"
+          ) {
             set({ ...signedOutState, authReady: true });
           }
         } catch (err) {
@@ -489,14 +513,14 @@ export const useSessionStore = create<SessionState>()(
           return { error: "Aucun compte à supprimer." };
         }
 
-        if (state.authProvider === "apple") {
+        if (state.authProvider === "apple" || state.authProvider === "google") {
           try {
             await deleteRemoteUserData(state.userId);
           } catch (err) {
-            console.warn("[apple] delete account failed", err);
+            console.warn("[stack] delete account failed", err);
             return {
               error:
-                "Impossible de supprimer le compte Apple. Réessaie ou contacte le support.",
+                "Impossible de supprimer le compte. Réessaie ou contacte le support.",
             };
           }
           await clearAppleAccessToken();
@@ -549,7 +573,7 @@ export const useSessionStore = create<SessionState>()(
       },
       signOut: async () => {
         const provider = get().authProvider;
-        if (provider === "apple") {
+        if (provider === "apple" || provider === "google") {
           const token = await getAppleAccessToken();
           if (token) {
             try {
@@ -558,7 +582,7 @@ export const useSessionStore = create<SessionState>()(
                 accessToken: token,
               });
             } catch (err) {
-              console.warn("[apple] revoke session failed", err);
+              console.warn("[stack] revoke session failed", err);
             }
           }
           await clearAppleAccessToken();

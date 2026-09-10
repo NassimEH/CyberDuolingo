@@ -1,5 +1,5 @@
 /**
- * Push Apple / Stack server env vars from .env.local → EAS Environments.
+ * Push Apple / Google / Stack server env vars from .env.local → EAS Environments.
  * Usage: node scripts/push-eas-apple-env.js
  *
  * Does not print secret values.
@@ -79,13 +79,14 @@ const environments = ["production", "preview", "development"];
 const vars = [
   {
     name: "DATABASE_URL",
+    // `sensitive` (not `secret`): required at EAS Hosting runtime for API routes.
     value: env.DATABASE_URL,
-    visibility: "secret",
+    visibility: "sensitive",
   },
   {
     name: "STACK_SESSION_SECRET",
     value: env.STACK_SESSION_SECRET,
-    visibility: "secret",
+    visibility: "sensitive",
   },
   {
     name: "APPLE_BUNDLE_ID",
@@ -100,6 +101,26 @@ if (env.EXPO_PUBLIC_API_BASE_URL?.trim()) {
     value: env.EXPO_PUBLIC_API_BASE_URL.trim(),
     visibility: "plaintext",
   });
+}
+
+if (env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID",
+    value: env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.GOOGLE_CLIENT_SECRET?.trim()) {
+  vars.push({
+    name: "GOOGLE_CLIENT_SECRET",
+    value: env.GOOGLE_CLIENT_SECRET.trim(),
+    visibility: "sensitive",
+  });
+} else {
+  console.warn(
+    "Warning: GOOGLE_CLIENT_SECRET missing — native Google exchange will fail until you add it."
+  );
 }
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stack-eas-env-"));

@@ -3,7 +3,7 @@
  * sessionStore binds real getters/setters at module init; remoteSync reads via this bridge.
  */
 
-export type AuthProvider = "neon" | "apple" | null;
+export type AuthProvider = "neon" | "apple" | "google" | null;
 
 export type SessionBridgeState = {
   authProvider: AuthProvider;

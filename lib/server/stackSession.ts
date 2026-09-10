@@ -5,6 +5,8 @@ import { getServerSql } from "@/lib/server/db";
 
 const SESSION_DAYS = 30;
 
+export type StackAuthProvider = "apple" | "google";
+
 function getSessionSecret(): Uint8Array {
   const secret = process.env.STACK_SESSION_SECRET?.trim();
   if (!secret || secret.length < 32) {
@@ -22,10 +24,17 @@ export function hashSessionToken(token: string): string {
 export type StackSessionClaims = {
   userId: string;
   sessionId: string;
-  provider: "apple";
+  provider: StackAuthProvider;
 };
 
-export async function mintAppleSession(userId: string): Promise<{
+function isStackAuthProvider(value: unknown): value is StackAuthProvider {
+  return value === "apple" || value === "google";
+}
+
+export async function mintStackSession(
+  userId: string,
+  provider: StackAuthProvider
+): Promise<{
   accessToken: string;
   sessionId: string;
   expiresAt: string;
@@ -40,12 +49,12 @@ export async function mintAppleSession(userId: string): Promise<{
 
   await sql`
     INSERT INTO public.app_sessions (id, user_id, token_hash, auth_provider, expires_at)
-    VALUES (${sessionId}::uuid, ${userId}, ${tokenHash}, 'apple', ${expiresAt}::timestamptz)
+    VALUES (${sessionId}::uuid, ${userId}, ${tokenHash}, ${provider}, ${expiresAt}::timestamptz)
   `;
 
   const accessToken = await new SignJWT({
     sid: sessionId,
-    provider: "apple",
+    provider,
     th: tokenHash,
   })
     .setProtectedHeader({ alg: "HS256" })
@@ -63,7 +72,12 @@ export async function mintAppleSession(userId: string): Promise<{
   };
 }
 
-export async function verifyStackAppleSession(
+/** @deprecated Prefer mintStackSession(userId, "apple") */
+export async function mintAppleSession(userId: string) {
+  return mintStackSession(userId, "apple");
+}
+
+export async function verifyStackSession(
   accessToken: string
 ): Promise<StackSessionClaims | null> {
   try {
@@ -75,7 +89,7 @@ export async function verifyStackAppleSession(
     const sessionId = typeof payload.sid === "string" ? payload.sid : null;
     const tokenHash = typeof payload.th === "string" ? payload.th : null;
     if (!userId || !sessionId || !tokenHash) return null;
-    if (payload.provider !== "apple") return null;
+    if (!isStackAuthProvider(payload.provider)) return null;
 
     const sql = getServerSql();
     const rows = await sql`
@@ -97,10 +111,17 @@ export async function verifyStackAppleSession(
     if (!row || row.revoked_at) return null;
     if (new Date(row.expires_at).getTime() <= Date.now()) return null;
 
-    return { userId, sessionId, provider: "apple" };
+    return { userId, sessionId, provider: payload.provider };
   } catch {
     return null;
   }
+}
+
+/** @deprecated Prefer verifyStackSession */
+export async function verifyStackAppleSession(accessToken: string) {
+  const claims = await verifyStackSession(accessToken);
+  if (!claims || claims.provider !== "apple") return null;
+  return claims;
 }
 
 export async function revokeStackSession(sessionId: string): Promise<void> {

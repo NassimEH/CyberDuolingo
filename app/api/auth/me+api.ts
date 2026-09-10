@@ -1,10 +1,10 @@
 import { getServerSql } from "@/lib/server/db";
-import { jsonError, requireAppleBearer } from "@/lib/server/httpAuth";
+import { jsonError, requireStackBearer } from "@/lib/server/httpAuth";
 import { revokeStackSession } from "@/lib/server/stackSession";
 
-/** GET /api/auth/me — validate Stack Apple session + return profile basics. */
+/** GET /api/auth/me — validate Stack session (Apple/Google) + return profile. */
 export async function GET(request: Request) {
-  const auth = await requireAppleBearer(request);
+  const auth = await requireStackBearer(request);
   if (auth instanceof Response) return auth;
 
   try {
@@ -26,12 +26,14 @@ export async function GET(request: Request) {
     if (!row) {
       return jsonError("User not found", 404);
     }
+
     return Response.json({
       user: {
         id: row.user_id,
         email: row.email,
         firstName: row.first_name,
         avatarUrl: row.avatar_url,
+        authProvider: auth.provider,
       },
     });
   } catch (err) {
@@ -40,9 +42,9 @@ export async function GET(request: Request) {
   }
 }
 
-/** DELETE /api/auth/me — revoke current Apple session (sign-out). */
+/** DELETE /api/auth/me — revoke current Stack session (sign-out). */
 export async function DELETE(request: Request) {
-  const auth = await requireAppleBearer(request);
+  const auth = await requireStackBearer(request);
   if (auth instanceof Response) return auth;
 
   try {

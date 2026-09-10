@@ -2,6 +2,17 @@ const easProjectId =
   process.env.EAS_PROJECT_ID?.trim() ||
   "9db897d7-c686-46d6-bd77-7cf6ddf69654";
 
+/** Google iOS OAuth requires this reversed client ID as a URL scheme. */
+function googleIosUrlScheme() {
+  const id = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
+  if (!id?.endsWith(".apps.googleusercontent.com")) return null;
+  const prefix = id.replace(/\.apps\.googleusercontent\.com$/, "");
+  if (!prefix) return null;
+  return `com.googleusercontent.apps.${prefix}`;
+}
+
+const googleScheme = googleIosUrlScheme();
+
 export default {
   expo: {
     name: "Stack",
@@ -9,7 +20,7 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "stack",
+    scheme: googleScheme ? ["stack", googleScheme] : "stack",
     userInterfaceStyle: "automatic",
     newArchEnabled: false,
     ios: {

@@ -1,7 +1,7 @@
-import type { GoogleAuthRequestConfig } from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
-import { Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+
+import { getApiBaseUrl } from "@/lib/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -15,7 +15,7 @@ function readExtra(): Extra {
   return (Constants.expoConfig?.extra ?? {}) as Extra;
 }
 
-/** Public Google OAuth Web Client ID (safe in the app). Same ID as Neon Console. */
+/** Public Google OAuth Web Client ID (same as Neon Auth → Google). */
 export function getGoogleWebClientId(): string {
   return (
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ||
@@ -40,25 +40,20 @@ export function getGoogleAndroidClientId(): string {
   );
 }
 
-export function isGoogleNativeConfigured(): boolean {
-  if (Platform.OS === "ios") {
-    return Boolean(getGoogleIosClientId() || getGoogleWebClientId());
-  }
-  if (Platform.OS === "android") {
-    return Boolean(getGoogleAndroidClientId() || getGoogleWebClientId());
-  }
-  return Boolean(getGoogleWebClientId());
+/**
+ * HTTPS redirect registered on the Google **Web** OAuth client.
+ * Required by Google’s OAuth policy (custom schemes are blocked for Web clients).
+ * Must match Google Cloud → Authorized redirect URIs.
+ */
+export function getGoogleNativeRedirectUri(): string {
+  return `${getApiBaseUrl()}/api/auth/google/callback`;
 }
 
-/** Hook config for expo-auth-session Google ID token flow (native). */
-export function getGoogleIdTokenAuthConfig(): Partial<GoogleAuthRequestConfig> {
-  const web = getGoogleWebClientId();
-  const ios = getGoogleIosClientId() || web;
-  const android = getGoogleAndroidClientId() || web;
-  return {
-    webClientId: web || undefined,
-    iosClientId: ios || undefined,
-    androidClientId: android || undefined,
-    clientId: web || ios || android || undefined,
-  };
+/** Google iOS reversed client ID scheme (optional, for future native SDK). */
+export function getGoogleIosReversedScheme(): string | null {
+  const id = getGoogleIosClientId();
+  if (!id.endsWith(".apps.googleusercontent.com")) return null;
+  const prefix = id.replace(/\.apps\.googleusercontent\.com$/, "");
+  if (!prefix) return null;
+  return `com.googleusercontent.apps.${prefix}`;
 }

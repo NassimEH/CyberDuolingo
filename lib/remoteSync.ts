@@ -21,12 +21,13 @@ import type { TrackId } from "@/types/learning";
 import NetInfo from "@react-native-community/netinfo";
 import { Platform } from "react-native";
 
-function isAppleSession(): boolean {
-  return getSessionBridge().getState().authProvider === "apple";
+function isStackSession(): boolean {
+  const provider = getSessionBridge().getState().authProvider;
+  return provider === "apple" || provider === "google";
 }
 
 function canSyncRemote(): boolean {
-  return isAppleSession() || isNeonConfigured();
+  return isStackSession() || isNeonConfigured();
 }
 
 type ProfileRow = {
@@ -265,7 +266,7 @@ export async function ensureUserProfile(input: {
 }) {
   if (!canSyncRemote()) return;
 
-  if (isAppleSession()) {
+  if (isStackSession()) {
     if (input.avatarUrl !== undefined) {
       getSessionBridge().patch({ avatarUri: input.avatarUrl });
     }
@@ -335,7 +336,7 @@ export async function ensureUserProfile(input: {
 export async function pullRemoteState(userId: string) {
   if (!canSyncRemote()) return;
 
-  if (isAppleSession()) {
+  if (isStackSession()) {
     await pullViaAppleApi(userId);
     return;
   }
@@ -403,7 +404,7 @@ export async function pullRemoteState(userId: string) {
 export async function pushRemoteState(userId: string) {
   if (!canSyncRemote() || !userId) return;
 
-  if (isAppleSession()) {
+  if (isStackSession()) {
     await pushViaAppleApi(userId);
     return;
   }
@@ -565,7 +566,7 @@ export async function wipeRemoteLearningData(userId: string) {
   if (!canSyncRemote() || !userId) return;
   cancelScheduledRemoteSync();
 
-  if (isAppleSession()) {
+  if (isStackSession()) {
     const token = await getAppleAccessToken();
     if (!token) throw new Error("Apple session missing");
     const response = await apiFetch("/api/sync?scope=learning", {
@@ -595,7 +596,7 @@ export async function deleteRemoteUserData(userId: string) {
   if (!canSyncRemote() || !userId) return;
   cancelScheduledRemoteSync();
 
-  if (isAppleSession()) {
+  if (isStackSession()) {
     const token = await getAppleAccessToken();
     if (!token) throw new Error("Apple session missing");
     const response = await apiFetch("/api/sync?scope=account", {

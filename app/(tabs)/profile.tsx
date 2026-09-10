@@ -268,7 +268,7 @@ export default function ProfileScreen() {
           void (async () => {
             await signOut();
             posthog.reset();
-            router.replace("/onboarding");
+            router.replace("/(auth)/sign-in");
           })();
         },
       },
@@ -307,7 +307,11 @@ export default function ProfileScreen() {
   }
 
   async function confirmDeleteAccount() {
-    if (authProvider !== "apple" && deletePassword.trim().length < 8) {
+    if (
+      authProvider !== "apple" &&
+      authProvider !== "google" &&
+      deletePassword.trim().length < 8
+    ) {
       Alert.alert(
         t("profile.deleteAccount"),
         t("profile.deleteAccountPasswordHint")
@@ -316,7 +320,7 @@ export default function ProfileScreen() {
     }
     setBusyDelete(true);
     const result = await deleteAccount(
-      authProvider === "apple"
+      authProvider === "apple" || authProvider === "google"
         ? undefined
         : { password: deletePassword.trim() }
     );
@@ -329,7 +333,7 @@ export default function ProfileScreen() {
     clearAllLocalData();
     clearCerts();
     posthog.reset();
-    router.replace("/onboarding");
+    router.replace("/(auth)/sign-in");
   }
 
   const dividerColor = colors.neutral.border;
@@ -962,11 +966,11 @@ export default function ProfileScreen() {
                 { color: colors.neutral.textSecondary },
               ]}
             >
-              {authProvider === "apple"
+              {authProvider === "apple" || authProvider === "google"
                 ? t("profile.deleteAccountConfirmMessageApple")
                 : t("profile.deleteAccountConfirmMessage")}
             </Text>
-            {authProvider === "apple" ? null : (
+            {authProvider === "apple" || authProvider === "google" ? null : (
               <>
                 <Text
                   style={[

@@ -1,120 +1,171 @@
-import * as Application from "expo-application";
-import {
-  AuthRequest,
-  AccessTokenRequest,
-  makeRedirectUri,
-  ResponseType,
-  type AuthRequestPromptOptions,
-} from "expo-auth-session";
+import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
 import { useCallback, useState } from "react";
 
+import { apiFetch } from "@/lib/api";
 import {
-  getGoogleAndroidClientId,
-  getGoogleIosClientId,
+  getGoogleNativeRedirectUri,
   getGoogleWebClientId,
 } from "@/lib/googleAuth";
 import { useSessionStore } from "@/store/sessionStore";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const googleDiscovery = {
-  authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
-  tokenEndpoint: "https://oauth2.googleapis.com/token",
-  revocationEndpoint: "https://oauth2.googleapis.com/revoke",
-  userInfoEndpoint: "https://openidconnect.googleapis.com/v1/userinfo",
-} as const;
+const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
 const GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
-];
+].join(" ");
 
-function getNativeGoogleClientId(): string {
-  if (Platform.OS === "ios") return getGoogleIosClientId();
-  if (Platform.OS === "android") return getGoogleAndroidClientId();
-  return "";
+function randomNonce(bytes = 16): string {
+  const alphabet = "abcdef0123456789";
+  let out = "";
+  for (let i = 0; i < bytes * 2; i += 1) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)]!;
+  }
+  return out;
+}
+
+function buildOAuthState(appReturnUrl: string): string {
+  return `${randomNonce()}.${encodeURIComponent(appReturnUrl)}`;
+}
+
+function getQueryParam(url: string, key: string): string | null {
+  const parsed = Linking.parse(url);
+  const fromLink = parsed.queryParams?.[key];
+  if (typeof fromLink === "string" && fromLink.length > 0) {
+    return fromLink;
+  }
+  if (Array.isArray(fromLink) && typeof fromLink[0] === "string") {
+    return fromLink[0];
+  }
+
+  const qIndex = url.indexOf("?");
+  if (qIndex < 0) return null;
+  return new URLSearchParams(url.slice(qIndex + 1)).get(key);
+}
+
+function buildGoogleAuthUrl(input: {
+  clientId: string;
+  redirectUri: string;
+  state: string;
+}): string {
+  const params = new URLSearchParams({
+    client_id: input.clientId,
+    redirect_uri: input.redirectUri,
+    response_type: "code",
+    scope: GOOGLE_SCOPES,
+    state: input.state,
+    include_granted_scopes: "true",
+  });
+  return `${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`;
 }
 
 /**
- * Imperative Google ID-token prompt (no useIdTokenAuthRequest hook).
- * Avoids render-time crash when EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID is missing.
+ * Native Google → HTTPS OAuth → ticket → Stack session (same pattern as Apple).
+ * Neon Managed Auth ignores idToken and only returns browser OAuth redirects.
  */
-async function promptNativeGoogleIdToken(): Promise<
-  { idToken: string } | { error: string }
+async function promptNativeGoogleStackSession(): Promise<
+  | {
+      accessToken: string;
+      user: {
+        id: string;
+        email: string | null;
+        firstName: string | null;
+        avatarUri: string | null;
+      };
+    }
+  | { error: string }
 > {
-  const clientId = getNativeGoogleClientId();
+  const clientId = getGoogleWebClientId();
   if (!clientId) {
     return {
       error:
-        "Sur iPhone il faut EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID (client OAuth type iOS dans Google Cloud, Bundle ID me.nassimelh.stack). EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID sert au web / Neon, pas au téléphone. Crée le client iOS, ajoute la variable, relance avec npx expo start -c. En attendant teste Google sur le navigateur (localhost).",
+        "Ajoute EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID dans .env.local (même ID que Neon Auth → Google).",
     };
   }
 
-  const redirectUri = makeRedirectUri({
-    native: `${Application.applicationId ?? "me.nassimelh.stack"}:/oauthredirect`,
-  });
+  const redirectUri = getGoogleNativeRedirectUri();
+  if (!/^https:\/\//i.test(redirectUri)) {
+    return {
+      error:
+        "EXPO_PUBLIC_API_BASE_URL doit être une URL HTTPS pour Google sur mobile.",
+    };
+  }
 
-  const request = new AuthRequest({
-    clientId,
-    scopes: GOOGLE_SCOPES,
-    redirectUri,
-    responseType: ResponseType.Code,
-    usePKCE: true,
-    extraParams: {},
-  });
+  const appReturnUrl = Linking.createURL("oauth/google");
+  const state = buildOAuthState(appReturnUrl);
+  const authUrl = buildGoogleAuthUrl({ clientId, redirectUri, state });
 
-  await request.makeAuthUrlAsync(googleDiscovery);
-
-  const promptOptions: AuthRequestPromptOptions = {
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, appReturnUrl, {
     showInRecents: true,
-  };
-  const result = await request.promptAsync(googleDiscovery, promptOptions);
+  });
 
   if (result.type === "cancel" || result.type === "dismiss") {
     return { error: "Connexion Google annulée." };
   }
-  if (result.type !== "success") {
-    return { error: "Connexion Google impossible." };
-  }
-
-  const code = result.params.code;
-  if (!code) {
-    return { error: "Google n’a pas renvoyé de code d’autorisation." };
-  }
-
-  const token = await new AccessTokenRequest({
-    clientId,
-    code,
-    redirectUri,
-    scopes: GOOGLE_SCOPES,
-    extraParams: {
-      code_verifier: request.codeVerifier ?? "",
-    },
-  }).performAsync(googleDiscovery);
-
-  const idToken = token.idToken;
-  if (!idToken) {
+  if (result.type !== "success" || !("url" in result) || !result.url) {
     return {
       error:
-        "Google n’a pas renvoyé d’id_token. Vérifie que le Client ID est bien de type iOS (pas Web).",
+        "Connexion Google refusée. Ajoute cette URI dans Google Cloud → Client Web : " +
+        redirectUri,
     };
   }
 
-  return { idToken };
+  const oauthError = getQueryParam(result.url, "error");
+  if (oauthError) {
+    const detail = getQueryParam(result.url, "detail");
+    const base = `Connexion Google refusée (${oauthError}).`;
+    return { error: detail ? `${base} ${detail}` : base };
+  }
+
+  const ticket = getQueryParam(result.url, "gt");
+  if (!ticket) {
+    return { error: "Ticket Google manquant. Relance avec npx expo start -c." };
+  }
+
+  const finishRes = await apiFetch("/api/auth/google/finish", {
+    method: "POST",
+    body: JSON.stringify({ ticket }),
+  });
+
+  const payload = (await finishRes.json().catch(() => ({}))) as {
+    accessToken?: string;
+    user?: {
+      id: string;
+      email: string | null;
+      firstName: string | null;
+      avatarUri: string | null;
+    };
+    error?: string;
+  };
+
+  if (!finishRes.ok || !payload.accessToken || !payload.user?.id) {
+    return {
+      error:
+        payload.error ||
+        "Impossible de finaliser la connexion Google (ticket expiré ?).",
+    };
+  }
+
+  return {
+    accessToken: payload.accessToken,
+    user: {
+      id: payload.user.id,
+      email: payload.user.email,
+      firstName: payload.user.firstName,
+      avatarUri: payload.user.avatarUri,
+    },
+  };
 }
 
-/**
- * Google sign-in:
- * - Web → Neon Managed Auth (`signIn.social`) — uses WEB client ID
- * - Native → Google ID token then Neon — needs IOS/ANDROID client ID
- */
 export function useGoogleAuth() {
   const signInWithGoogleWeb = useSessionStore((s) => s.signInWithGoogleWeb);
-  const signInWithGoogleIdToken = useSessionStore(
-    (s) => s.signInWithGoogleIdToken
+  const signInWithGoogleStackSession = useSessionStore(
+    (s) => s.signInWithGoogleStackSession
   );
   const [loading, setLoading] = useState(false);
 
@@ -131,15 +182,15 @@ export function useGoogleAuth() {
         return await signInWithGoogleWeb();
       }
 
-      const prompted = await promptNativeGoogleIdToken();
+      const prompted = await promptNativeGoogleStackSession();
       if ("error" in prompted) {
         return { error: prompted.error };
       }
-      return await signInWithGoogleIdToken(prompted.idToken);
+      return await signInWithGoogleStackSession(prompted);
     } finally {
       setLoading(false);
     }
-  }, [signInWithGoogleIdToken, signInWithGoogleWeb]);
+  }, [signInWithGoogleStackSession, signInWithGoogleWeb]);
 
   return { signInWithGoogle, loading };
 }
