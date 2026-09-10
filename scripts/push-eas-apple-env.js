@@ -111,6 +111,62 @@ if (env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim()) {
   });
 }
 
+if (env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
+    value: env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.EXPO_PUBLIC_NEON_AUTH_URL?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_NEON_AUTH_URL",
+    value: env.EXPO_PUBLIC_NEON_AUTH_URL.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.EXPO_PUBLIC_NEON_DATA_API_URL?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_NEON_DATA_API_URL",
+    value: env.EXPO_PUBLIC_NEON_DATA_API_URL.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.EXPO_PUBLIC_SITE_URL?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_SITE_URL",
+    value: env.EXPO_PUBLIC_SITE_URL.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.EXPO_PUBLIC_AUTH_ORIGIN?.trim()) {
+  vars.push({
+    name: "EXPO_PUBLIC_AUTH_ORIGIN",
+    value: env.EXPO_PUBLIC_AUTH_ORIGIN.trim(),
+    visibility: "plaintext",
+  });
+}
+
+if (env.POSTHOG_PROJECT_TOKEN?.trim()) {
+  vars.push({
+    name: "POSTHOG_PROJECT_TOKEN",
+    value: env.POSTHOG_PROJECT_TOKEN.trim(),
+    visibility: "sensitive",
+  });
+}
+
+if (env.POSTHOG_HOST?.trim()) {
+  vars.push({
+    name: "POSTHOG_HOST",
+    value: env.POSTHOG_HOST.trim(),
+    visibility: "plaintext",
+  });
+}
+
 if (env.GOOGLE_CLIENT_SECRET?.trim()) {
   vars.push({
     name: "GOOGLE_CLIENT_SECRET",
@@ -128,10 +184,8 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stack-eas-env-"));
 try {
   for (const environment of environments) {
     for (const v of vars) {
-      console.log(`→ ${environment}: ${v.name} (${v.visibility})`);
-      const file = path.join(tmpDir, `${environment}-${v.name}.txt`);
-      fs.writeFileSync(file, v.value, "utf8");
-
+      // `string` type: value is the env content. `file` type stores a path (breaks EXPO_PUBLIC_*).
+      console.log(`→ ${environment}: ${v.name} (${v.visibility}, string)`);
       const result = spawnSync(
         process.execPath,
         [
@@ -140,9 +194,9 @@ try {
           "--name",
           v.name,
           "--type",
-          "file",
+          "string",
           "--value",
-          file,
+          v.value,
           "--visibility",
           v.visibility,
           "--environment",
