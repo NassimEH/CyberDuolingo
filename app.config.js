@@ -102,6 +102,9 @@ export default {
       neonDataApiUrl: process.env.EXPO_PUBLIC_NEON_DATA_API_URL,
       authOrigin: process.env.EXPO_PUBLIC_AUTH_ORIGIN,
       siteUrl: process.env.EXPO_PUBLIC_SITE_URL,
+      googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
       ...(easProjectId
         ? {
             eas: {

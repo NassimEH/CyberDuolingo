@@ -6,7 +6,11 @@ import {
   cacheAvatarLocally,
   clearCachedAvatar,
 } from "@/lib/avatar";
-import { authClient, isNeonConfigured } from "@/lib/neon";
+import {
+  authClient,
+  getAuthCallbackURL,
+  isNeonConfigured,
+} from "@/lib/neon";
 import {
   deleteRemoteUserData,
   ensureUserProfile,
@@ -39,6 +43,12 @@ interface SessionState {
     password: string;
     firstName: string;
   }) => Promise<{ error?: string }>;
+  /** Browser OAuth redirect — web / Expo web. */
+  signInWithGoogleWeb: () => Promise<{ error?: string }>;
+  /** Native Google ID token → Neon Auth. */
+  signInWithGoogleIdToken: (
+    idToken: string
+  ) => Promise<{ error?: string }>;
   setAvatarUri: (uri: string | null) => Promise<void>;
   updateProfile: (input: {
     firstName: string;
@@ -140,6 +150,75 @@ export const useSessionStore = create<SessionState>()(
           firstName: user.name ?? name,
         });
         await pushRemoteState(user.id);
+        return {};
+      },
+      signInWithGoogleWeb: async () => {
+        if (!isNeonConfigured()) {
+          return { error: "Neon Auth n'est pas configuré." };
+        }
+        const callbackURL = getAuthCallbackURL();
+        const result = await authClient.signIn.social({
+          provider: "google",
+          callbackURL,
+          newUserCallbackURL: callbackURL,
+          errorCallbackURL: callbackURL,
+        });
+        if (result.error) {
+          return {
+            error: result.error.message ?? "Connexion Google impossible.",
+          };
+        }
+        // Browser redirect usually leaves this page; if not, hydrate session.
+        const user = (await authClient.getSession()).data?.user ?? null;
+        if (!user?.id) {
+          return {};
+        }
+        get().setFromRemoteUser({
+          userId: user.id,
+          email: user.email,
+          firstName: user.name,
+          ...(user.image ? { avatarUri: user.image } : {}),
+        });
+        await pullRemoteState(user.id);
+        await ensureUserProfile({
+          userId: user.id,
+          email: user.email,
+          firstName: user.name,
+        });
+        return {};
+      },
+      signInWithGoogleIdToken: async (idToken) => {
+        if (!isNeonConfigured()) {
+          return { error: "Neon Auth n'est pas configuré." };
+        }
+        if (!idToken.trim()) {
+          return { error: "Jeton Google manquant." };
+        }
+        const result = await authClient.signIn.social({
+          provider: "google",
+          idToken: { token: idToken },
+        });
+        if (result.error) {
+          return {
+            error: result.error.message ?? "Connexion Google impossible.",
+          };
+        }
+        const user = (await authClient.getSession()).data?.user ?? null;
+        if (!user?.id) {
+          return { error: "Session introuvable après connexion Google." };
+        }
+        get().setFromRemoteUser({
+          userId: user.id,
+          email: user.email,
+          firstName: user.name,
+          ...(user.image ? { avatarUri: user.image } : {}),
+        });
+        await pullRemoteState(user.id);
+        await ensureUserProfile({
+          userId: user.id,
+          email: user.email,
+          firstName: user.name,
+        });
         return {};
       },
       setAvatarUri: async (avatarUri) => {

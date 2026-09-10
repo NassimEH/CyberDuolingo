@@ -31,6 +31,8 @@ export type TranslationKey =
   | "auth.signUp"
   | "auth.noAccount"
   | "auth.hasAccount"
+  | "auth.or"
+  | "auth.continueWithGoogle"
   | "trackSelect.title"
   | "trackSelect.subtitle"
   | "trackSelect.popular"
@@ -431,6 +433,8 @@ export const fr: Record<TranslationKey, string> = {
   "auth.signUp": "S’inscrire",
   "auth.noAccount": "Pas encore de compte ? ",
   "auth.hasAccount": "Déjà un compte ? ",
+  "auth.or": "ou",
+  "auth.continueWithGoogle": "Continuer avec Google",
   "trackSelect.title": "Choisis ton parcours",
   "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
   "trackSelect.popular": "Nos modules",
@@ -832,6 +836,8 @@ export const en: Record<TranslationKey, string> = {
   "auth.signUp": "Sign Up",
   "auth.noAccount": "Don't have an account? ",
   "auth.hasAccount": "Already have an account? ",
+  "auth.or": "or",
+  "auth.continueWithGoogle": "Continue with Google",
   "trackSelect.title": "Choose your track",
   "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",
   "trackSelect.popular": "Our modules",
