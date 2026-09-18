@@ -1,4 +1,5 @@
 import { AppPreview } from "@/components/onboarding/AppPreview";
+import { usePhoneLayout } from "@/components/PhoneShell";
 import { images } from "@/constants/images";
 import { colors, fontFamily } from "@/constants/theme";
 import { ONBOARDING_SLIDES, type OnboardingSlide } from "@/data/onboarding";
@@ -13,34 +14,43 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  type LayoutChangeEvent,
   type ListRenderItemInfo,
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const LAST_INDEX = ONBOARDING_SLIDES.length - 1;
 
 export default function OnboardingScreen() {
   const t = useT();
   const localize = useLocalize();
+  const { width: layoutWidth, height: windowHeight } = usePhoneLayout();
   const isSignedIn = useSessionStore((s) => s.isSignedIn);
   const hasSeenProductTour = useOnboardingStore((s) => s.hasSeenProductTour);
   const completeProductTour = useOnboardingStore((s) => s.completeProductTour);
 
   const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const [slideWidth, setSlideWidth] = useState(0);
   const [hydrated, setHydrated] = useState(
     useOnboardingStore.persist.hasHydrated()
   );
-  const [index, setIndex] = useState(0);
+  const [userIndex, setUserIndex] = useState<number | null>(null);
+
+  const pageWidth = slideWidth > 0 ? slideWidth : layoutWidth;
+  // Keep preview readable without crowding CTAs on short / iPad-compat windows.
+  const previewHeight = Math.max(
+    180,
+    Math.min(320, Math.round(windowHeight * 0.34))
+  );
 
   useEffect(() => {
     if (hydrated) return;
@@ -59,11 +69,7 @@ export default function OnboardingScreen() {
     [hasSeenProductTour]
   );
 
-  useEffect(() => {
-    if (!hydrated) return;
-    setIndex(startIndex);
-  }, [hydrated, startIndex]);
-
+  const index = userIndex ?? (hydrated ? startIndex : 0);
   const isLast = index >= LAST_INDEX;
 
   const finishTour = useCallback(() => {
@@ -77,33 +83,46 @@ export default function OnboardingScreen() {
     if (isLast) return;
     const next = index + 1;
     listRef.current?.scrollToIndex({ index: next, animated: true });
-    setIndex(next);
+    setUserIndex(next);
     if (next === LAST_INDEX) finishTour();
   };
 
   const skipToEnd = () => {
     finishTour();
     listRef.current?.scrollToIndex({ index: LAST_INDEX, animated: true });
-    setIndex(LAST_INDEX);
+    setUserIndex(LAST_INDEX);
     posthog.capture("onboarding_tour_skipped", { from_slide: index });
   };
 
   const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    const next = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
     if (next === index) return;
-    setIndex(next);
+    setUserIndex(next);
     if (next === LAST_INDEX) finishTour();
   };
 
+  const onListLayout = (e: LayoutChangeEvent) => {
+    const next = e.nativeEvent.layout.width;
+    if (next > 0 && Math.abs(next - slideWidth) > 0.5) {
+      setSlideWidth(next);
+    }
+  };
+
   const renderItem = ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
-    <View style={styles.slide}>
-      <View style={styles.previewArea}>
+    <ScrollView
+      style={{ width: pageWidth }}
+      contentContainerStyle={styles.slideContent}
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+      nestedScrollEnabled
+    >
+      <View style={[styles.previewArea, { height: previewHeight }]}>
         <AppPreview preview={item.preview} />
       </View>
       <Text style={styles.eyebrow}>{localize(item.eyebrow)}</Text>
       <Text style={styles.title}>{localize(item.title)}</Text>
       <Text style={styles.body}>{localize(item.body)}</Text>
-    </View>
+    </ScrollView>
   );
 
   if (!hydrated) {
@@ -154,9 +173,11 @@ export default function OnboardingScreen() {
         showsHorizontalScrollIndicator={false}
         initialScrollIndex={startIndex}
         onMomentumScrollEnd={onMomentumEnd}
+        onLayout={onListLayout}
+        style={styles.list}
         getItemLayout={(_, i) => ({
-          length: SCREEN_WIDTH,
-          offset: SCREEN_WIDTH * i,
+          length: pageWidth,
+          offset: pageWidth * i,
           index: i,
         })}
         onScrollToIndexFailed={(info) => {
@@ -186,6 +207,7 @@ export default function OnboardingScreen() {
                 style={styles.primaryBtn}
                 activeOpacity={0.85}
                 testID="onboarding-done-button"
+                accessibilityRole="button"
                 onPress={() => {
                   finishTour();
                   router.replace("/(tabs)");
@@ -207,6 +229,7 @@ export default function OnboardingScreen() {
                   style={styles.primaryBtn}
                   activeOpacity={0.85}
                   testID="get-started-button"
+                  accessibilityRole="button"
                   onPress={() => {
                     finishTour();
                     posthog.capture("onboarding_get_started_tapped");
@@ -227,6 +250,7 @@ export default function OnboardingScreen() {
                   style={styles.secondaryBtn}
                   activeOpacity={0.85}
                   testID="sign-in-cta-button"
+                  accessibilityRole="button"
                   onPress={() => {
                     finishTour();
                     posthog.capture("onboarding_sign_in_tapped");
@@ -246,6 +270,7 @@ export default function OnboardingScreen() {
             activeOpacity={0.85}
             onPress={goNext}
             testID="onboarding-next-button"
+            accessibilityRole="button"
           >
             <Text style={styles.primaryBtnText}>{t("onboarding.next")}</Text>
             <Ionicons
@@ -301,15 +326,17 @@ const styles = StyleSheet.create({
   skipPlaceholder: {
     width: 48,
   },
-  slide: {
-    width: SCREEN_WIDTH,
+  list: {
+    flex: 1,
+  },
+  slideContent: {
     paddingHorizontal: 24,
     paddingTop: 8,
+    paddingBottom: 12,
   },
   previewArea: {
-    height: 360,
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   eyebrow: {
     fontFamily: fontFamily.semiBold,
@@ -320,8 +347,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamily.bold,
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 24,
+    lineHeight: 30,
     color: colors.neutral.textPrimary,
     marginTop: 6,
   },
@@ -363,6 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
+    minHeight: 52,
   },
   primaryBtnText: {
     fontFamily: fontFamily.semiBold,
@@ -376,6 +404,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
+    minHeight: 52,
   },
   secondaryBtnText: {
     fontFamily: fontFamily.semiBold,

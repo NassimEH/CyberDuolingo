@@ -256,7 +256,8 @@ export function AppPreview({ preview }: Props) {
 const styles = StyleSheet.create({
   phone: {
     width: 220,
-    height: 360,
+    height: "100%",
+    maxHeight: 360,
     borderRadius: 28,
     borderWidth: 3,
     borderColor: "#0F172A",
@@ -470,8 +471,9 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   welcomeWrap: {
-    width: 260,
-    height: 300,
+    width: "100%",
+    maxWidth: 260,
+    flex: 1,
     alignSelf: "center",
     justifyContent: "center",
   },

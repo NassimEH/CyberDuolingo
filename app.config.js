@@ -17,14 +17,18 @@ export default {
   expo: {
     name: "Stack",
     slug: "stack",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: googleScheme ? ["stack", googleScheme] : "stack",
     userInterfaceStyle: "automatic",
     newArchEnabled: false,
     ios: {
+      // iPhone-only binary (TARGETED_DEVICE_FAMILY = 1). Still runs on iPad in
+      // compatibility mode — layouts must remain usable there (Guideline 4).
       supportsTablet: false,
+      isTabletOnly: false,
+      requireFullScreen: true,
       bundleIdentifier: "me.nassimelh.stack",
       usesAppleSignIn: true,
       infoPlist: {

@@ -6,7 +6,7 @@ import {
   User,
   type LucideIcon,
 } from "@/constants/icons";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Animated, {
   Easing,
   useSharedValue,
@@ -18,16 +18,16 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Platform,
+  type LayoutChangeEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fontFamily } from "@/constants/theme";
 import { motion } from "@/lib/motion";
 import { useT } from "@/lib/i18n";
 import { useTheme } from "@/lib/useTheme";
+import { usePhoneLayout } from "@/components/PhoneShell";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CIRCLE_SIZE = 52;
 const TAB_HEIGHT = 64;
 
@@ -76,7 +76,15 @@ function TabItem({
   }));
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tab} activeOpacity={0.8}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.tab}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isFocused }}
+      accessibilityLabel={label}
+      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+    >
       <Animated.View style={iconStyle}>
         <Icon size={22} color={color} strokeWidth={2} />
       </Animated.View>
@@ -90,7 +98,10 @@ export function TabBar(props: any) {
   const insets = useSafeAreaInsets();
   const t = useT();
   const { colors } = useTheme();
-  const tabWidth = SCREEN_WIDTH / TABS.length;
+  const { width: layoutWidth } = usePhoneLayout();
+  const [measuredWidth, setMeasuredWidth] = useState(layoutWidth);
+  const barWidth = measuredWidth > 0 ? measuredWidth : layoutWidth;
+  const tabWidth = barWidth / TABS.length;
 
   const indicatorX = useSharedValue(
     state.index * tabWidth + (tabWidth - CIRCLE_SIZE) / 2
@@ -107,12 +118,20 @@ export function TabBar(props: any) {
     transform: [{ translateX: indicatorX.value }],
   }));
 
+  const onBarLayout = (e: LayoutChangeEvent) => {
+    const next = e.nativeEvent.layout.width;
+    if (next > 0 && Math.abs(next - measuredWidth) > 0.5) {
+      setMeasuredWidth(next);
+    }
+  };
+
   return (
     <View
+      onLayout={onBarLayout}
       style={[
         styles.container,
         {
-          paddingBottom: insets.bottom || 8,
+          paddingBottom: Math.max(insets.bottom, 8),
           backgroundColor: colors.neutral.background,
           borderTopColor: colors.neutral.border,
         },
@@ -190,6 +209,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: TAB_HEIGHT,
+    minHeight: 48,
   },
   label: {
     fontFamily: fontFamily.medium,

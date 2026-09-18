@@ -2,6 +2,7 @@ import "../global.css";
 
 import { NeonSessionBridge } from "@/components/NeonSessionBridge";
 import { NotificationScheduler } from "@/components/NotificationScheduler";
+import { PhoneShell } from "@/components/PhoneShell";
 import { SyncStatusBridge } from "@/components/SyncStatusBridge";
 import { preloadCriticalImages } from "@/constants/images";
 import { identifyUser, syncAnalyticsFromStore } from "@/lib/analytics";
@@ -128,27 +129,29 @@ export default function RootLayout() {
       <NeonSessionBridge />
       <SyncStatusBridge />
       <NotificationScheduler />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "fade_from_bottom",
-          animationDuration: 220,
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="language-select" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="lesson/[id]" />
-        <Stack.Screen name="certifications" />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="account/edit" />
-        <Stack.Screen name="privacy/preferences" />
-        <Stack.Screen name="legal/[slug]" />
-        <Stack.Screen name="about" />
-        <Stack.Screen name="support" />
-      </Stack>
+      <PhoneShell>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: "fade_from_bottom",
+            animationDuration: 220,
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="language-select" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="lesson/[id]" />
+          <Stack.Screen name="certifications" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="account/edit" />
+          <Stack.Screen name="privacy/preferences" />
+          <Stack.Screen name="legal/[slug]" />
+          <Stack.Screen name="about" />
+          <Stack.Screen name="support" />
+        </Stack>
+      </PhoneShell>
     </PostHogProvider>
   );
 }
