@@ -4,6 +4,8 @@ import { Platform } from "react-native";
 import { isAppleAuthAvailable, promptAppleIdToken } from "@/lib/appleAuth";
 import { useSessionStore } from "@/store/sessionStore";
 
+export type AppleAuthMode = "signIn" | "signUp";
+
 /**
  * Sign in with Apple (iOS native → Stack backend JWT verify → session).
  * Email/password and Google continue to use Neon Auth unchanged.
@@ -23,32 +25,40 @@ export function useAppleAuth() {
     };
   }, []);
 
-  const signInWithApple = useCallback(async (): Promise<{ error?: string }> => {
-    if (Platform.OS !== "ios") {
-      return {
-        error: "Sign in with Apple est disponible uniquement sur iOS.",
-      };
-    }
-
-    setLoading(true);
-    try {
-      const prompted = await promptAppleIdToken();
-      if (prompted.error || !prompted.idToken) {
-        // User dismiss: stay on screen, no error toast.
-        if (prompted.error === "Connexion Apple annulée.") {
-          return {};
-        }
-        return { error: prompted.error ?? "Connexion Apple impossible." };
+  const signInWithApple = useCallback(
+    async (
+      mode: AppleAuthMode = "signUp"
+    ): Promise<{ error?: string; code?: string }> => {
+      if (Platform.OS !== "ios") {
+        return {
+          error: "Sign in with Apple est disponible uniquement sur iOS.",
+        };
       }
-      return await signInWithAppleIdToken({
-        idToken: prompted.idToken,
-        nonce: prompted.nonce,
-        fullName: prompted.fullName,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [signInWithAppleIdToken]);
+
+      setLoading(true);
+      try {
+        const prompted = await promptAppleIdToken();
+        if (prompted.error || !prompted.idToken) {
+          if (prompted.error === "Connexion Apple annulée.") {
+            return {};
+          }
+          return { error: prompted.error ?? "Connexion Apple impossible." };
+        }
+        return await signInWithAppleIdToken({
+          idToken: prompted.idToken,
+          nonce: prompted.nonce,
+          mode,
+          emailHint: prompted.email,
+          givenName: prompted.givenName,
+          familyName: prompted.familyName,
+          fullName: prompted.fullName,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [signInWithAppleIdToken]
+  );
 
   return { signInWithApple, loading, available };
 }

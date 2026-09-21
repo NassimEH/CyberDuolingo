@@ -24,7 +24,37 @@ function resolveAppleAudiences(): string[] {
   if (configured.length === 0) {
     return ["me.nassimelh.stack"];
   }
-  return configured;
+  // Deduplicate while preserving order.
+  return [...new Set(configured)];
+}
+
+/**
+ * Apple's identity-token `nonce` claim is SHA-256(rawNonce), but encoding
+ * varies by platform / library:
+ * - Native iOS (ASAuthorizationAppleIDRequest): typically base64 of the digest
+ * - Some OIDC stacks: base64url (no padding)
+ * - Some docs / backends: lowercase hex
+ *
+ * Comparing only hex (previous bug) rejects every valid Apple Sign-In.
+ */
+export function appleNonceMatches(
+  rawNonce: string,
+  tokenNonce: string
+): boolean {
+  const digest = createHash("sha256").update(rawNonce, "utf8").digest();
+  const base64 = digest.toString("base64");
+  const base64url = digest.toString("base64url");
+  const hex = digest.toString("hex");
+  const candidates = new Set([
+    hex,
+    hex.toUpperCase(),
+    base64,
+    base64.replace(/=+$/, ""),
+    base64url,
+    // Rare: client pre-hashed and Apple echoed the preimage as-is.
+    rawNonce,
+  ]);
+  return candidates.has(tokenNonce);
 }
 
 export type VerifiedAppleIdentity = {
@@ -48,6 +78,8 @@ export async function verifyAppleIdentityToken(
   const { payload } = await jwtVerify(identityToken, getAppleJwks(), {
     issuer: APPLE_ISSUER,
     audience: audiences,
+    // Small clock skew for App Review devices / region lag.
+    clockTolerance: 60,
   });
 
   const appleUserId = typeof payload.sub === "string" ? payload.sub : null;
@@ -55,19 +87,18 @@ export async function verifyAppleIdentityToken(
     throw new Error("Apple token missing subject");
   }
 
-  if (nonce) {
-    // Apple puts SHA-256(nonce) (hex) in the identity token, not the raw nonce.
-    const expected = createHash("sha256").update(nonce).digest("hex");
-    const tokenNonce = typeof payload.nonce === "string" ? payload.nonce : null;
-    if (!tokenNonce || tokenNonce !== expected) {
+  const rawNonce = nonce?.trim() || null;
+  if (rawNonce) {
+    const tokenNonce =
+      typeof payload.nonce === "string" ? payload.nonce : null;
+    if (!tokenNonce || !appleNonceMatches(rawNonce, tokenNonce)) {
       throw new Error("Apple token nonce mismatch");
     }
   }
 
   const email = typeof payload.email === "string" ? payload.email : null;
   const emailVerified =
-    payload.email_verified === true ||
-    payload.email_verified === "true";
+    payload.email_verified === true || payload.email_verified === "true";
   const isPrivateEmail =
     payload.is_private_email === true ||
     payload.is_private_email === "true" ||

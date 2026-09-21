@@ -68,7 +68,9 @@ function buildGoogleAuthUrl(input: {
  * Native Google → HTTPS OAuth → ticket → Stack session (same pattern as Apple).
  * Neon Managed Auth ignores idToken and only returns browser OAuth redirects.
  */
-async function promptNativeGoogleStackSession(): Promise<
+async function promptNativeGoogleStackSession(
+  mode: "signIn" | "signUp" = "signUp"
+): Promise<
   | {
       accessToken: string;
       user: {
@@ -78,7 +80,7 @@ async function promptNativeGoogleStackSession(): Promise<
         avatarUri: string | null;
       };
     }
-  | { error: string }
+  | { error: string; code?: string }
 > {
   const clientId = getGoogleWebClientId();
   if (!clientId) {
@@ -105,7 +107,7 @@ async function promptNativeGoogleStackSession(): Promise<
   });
 
   if (result.type === "cancel" || result.type === "dismiss") {
-    return { error: "Connexion Google annulée." };
+    return { error: "" };
   }
   if (result.type !== "success" || !("url" in result) || !result.url) {
     return {
@@ -129,7 +131,7 @@ async function promptNativeGoogleStackSession(): Promise<
 
   const finishRes = await apiFetch("/api/auth/google/finish", {
     method: "POST",
-    body: JSON.stringify({ ticket }),
+    body: JSON.stringify({ ticket, mode }),
   });
 
   const payload = (await finishRes.json().catch(() => ({}))) as {
@@ -141,9 +143,18 @@ async function promptNativeGoogleStackSession(): Promise<
       avatarUri: string | null;
     };
     error?: string;
+    code?: string;
   };
 
   if (!finishRes.ok || !payload.accessToken || !payload.user?.id) {
+    if (payload.code === "ACCOUNT_NOT_FOUND" || finishRes.status === 404) {
+      return {
+        code: "ACCOUNT_NOT_FOUND",
+        error:
+          payload.error ||
+          "Aucun compte Stack n’est lié à ce compte Google. Crée un compte d’abord.",
+      };
+    }
     return {
       error:
         payload.error ||
@@ -169,28 +180,34 @@ export function useGoogleAuth() {
   );
   const [loading, setLoading] = useState(false);
 
-  const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
-    setLoading(true);
-    try {
-      if (Platform.OS === "web") {
-        if (!getGoogleWebClientId()) {
-          return {
-            error:
-              "Ajoute EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID dans .env.local (même ID que Neon Auth → Google).",
-          };
+  const signInWithGoogle = useCallback(
+    async (
+      mode: "signIn" | "signUp" = "signUp"
+    ): Promise<{ error?: string; code?: string }> => {
+      setLoading(true);
+      try {
+        if (Platform.OS === "web") {
+          if (!getGoogleWebClientId()) {
+            return {
+              error:
+                "Ajoute EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID dans .env.local (même ID que Neon Auth → Google).",
+            };
+          }
+          return await signInWithGoogleWeb();
         }
-        return await signInWithGoogleWeb();
-      }
 
-      const prompted = await promptNativeGoogleStackSession();
-      if ("error" in prompted) {
-        return { error: prompted.error };
+        const prompted = await promptNativeGoogleStackSession(mode);
+        if ("error" in prompted) {
+          if (!prompted.error) return {};
+          return { error: prompted.error, code: prompted.code };
+        }
+        return await signInWithGoogleStackSession(prompted);
+      } finally {
+        setLoading(false);
       }
-      return await signInWithGoogleStackSession(prompted);
-    } finally {
-      setLoading(false);
-    }
-  }, [signInWithGoogleStackSession, signInWithGoogleWeb]);
+    },
+    [signInWithGoogleStackSession, signInWithGoogleWeb]
+  );
 
   return { signInWithGoogle, loading };
 }

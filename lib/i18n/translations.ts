@@ -35,6 +35,8 @@ export type TranslationKey =
   | "auth.continueWithGoogle"
   | "auth.appleIosOnly"
   | "auth.continueWithApple"
+  | "auth.appleAccountNotFound"
+  | "auth.googleAccountNotFound"
   | "trackSelect.title"
   | "trackSelect.subtitle"
   | "trackSelect.popular"
@@ -279,6 +281,14 @@ export type TranslationKey =
   | "account.email"
   | "account.save"
   | "account.editLocalHint"
+  | "account.completeTitle"
+  | "account.completeSubtitle"
+  | "account.completeEmailHint"
+  | "account.completeSave"
+  | "account.completeContinue"
+  | "account.completeAlreadyDone"
+  | "account.completeNameError"
+  | "account.completeEmailError"
   | "privacy.prefsTitle"
   | "privacy.prefsIntro"
   | "privacy.analytics"
@@ -440,6 +450,8 @@ export const fr: Record<TranslationKey, string> = {
   "auth.continueWithGoogle": "Continuer avec Google",
   "auth.appleIosOnly": "Sign in with Apple est disponible sur iPhone (build natif), pas sur le web.",
   "auth.continueWithApple": "Continuer avec Apple",
+  "auth.appleAccountNotFound": "Aucun compte Stack n’est lié à cet Apple ID. Crée un compte d’abord.",
+  "auth.googleAccountNotFound": "Aucun compte Stack n’est lié à ce compte Google. Crée un compte d’abord.",
   "trackSelect.title": "Choisis ton parcours",
   "trackSelect.subtitle": "Tu commences par un module. Les autres resteront accessibles plus tard, pour élargir ton parcours.",
   "trackSelect.popular": "Nos modules",
@@ -668,7 +680,7 @@ export const fr: Record<TranslationKey, string> = {
   "profile.appVersion": "Version",
   "profile.versionLabel": "Stack · v{version}",
   "profile.signOutConfirmTitle": "Se déconnecter ?",
-  "profile.signOutConfirmMessage": "Tu pourras te reconnecter plus tard. La progression reste sur cet appareil.",
+  "profile.signOutConfirmMessage": "Tu pourras te reconnecter plus tard. La progression locale de cet appareil est effacée à la déconnexion (elle reste sauvegardée sur ton compte).",
   "profile.deleteDataConfirmTitle": "Supprimer les données ?",
   "profile.deleteDataConfirmMessage": "XP, leçons, défis, labs et certifications suivies seront effacés sur cet appareil et sur Neon. Ton compte Auth reste actif. Irréversible.",
   "profile.deleteDataDone": "Données d’apprentissage effacées (local + serveur).",
@@ -684,6 +696,14 @@ export const fr: Record<TranslationKey, string> = {
   "account.email": "E-mail",
   "account.save": "Enregistrer",
   "account.editLocalHint": "Ton prénom s’affiche sur l’accueil (« Salut, … ») et reste synchronisé avec ton compte.",
+  "account.completeTitle": "Complète ton profil",
+  "account.completeSubtitle": "Tu as masqué ton nom ou ton e-mail avec Apple. Indique-les pour personnaliser ton expérience Stack.",
+  "account.completeEmailHint": "Apple a masqué ton e-mail. Entre l’adresse que tu veux utiliser dans Stack.",
+  "account.completeSave": "Continuer",
+  "account.completeContinue": "Continuer vers l’app",
+  "account.completeAlreadyDone": "Ton profil est déjà complet.",
+  "account.completeNameError": "Entre ton prénom (au moins 2 caractères).",
+  "account.completeEmailError": "Entre une adresse e-mail valide.",
   "privacy.prefsTitle": "Préférences",
   "privacy.prefsIntro": "Seules les préférences réellement utilisées par l’app sont listées ici.",
   "privacy.analytics": "Analytics",
@@ -846,6 +866,8 @@ export const en: Record<TranslationKey, string> = {
   "auth.continueWithGoogle": "Continue with Google",
   "auth.appleIosOnly": "Sign in with Apple is available on iPhone (native build), not on web.",
   "auth.continueWithApple": "Continue with Apple",
+  "auth.appleAccountNotFound": "No Stack account is linked to this Apple ID. Create an account first.",
+  "auth.googleAccountNotFound": "No Stack account is linked to this Google account. Create an account first.",
   "trackSelect.title": "Choose your track",
   "trackSelect.subtitle": "Start with one module. You can add others later to broaden your path.",
   "trackSelect.popular": "Our modules",
@@ -1074,7 +1096,7 @@ export const en: Record<TranslationKey, string> = {
   "profile.appVersion": "Version",
   "profile.versionLabel": "Stack · v{version}",
   "profile.signOutConfirmTitle": "Sign out?",
-  "profile.signOutConfirmMessage": "You can sign back in later. Progress stays on this device.",
+  "profile.signOutConfirmMessage": "You can sign back in later. Local progress on this device is cleared on sign-out (it stays saved on your account).",
   "profile.deleteDataConfirmTitle": "Delete data?",
   "profile.deleteDataConfirmMessage": "XP, lessons, challenges, labs, and certification path will be erased on this device and on Neon. Your Auth account stays active. This cannot be undone.",
   "profile.deleteDataDone": "Learning data cleared (local + server).",
@@ -1090,6 +1112,14 @@ export const en: Record<TranslationKey, string> = {
   "account.email": "Email",
   "account.save": "Save",
   "account.editLocalHint": "Your first name appears on Home (“Hey, …”) and stays synced with your account.",
+  "account.completeTitle": "Complete your profile",
+  "account.completeSubtitle": "You hid your name or email with Apple. Add them so we can personalize your Stack experience.",
+  "account.completeEmailHint": "Apple hid your email. Enter the address you want to use in Stack.",
+  "account.completeSave": "Continue",
+  "account.completeContinue": "Continue to the app",
+  "account.completeAlreadyDone": "Your profile is already complete.",
+  "account.completeNameError": "Enter your first name (at least 2 characters).",
+  "account.completeEmailError": "Enter a valid email address.",
   "privacy.prefsTitle": "Preferences",
   "privacy.prefsIntro": "Only preferences actually used by the app are listed here.",
   "privacy.analytics": "Analytics",

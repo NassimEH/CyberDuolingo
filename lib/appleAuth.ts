@@ -12,10 +12,37 @@ export async function isAppleAuthAvailable(): Promise<boolean> {
   }
 }
 
+/**
+ * Cryptographically random nonce for Apple Sign-In.
+ * Passed raw to ASAuthorizationAppleIDRequest — iOS SHA-256-hashes it before
+ * sending to Apple; the hash appears in the identity token `nonce` claim.
+ */
+async function createAppleNonce(): Promise<string> {
+  const bytes = await Crypto.getRandomBytesAsync(16);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  if (typeof globalThis.btoa === "function") {
+    return globalThis
+      .btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function pickNamePart(value: string | null | undefined): string {
+  return value?.trim() ?? "";
+}
+
 export async function promptAppleIdToken(): Promise<{
   idToken?: string;
   nonce?: string;
   email?: string | null;
+  givenName?: string | null;
+  familyName?: string | null;
   fullName?: string | null;
   error?: string;
 }> {
@@ -32,7 +59,7 @@ export async function promptAppleIdToken(): Promise<{
     };
   }
 
-  const nonce = Crypto.randomUUID();
+  const nonce = await createAppleNonce();
 
   try {
     const credential = await AppleAuthentication.signInAsync({
@@ -40,6 +67,7 @@ export async function promptAppleIdToken(): Promise<{
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+      // Raw nonce — iOS hashes with SHA-256 before Apple; do NOT pre-hash.
       nonce,
     });
 
@@ -47,14 +75,18 @@ export async function promptAppleIdToken(): Promise<{
       return { error: "Apple n’a pas renvoyé de jeton d’identité." };
     }
 
-    const given = credential.fullName?.givenName?.trim() ?? "";
-    const family = credential.fullName?.familyName?.trim() ?? "";
-    const fullName = [given, family].filter(Boolean).join(" ") || null;
+    const givenName = pickNamePart(credential.fullName?.givenName) || null;
+    const familyName = pickNamePart(credential.fullName?.familyName) || null;
+    const fullName =
+      [givenName, familyName].filter(Boolean).join(" ") || null;
 
     return {
       idToken: credential.identityToken,
       nonce,
-      email: credential.email,
+      // Only present on first authorization (or when user shares email).
+      email: credential.email ?? null,
+      givenName,
+      familyName,
       fullName,
     };
   } catch (err) {

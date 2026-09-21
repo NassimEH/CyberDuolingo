@@ -1,6 +1,7 @@
 import { images } from "@/constants/images";
 import { AuthSocialButtons } from "@/components/AuthSocialButtons";
 import { identifyUser, trackEvent } from "@/lib/analytics";
+import { needsAppleProfileCompletion } from "@/lib/appleProfile";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useT } from "@/lib/i18n";
@@ -33,11 +34,22 @@ export default function SignInScreen() {
 
   const afterAuthSuccess = (method: "password" | "google" | "apple") => {
     trackEvent("sign_in_completed", { method });
-    const uid = useSessionStore.getState().userId;
-    if (uid) {
-      identifyUser(uid, {
+    const state = useSessionStore.getState();
+    if (state.userId) {
+      identifyUser(state.userId, {
         preferredTrack: selectedTrack,
       });
+    }
+    if (
+      method === "apple" &&
+      needsAppleProfileCompletion({
+        authProvider: state.authProvider,
+        firstName: state.firstName,
+        email: state.email,
+      })
+    ) {
+      router.replace("/account/complete-profile");
+      return;
     }
     router.replace("/");
   };
@@ -102,6 +114,7 @@ export default function SignInScreen() {
 
             <AuthSocialButtons
               disabled={loading}
+              mode="signIn"
               onError={setAuthError}
               onSuccess={(method) => afterAuthSuccess(method)}
             />

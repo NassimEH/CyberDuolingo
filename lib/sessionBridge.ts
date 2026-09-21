@@ -7,6 +7,7 @@ export type AuthProvider = "neon" | "apple" | "google" | null;
 
 export type SessionBridgeState = {
   authProvider: AuthProvider;
+  isSignedIn: boolean;
   email: string | null;
   firstName: string | null;
   avatarUri: string | null;
@@ -19,6 +20,7 @@ type SessionBridge = {
 
 const fallback: SessionBridgeState = {
   authProvider: null,
+  isSignedIn: false,
   email: null,
   firstName: null,
   avatarUri: null,

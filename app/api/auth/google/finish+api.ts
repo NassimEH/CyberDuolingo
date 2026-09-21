@@ -1,16 +1,22 @@
-import { authenticateWithGoogle } from "@/lib/server/googleAuthService";
+import {
+  GoogleAccountNotFoundError,
+  authenticateWithGoogle,
+  type GoogleAuthMode,
+} from "@/lib/server/googleAuthService";
 import { redeemGoogleOAuthTicket } from "@/lib/server/googleOAuthCallback";
 import { jsonError } from "@/lib/server/httpAuth";
 
 /**
  * POST /api/auth/google/finish
- * Body: { ticket }
+ * Body: { ticket, mode? }
  * Redeems the OAuth ticket → verifies Google id_token → Stack session (like Apple).
- * Neon Managed Auth does not support idToken social sign-in (always returns redirect).
  */
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { ticket?: string };
+    const body = (await request.json()) as {
+      ticket?: string;
+      mode?: GoogleAuthMode | null;
+    };
     const ticket = body.ticket?.trim();
     if (!ticket) {
       return jsonError("ticket is required", 400);
@@ -21,9 +27,23 @@ export async function POST(request: Request) {
       return jsonError("Invalid or expired Google ticket", 401);
     }
 
-    const result = await authenticateWithGoogle(idToken);
+    const mode: GoogleAuthMode =
+      body.mode === "signIn" || body.mode === "signUp" ? body.mode : "signUp";
+
+    const result = await authenticateWithGoogle(idToken, mode);
     return Response.json(result);
   } catch (err) {
+    if (err instanceof GoogleAccountNotFoundError) {
+      return Response.json(
+        {
+          error:
+            "Aucun compte Stack n’est lié à ce compte Google. Crée un compte d’abord.",
+          code: err.code,
+        },
+        { status: 404 }
+      );
+    }
+
     const message =
       err instanceof Error ? err.message : "Google finish failed";
     console.error("[auth/google/finish]", message);

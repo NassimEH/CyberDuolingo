@@ -350,6 +350,18 @@ export default function ProfileScreen() {
         <ScreenHeader
           title={t("profile.title")}
           subtitle={t("profile.subtitle")}
+          right={
+            <TouchableOpacity
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.signOut")}
+              style={styles.headerSignOut}
+            >
+              <LogOut size={22} color={colors.semantic.error} strokeWidth={2} />
+            </TouchableOpacity>
+          }
         />
 
         <View style={styles.hero}>
@@ -1052,6 +1064,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screen,
     paddingTop: spacing.xs,
     paddingBottom: spacing.tabScrollBottom,
+  },
+  headerSignOut: {
+    padding: 4,
+    backgroundColor: "transparent",
   },
   hero: {
     alignItems: "center",

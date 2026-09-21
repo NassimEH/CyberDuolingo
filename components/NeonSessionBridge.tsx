@@ -11,11 +11,12 @@ import { useThemeStore } from "@/store/themeStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useUnitStore } from "@/store/unitStore";
 
-/** Hydrate Neon Auth session once, then debounce progress sync to Postgres. */
+/** Hydrate auth once, then debounce progress sync once the session is verified. */
 export function NeonSessionBridge() {
   const hydrateFromNeon = useSessionStore((s) => s.hydrateFromNeon);
   const userId = useSessionStore((s) => s.userId);
   const isSignedIn = useSessionStore((s) => s.isSignedIn);
+  const syncReady = useSessionStore((s) => s.syncReady);
   const hydratedOnce = useRef(false);
 
   useEffect(() => {
@@ -25,7 +26,8 @@ export function NeonSessionBridge() {
   }, [hydrateFromNeon]);
 
   useEffect(() => {
-    if (!isSignedIn || !userId) return;
+    // Wait for hydrate so Neon JWT / Stack token exist before first push.
+    if (!syncReady || !isSignedIn || !userId) return;
 
     const sync = () => scheduleRemoteSync(userId);
     const unsubs = [
@@ -42,7 +44,7 @@ export function NeonSessionBridge() {
     return () => {
       for (const unsub of unsubs) unsub();
     };
-  }, [isSignedIn, userId]);
+  }, [syncReady, isSignedIn, userId]);
 
   return null;
 }

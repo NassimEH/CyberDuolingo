@@ -4,7 +4,7 @@ import { getTrack } from "@/data/tracks";
 import { apiFetch } from "@/lib/api";
 import { getAppleAccessToken } from "@/lib/appleSession";
 import { cacheAvatarLocally, readCachedAvatar } from "@/lib/avatar";
-import { authClient, db, isNeonConfigured } from "@/lib/neon";
+import { authClient, db, getAccessToken, isNeonConfigured } from "@/lib/neon";
 import type { ActivityLog, LabSessionProgress } from "@/store/learningStore";
 import { useCertificationStore } from "@/store/certificationStore";
 import { useLearningStore } from "@/store/learningStore";
@@ -201,19 +201,19 @@ async function pullViaAppleApi(userId: string) {
 
   if (data.learning) {
     applyLearningSnapshot({ user_id: userId, ...data.learning } as LearningRow);
+  } else {
+    useLearningStore.getState().clearAllLocalData();
   }
 
-  if (data.certifications?.length) {
-    const entries: Record<string, UserCertEntry> = {};
-    for (const row of data.certifications) {
-      entries[row.certification_id] = {
-        ...(row.payload ?? {}),
-        status: (row.payload?.status ?? row.status) as UserCertEntry["status"],
-        progress: row.payload?.progress ?? 0,
-      };
-    }
-    useCertificationStore.setState({ entries });
+  const entries: Record<string, UserCertEntry> = {};
+  for (const row of data.certifications ?? []) {
+    entries[row.certification_id] = {
+      ...(row.payload ?? {}),
+      status: (row.payload?.status ?? row.status) as UserCertEntry["status"],
+      progress: row.payload?.progress ?? 0,
+    };
   }
+  useCertificationStore.setState({ entries });
 }
 
 async function pushViaAppleApi(userId: string) {
@@ -376,6 +376,8 @@ export async function pullRemoteState(userId: string) {
 
   if (progress) {
     applyLearningSnapshot(progress as LearningRow);
+  } else {
+    useLearningStore.getState().clearAllLocalData();
   }
 
   const { data: certs, error: certError } = await db
@@ -384,29 +386,49 @@ export async function pullRemoteState(userId: string) {
     .eq("user_id", userId);
   if (certError) throw certError;
 
-  if (certs?.length) {
-    const entries: Record<string, UserCertEntry> = {};
-    for (const row of certs as Array<{
-      certification_id: string;
-      payload: UserCertEntry;
-      status: string;
-    }>) {
-      entries[row.certification_id] = {
-        ...(row.payload ?? {}),
-        status: (row.payload?.status ?? row.status) as UserCertEntry["status"],
-        progress: row.payload?.progress ?? 0,
-      };
-    }
-    useCertificationStore.setState({ entries });
+  const entries: Record<string, UserCertEntry> = {};
+  for (const row of (certs ?? []) as Array<{
+    certification_id: string;
+    payload: UserCertEntry;
+    status: string;
+  }>) {
+    entries[row.certification_id] = {
+      ...(row.payload ?? {}),
+      status: (row.payload?.status ?? row.status) as UserCertEntry["status"],
+      progress: row.payload?.progress ?? 0,
+    };
   }
+  useCertificationStore.setState({ entries });
+}
+
+function isAuthSyncError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { name?: string; message?: string };
+  const msg = e.message ?? "";
+  return (
+    e.name === "AuthRequiredError" ||
+    /AuthRequired|JWT|Unauthorized|token unavailable|session missing/i.test(
+      msg
+    )
+  );
 }
 
 export async function pushRemoteState(userId: string) {
   if (!canSyncRemote() || !userId) return;
 
   if (isStackSession()) {
+    const token = await getAppleAccessToken();
+    if (!token) {
+      throw new Error("Stack session missing");
+    }
     await pushViaAppleApi(userId);
     return;
+  }
+
+  // Neon Data API requires a JWT from /get-session — skip if not ready.
+  const jwt = await getAccessToken();
+  if (!jwt) {
+    throw new Error("Neon Data API token unavailable");
   }
 
   const learning = useLearningStore.getState();
@@ -431,8 +453,9 @@ export async function pushRemoteState(userId: string) {
   const { error: profileError } = await db.from("profiles").upsert(
     {
       user_id: userId,
-      email: user?.email ?? null,
-      first_name: user?.name ?? null,
+      email: user?.email ?? getSessionBridge().getState().email,
+      first_name:
+        user?.name ?? getSessionBridge().getState().firstName,
       avatar_url: avatarUrl,
       selected_track: track,
       locale,
@@ -523,6 +546,7 @@ export function cancelScheduledRemoteSync() {
 
 export async function flushPendingRemoteSync(userId: string | null | undefined) {
   if (!userId || !canSyncRemote()) return;
+  if (!getSessionBridge().getState().isSignedIn) return;
   if (!(await isDeviceOnline())) {
     useSyncStore.getState().setOnline(false);
     useSyncStore.getState().markPending();
@@ -537,8 +561,14 @@ export async function flushPendingRemoteSync(userId: string | null | undefined) 
       useSyncStore.getState().markSynced();
     })
     .catch((err) => {
-      const message =
-        err instanceof Error ? err.message : "Sync failed";
+      if (isAuthSyncError(err)) {
+        // Common during sign-out / cold start — not a user-facing failure.
+        if (getSessionBridge().getState().isSignedIn) {
+          useSyncStore.getState().markPending();
+        }
+        return;
+      }
+      const message = err instanceof Error ? err.message : "Sync failed";
       console.warn("[sync] sync failed", err);
       useSyncStore.getState().markError(message);
     })
@@ -551,6 +581,7 @@ export async function flushPendingRemoteSync(userId: string | null | undefined) 
 
 export function scheduleRemoteSync(userId: string | null | undefined) {
   if (!userId || !canSyncRemote()) return;
+  if (!getSessionBridge().getState().isSignedIn) return;
   useSyncStore.getState().markPending();
   cancelScheduledRemoteSync();
   syncTimer = setTimeout(() => {
@@ -585,7 +616,37 @@ export async function wipeRemoteLearningData(userId: string) {
     .eq("user_id", userId);
   if (certError) throw certError;
 
-  await pushRemoteState(userId);
+  // Explicit empty progress — do not depend on local store state.
+  const emptyLearning: LearningRow = {
+    user_id: userId,
+    total_xp: 0,
+    xp_today: 0,
+    daily_goal: 20,
+    streak: 0,
+    streak_freezes: 1,
+    last_active_date: null,
+    completed_lesson_ids: [],
+    unlocked_achievement_ids: [],
+    review_question_ids: [],
+    completed_challenge_ids: [],
+    completed_lab_ids: [],
+    perfect_lab_ids: [],
+    rewarded_lab_ids: [],
+    started_lab_ids: [],
+    lab_sessions: {},
+    labs_day_key: null,
+    labs_started_today: [],
+    active_days: [],
+    skill_xp: {},
+    activity_logs: [],
+    activity_seen_at: null,
+    selected_unit_ids: {},
+  };
+
+  const { error: progressError } = await db
+    .from("learning_progress")
+    .upsert(emptyLearning, { onConflict: "user_id" });
+  if (progressError) throw progressError;
 }
 
 /**

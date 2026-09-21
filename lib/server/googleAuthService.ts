@@ -4,6 +4,8 @@ import { verifyGoogleIdToken } from "@/lib/server/googleVerify";
 import { getServerSql } from "@/lib/server/db";
 import { mintStackSession } from "@/lib/server/stackSession";
 
+export type GoogleAuthMode = "signIn" | "signUp";
+
 export type GoogleAuthResult = {
   accessToken: string;
   expiresAt: string;
@@ -16,17 +18,32 @@ export type GoogleAuthResult = {
   };
 };
 
+export class GoogleAccountNotFoundError extends Error {
+  readonly code = "ACCOUNT_NOT_FOUND" as const;
+  constructor() {
+    super("GOOGLE_ACCOUNT_NOT_FOUND");
+    this.name = "GoogleAccountNotFoundError";
+  }
+}
+
 /**
  * Verify Google id_token, find-or-create Stack user by google_user_id only
  * (never merge by email), mint app session.
+ *
+ * - signIn: existing Google identity only
+ * - signUp: create if missing, or sign in if already linked
  */
 export async function authenticateWithGoogle(
-  idToken: string
+  idToken: string,
+  mode: GoogleAuthMode = "signUp"
 ): Promise<GoogleAuthResult> {
   const token = idToken?.trim();
   if (!token) {
     throw new Error("idToken is required");
   }
+
+  const resolvedMode: GoogleAuthMode =
+    mode === "signIn" || mode === "signUp" ? mode : "signUp";
 
   const verified = await verifyGoogleIdToken(token);
   const sql = getServerSql();
@@ -54,7 +71,34 @@ export async function authenticateWithGoogle(
   let avatarUri: string | null;
   let isNewUser = false;
 
-  if (existingRow) {
+  if (!existingRow) {
+    if (resolvedMode === "signIn") {
+      throw new GoogleAccountNotFoundError();
+    }
+
+    isNewUser = true;
+    userId = randomUUID();
+    email = verified.email;
+    firstName =
+      verified.name?.split(" ")[0] || email?.split("@")[0] || "Learner";
+    avatarUri = verified.picture;
+
+    await sql`
+      INSERT INTO public.profiles (user_id, email, first_name, avatar_url)
+      VALUES (${userId}, ${email}, ${firstName}, ${avatarUri})
+    `;
+
+    await sql`
+      INSERT INTO public.learning_progress (user_id)
+      VALUES (${userId})
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+
+    await sql`
+      INSERT INTO public.google_identities (google_user_id, user_id, email)
+      VALUES (${verified.googleUserId}, ${userId}, ${email})
+    `;
+  } else {
     userId = existingRow.user_id;
     email = verified.email ?? existingRow.email;
     firstName =
@@ -80,29 +124,6 @@ export async function authenticateWithGoogle(
         avatar_url = COALESCE(${verified.picture}, avatar_url),
         updated_at = now()
       WHERE user_id = ${userId}
-    `;
-  } else {
-    isNewUser = true;
-    userId = randomUUID();
-    email = verified.email;
-    firstName =
-      verified.name?.split(" ")[0] || email?.split("@")[0] || "Learner";
-    avatarUri = verified.picture;
-
-    await sql`
-      INSERT INTO public.profiles (user_id, email, first_name, avatar_url)
-      VALUES (${userId}, ${email}, ${firstName}, ${avatarUri})
-    `;
-
-    await sql`
-      INSERT INTO public.learning_progress (user_id)
-      VALUES (${userId})
-      ON CONFLICT (user_id) DO NOTHING
-    `;
-
-    await sql`
-      INSERT INTO public.google_identities (google_user_id, user_id, email)
-      VALUES (${verified.googleUserId}, ${userId}, ${email})
     `;
   }
 

@@ -1,6 +1,7 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 
+import { needsAppleProfileCompletion } from "@/lib/appleProfile";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
@@ -11,6 +12,9 @@ import { useTrackStore } from "@/store/trackStore";
  */
 export default function Index() {
   const isSignedIn = useSessionStore((s) => s.isSignedIn);
+  const authProvider = useSessionStore((s) => s.authProvider);
+  const firstName = useSessionStore((s) => s.firstName);
+  const email = useSessionStore((s) => s.email);
   const selectedTrack = useTrackStore((s) => s.selectedTrack);
   const hasSeenProductTour = useOnboardingStore((s) => s.hasSeenProductTour);
   const [bootReady, setBootReady] = useState(
@@ -59,6 +63,16 @@ export default function Index() {
         href={hasSeenProductTour ? "/(auth)/sign-in" : "/onboarding"}
       />
     );
+  }
+
+  if (
+    needsAppleProfileCompletion({
+      authProvider,
+      firstName,
+      email,
+    })
+  ) {
+    return <Redirect href="/account/complete-profile" />;
   }
 
   if (!selectedTrack) {

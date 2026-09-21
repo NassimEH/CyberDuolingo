@@ -146,6 +146,7 @@ export default function RootLayout() {
           <Stack.Screen name="certifications" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="account/edit" />
+          <Stack.Screen name="account/complete-profile" />
           <Stack.Screen name="privacy/preferences" />
           <Stack.Screen name="legal/[slug]" />
           <Stack.Screen name="about" />
