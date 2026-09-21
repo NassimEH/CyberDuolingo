@@ -4,7 +4,13 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  useColorScheme,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 /** Cap layouts to a phone column when the window is tablet-sized (iPad compat / Stage Manager). */
 export const PHONE_CONTENT_MAX_WIDTH = 430;
@@ -30,6 +36,8 @@ type Props = {
  */
 export function PhoneShell({ children }: Props) {
   const { width: windowWidth, height } = useWindowDimensions();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const isConstrained =
     Platform.OS === "ios" && windowWidth > PHONE_CONTENT_MAX_WIDTH + 24;
   const width = isConstrained
@@ -51,8 +59,20 @@ export function PhoneShell({ children }: Props) {
 
   return (
     <PhoneLayoutContext.Provider value={value}>
-      <View style={styles.stage}>
-        <View style={styles.phoneColumn}>{children}</View>
+      <View
+        style={[
+          styles.stage,
+          { backgroundColor: isDark ? "#0B1220" : "#E5E7EB" },
+        ]}
+      >
+        <View
+          style={[
+            styles.phoneColumn,
+            { backgroundColor: isDark ? "#0B1220" : "#fff" },
+          ]}
+        >
+          {children}
+        </View>
       </View>
     </PhoneLayoutContext.Provider>
   );
@@ -74,13 +94,11 @@ const styles = StyleSheet.create({
   stage: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#0B1220",
   },
   phoneColumn: {
     flex: 1,
     width: "100%",
     maxWidth: PHONE_CONTENT_MAX_WIDTH,
-    backgroundColor: "#fff",
     overflow: "hidden",
   },
 });

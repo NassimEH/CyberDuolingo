@@ -17,7 +17,7 @@ export default {
   expo: {
     name: "Stack",
     slug: "stack",
-    version: "1.0.1",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: googleScheme ? ["stack", googleScheme] : "stack",
@@ -84,7 +84,7 @@ export default {
         "expo-image-picker",
         {
           photosPermission:
-            "Allow $(PRODUCT_NAME) to access your photos to set a profile picture.",
+            "Stack a besoin d’accéder à tes photos pour définir ta photo de profil.",
           // Gallery-only avatar picker — do not declare unused camera/mic (Apple 5.1.1).
           cameraPermission: false,
           microphonePermission: false,

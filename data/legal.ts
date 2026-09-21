@@ -60,8 +60,8 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     },
     paragraphs: [
       {
-        fr: "Stack est une application d’apprentissage. L’authentification et la synchronisation de progression passent par Neon Auth (Better Auth) et Neon Postgres (Data API), avec des cookies de session stockés de façon sécurisée sur l’appareil (SecureStore).",
-        en: "Stack is a learning app. Authentication and progress sync use Neon Auth (Better Auth) and Neon Postgres (Data API), with session cookies stored securely on-device (SecureStore).",
+        fr: "Stack est une application d’apprentissage. L’authentification e-mail passe par Neon Auth ; Sign in with Apple et Google natifs utilisent une session Stack. La progression est synchronisée via Neon Postgres. Les jetons de session sont stockés de façon sécurisée sur l’appareil (SecureStore).",
+        en: "Stack is a learning app. Email auth uses Neon Auth; native Sign in with Apple and Google use a Stack session. Progress syncs via Neon Postgres. Session tokens are stored securely on-device (SecureStore).",
       },
       {
         fr: "Sur le serveur (Neon) : identifiant utilisateur, e-mail de compte, profil (prénom, avatar), progression (XP, leçons, défis, labs) et certifications suivies. Sur l’appareil : préférences (langue, thème, analytics, notifications) et cache de session.",
@@ -140,8 +140,8 @@ export const LEGAL_DOCS: Record<LegalSlug, LegalDoc> = {
     title: { fr: "Données collectées", en: "Data we collect" },
     paragraphs: [
       {
-        fr: "Compte Neon : e-mail, mot de passe (hashé côté auth), prénom, avatar optionnel.",
-        en: "Neon account: email, password (hashed by auth), first name, optional avatar.",
+        fr: "Compte : e-mail / mot de passe (Neon Auth), Sign in with Apple, ou Google. Profil : prénom, avatar optionnel.",
+        en: "Account: email / password (Neon Auth), Sign in with Apple, or Google. Profile: first name, optional avatar.",
       },
       {
         fr: "Progression synchronisée : XP, leçons / défis / labs terminés, certifications suivies.",
