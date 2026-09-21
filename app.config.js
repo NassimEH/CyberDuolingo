@@ -30,6 +30,7 @@ export default {
       isTabletOnly: false,
       requireFullScreen: true,
       bundleIdentifier: "me.nassimelh.stack",
+      buildNumber: "3",
       usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
