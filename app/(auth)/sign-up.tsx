@@ -1,7 +1,6 @@
 import { images } from "@/constants/images";
 import { AuthSocialButtons } from "@/components/AuthSocialButtons";
 import { identifyUser, trackEvent } from "@/lib/analytics";
-import { needsAppleProfileCompletion } from "@/lib/appleProfile";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTrackStore } from "@/store/trackStore";
 import { useT } from "@/lib/i18n";
@@ -43,17 +42,7 @@ export default function SignUpScreen() {
         signupDate: new Date().toISOString(),
       });
     }
-    if (
-      method === "apple" &&
-      needsAppleProfileCompletion({
-        authProvider: state.authProvider,
-        firstName: state.firstName,
-        email: state.email,
-      })
-    ) {
-      router.replace("/account/complete-profile");
-      return;
-    }
+    // Apple Guideline 4: never force name/email after Sign in with Apple.
     router.replace("/");
   };
 

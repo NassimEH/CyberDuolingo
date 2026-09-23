@@ -1,6 +1,10 @@
 /**
- * Client-safe helpers for Apple profile completeness.
- * (Keep free of Node-only imports — used from screens.)
+ * Client-safe helpers for Apple profile display.
+ * Keep free of Node-only imports — used from screens.
+ *
+ * App Store Guideline 4 / Sign in with Apple:
+ * Do NOT require name or email after SIWA when Authentication Services
+ * already provided them (including Hide My Email / private relay).
  */
 
 export function isApplePrivateRelayEmail(
@@ -9,6 +13,9 @@ export function isApplePrivateRelayEmail(
   return Boolean(email?.toLowerCase().endsWith("@privaterelay.appleid.com"));
 }
 
+/**
+ * @deprecated Display-only heuristic. Never use to block Sign in with Apple.
+ */
 export function isPlaceholderAppleName(
   firstName: string | null | undefined,
   email?: string | null
@@ -25,16 +32,14 @@ export function isPlaceholderAppleName(
   return false;
 }
 
-/** True when Apple hid name and/or email — user must complete Stack profile. */
-export function needsAppleProfileCompletion(input: {
+/**
+ * Never force a post-SIWA profile form (Apple Guideline 4).
+ * Name + email from Authentication Services (incl. private relay) are enough.
+ */
+export function needsAppleProfileCompletion(_input: {
   authProvider: string | null | undefined;
   firstName: string | null | undefined;
   email: string | null | undefined;
 }): boolean {
-  if (input.authProvider !== "apple") return false;
-  return (
-    isPlaceholderAppleName(input.firstName, input.email) ||
-    !input.email?.includes("@") ||
-    isApplePrivateRelayEmail(input.email)
-  );
+  return false;
 }

@@ -409,6 +409,11 @@ export const useSessionStore = create<SessionState>()(
           return { error: "Entre une adresse e-mail valide." };
         }
 
+        const previous = {
+          firstName: state.firstName,
+          email: state.email,
+        };
+
         if (state.authProvider === "neon" && isNeonConfigured()) {
           const result = await authClient.updateUser({
             name: trimmedName,
@@ -420,16 +425,26 @@ export const useSessionStore = create<SessionState>()(
           }
         }
 
+        // Optimistic local update, then persist to Neon `profiles` (or Stack sync API).
         set({
           firstName: trimmedName,
           email: trimmedEmail,
         });
-        await ensureUserProfile({
-          userId: state.userId,
-          email: trimmedEmail,
-          firstName: trimmedName,
-          avatarUrl: state.avatarUri,
-        });
+        try {
+          await ensureUserProfile({
+            userId: state.userId,
+            email: trimmedEmail,
+            firstName: trimmedName,
+            avatarUrl: state.avatarUri,
+          });
+        } catch (err) {
+          console.warn("[profile] ensureUserProfile failed", err);
+          set(previous);
+          return {
+            error:
+              "Impossible d’enregistrer sur le serveur. Vérifie ta connexion et réessaie.",
+          };
+        }
         return {};
       },
       hydrateFromNeon: async () => {

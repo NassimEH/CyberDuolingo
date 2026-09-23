@@ -17,7 +17,7 @@ export default {
   expo: {
     name: "Stack",
     slug: "stack",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: googleScheme ? ["stack", googleScheme] : "stack",
@@ -30,7 +30,7 @@ export default {
       isTabletOnly: false,
       requireFullScreen: true,
       bundleIdentifier: "me.nassimelh.stack",
-      buildNumber: "3",
+      buildNumber: "5",
       usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
